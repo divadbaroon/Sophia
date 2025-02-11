@@ -13,7 +13,7 @@ export default function CallToAction() {
         }}
       />
       <div className="container mx-auto px-6 text-center relative">
-        <h3 className="text-4xl font-bold mb-8 text-white">Ready to Revolutionize Your Office Hours?</h3>
+        <h3 className="text-4xl font-bold mb-8 text-white">Sample text for now</h3>
         <p className="text-xl mb-12 text-blue-100 max-w-2xl mx-auto">
           Join our beta program and be among the first TAs to experience the future of CS education support.
         </p>
