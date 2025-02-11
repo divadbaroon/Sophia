@@ -19,15 +19,6 @@ export default function SearchHeader({
           <h1 className="text-4xl font-extrabold text-gray-900 mb-2">{title}</h1>
           <p className="text-lg text-gray-600">{description}</p>
         </div>
-        {showNewButton && (
-          <Button 
-            className="bg-blue-600 hover:bg-blue-700" 
-            onClick={onNewClick}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Session
-          </Button>
-        )}
       </div>
 
       <div className="flex justify-end gap-4 mb-8">
