@@ -13,33 +13,53 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { signOut } from "@/app/(auth)/login/actions"
 
-interface NavigationProps {
-  user: any // Replace with your user type
+type NavItem = {
+  name: string;
+  href: string;
 }
+
+type NavigationProps = {
+  user: any
+}
+
 
 export default function Navigation({ user }: NavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  const navigationItems = ["Features", "How It Works", "Impact"]
+  const navigationItems: (string | NavItem)[] = user 
+    ? [
+        {
+          name: "Dashboard",
+          href: "/dashboard"
+        },
+        {
+          name: "Calendar",
+          href: "/calendar"
+        }
+      ]
+    : ["About", "Features", "Documentation"]
 
   return (
     <nav className="fixed w-full backdrop-blur-md bg-white/80 shadow-lg z-50">
       <div className="container mx-auto px-6 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <Link href="/" className="text-3xl font-bold mr-8 text-black">
+            <Link href="/home" className="text-3xl font-bold mr-8 text-black">
               ATLAS<span className="text-blue-600">.</span>
             </Link>
-            <div className="hidden md:flex space-x-6">
+            <div className="hidden md:flex space-x-6 mt-2">
               {navigationItems.map((item) => (
-                <a
-                  key={item}
-                  href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
+                <Link
+                  key={typeof item === 'string' ? item : item.name}
+                  href={typeof item === 'string' 
+                    ? `#${item.toLowerCase().replace(/\s+/g, "-")}` 
+                    : item.href
+                  }
                   className="text-gray-900 hover:text-blue-600 transition-colors duration-200 relative group"
                 >
-                  {item}
+                  {typeof item === 'string' ? item : item.name}
                   <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -65,7 +85,7 @@ export default function Navigation({ user }: NavigationProps) {
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <form action="/" method="POST" className="w-full">
+                    <form action="/home" method="POST" className="w-full">
                       <button 
                         className="w-full text-left" 
                         formAction={signOut}
@@ -102,15 +122,18 @@ export default function Navigation({ user }: NavigationProps) {
         {/* Mobile menu */}
         {isMenuOpen && (
           <div className="md:hidden mt-4 pb-4 backdrop-blur-md bg-white/90">
-            {navigationItems.map((item) => (
-              <a
-                key={item}
-                href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                className="block py-2 hover:bg-blue-50 px-4 rounded transition-colors duration-200 text-gray-900"
-                onClick={() => setIsMenuOpen(false)}
+             {navigationItems.map((item) => (
+              <Link
+                key={typeof item === 'string' ? item : item.name}
+                href={typeof item === 'string' 
+                  ? `#${item.toLowerCase().replace(/\s+/g, "-")}` 
+                  : item.href
+                }
+                className="text-gray-900 hover:text-blue-600 transition-colors duration-200 relative group"
               >
-                {item}
-              </a>
+                {typeof item === 'string' ? item : item.name}
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
+              </Link>
             ))}
             {user ? (
               <div className="pt-4 pb-3 border-t border-gray-200">
@@ -130,7 +153,7 @@ export default function Navigation({ user }: NavigationProps) {
                   </div>
                 </div>
                 <div className="mt-3 px-4">
-                  <form action="/" method="POST">
+                  <form action="/home" method="POST">
                     <button 
                       className="w-full text-left py-2 text-gray-900 hover:bg-blue-50 rounded"
                       formAction={signOut}
