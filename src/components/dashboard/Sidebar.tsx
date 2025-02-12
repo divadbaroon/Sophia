@@ -1,5 +1,4 @@
 import { LayoutDashboard, Clock, History, PlusCircle } from "lucide-react"
-
 import { SidebarProps } from "@/types"
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
@@ -27,13 +26,8 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   ]
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 p-6 fixed h-[calc(100vh-64px)] mt-16">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
-        <p className="text-sm text-gray-600 mt-2">Manage your sessions</p>
-      </div>
-      
-      <nav className="space-y-2">
+    <div className="w-64 bg-white border-r border-gray-200 p-6 fixed h-[calc(100vh-64px)] mt-11">
+      <nav className="space-y-2 mt-6">
         {navigationItems.map((item) => (
           <button
             key={item.id}
