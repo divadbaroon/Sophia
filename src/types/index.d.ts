@@ -1,12 +1,124 @@
+// ====== COURSE
+export interface Course {
+  id: string
+  name: string
+  code: string
+}
+
+// ====== LOCATION
+export interface Location {
+  type: "physical" | "virtual" | "hybrid"
+  details: string
+}
+
+// ====== METRICS
+export interface ActiveMetrics {
+  currentQueue: number
+  totalHelped: number
+  averageWaitTime: number
+  activeTime: number
+}
+
+export interface PastMetrics {
+  studentsHelped: number
+  averageWaitTime: number
+  peakQueueSize: number
+  totalDuration: number
+  actualStartTime: string
+  actualEndTime: string
+  topicsCovered: string[]
+  commonIssues: string[]
+  conceptualBreakthroughs: number
+  studentSatisfaction: number
+}
+
+// ====== DISCUSSION
+export interface Discussion {
+  topics: string[]
+  prerequisites: string[]
+  materials: string[]
+  preparation: string
+}
+
+// ====== RECURRING
+export interface Recurring {
+  frequency: "weekly" | "biweekly" | "monthly"
+  endDate: string
+}
+
+// ====== FEEDBACK
+export interface Feedback {
+  averageRating: number
+  responses: number
+  comments?: string[]
+  improvements?: string[]
+}
+
+// ====== STUDENT
+export interface Student {
+  id: number
+  name: string
+  waitTime: string
+  conceptGaps: string[]
+  status: "In Queue" | "In Progress" | "Completed"
+  joinedAt: string
+  avatar?: string
+  preferredName?: string
+  course?: string
+  previousVisits?: number
+}
+
+// ====== SESSION
+export interface BaseSession {
+  id: number
+  name: string
+  course: Course
+  duration: number
+  location: Location
+}
+
+export interface ActiveSession extends BaseSession {
+  status: "active"
+  startTime: string
+  expectedEndTime: string
+  metrics: ActiveMetrics
+  students: number
+}
+
+export interface UpcomingSession extends BaseSession {
+  status: "upcoming"
+  date: string
+  time: string
+  expectedAttendees?: number
+  description?: string
+  recurring?: Recurring
+  discussion?: Discussion
+}
+
+export interface PastSession extends BaseSession {
+  status: "past"
+  date: string
+  metrics: PastMetrics
+  feedback?: Feedback
+}
+
+export type Session = ActiveSession | UpcomingSession | PastSession
 
 // ====== DASHBOARD CREATE SESSION
-
 export interface CreateSessionProps {
-    onCancel: () => void
-  }
+  onCancel: () => void
+}
+
+export interface CreateSessionFormData {
+  name: string
+  course: Course
+  description?: string
+  date: string
+  duration: number
+  location: Location
+}
 
 // ====== DASHBOARD SEARCH
-
 export interface SearchHeaderProps {
   title: string
   description: string
@@ -19,15 +131,32 @@ export interface SearchHeaderProps {
 }
 
 // ====== DASHBOARD CARD
-
 export interface SessionCardProps {
   type: "active" | "upcoming" | "past"
-  data: any
+  data: Session
+  onUpdate?: {
+    active?: (session: ActiveSession) => void
+    upcoming?: (session: UpcomingSession) => void
+    past?: (session: PastSession) => void
+  }
 }
 
 // ====== DASHBOARD SIDEBAR
-
 export interface SidebarProps {
   activeTab: string
   setActiveTab: (tab: string) => void
+}
+
+// ====== MODAL
+export interface SessionDetailsModalProps {
+  isOpen: boolean
+  onClose: () => void
+  session: Session
+}
+
+export interface EditSessionModalProps {
+  isOpen: boolean
+  onClose: () => void
+  session: UpcomingSession
+  onUpdate: (updatedSession: UpcomingSession) => void
 }
