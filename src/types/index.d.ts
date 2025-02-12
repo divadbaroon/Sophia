@@ -79,10 +79,20 @@ export interface BaseSession {
 
 export interface ActiveSession extends BaseSession {
   status: "active"
-  startTime: string
-  expectedEndTime: string
-  metrics: ActiveMetrics
-  students: number
+  date: string
+  time: string
+  metrics?: {
+    currentQueue: number
+    totalHelped: number
+    averageWaitTime: number
+    activeTime: number
+  }
+}
+
+export interface ActiveSessionsProps {
+  sessions: ActiveSession[]
+  isLoading: boolean
+  onNewClick?: () => void
 }
 
 export interface UpcomingSession extends BaseSession {
@@ -95,11 +105,24 @@ export interface UpcomingSession extends BaseSession {
   discussion?: Discussion
 }
 
+export interface UpcomingSessionsProps {
+  sessions: UpcomingSession[]
+  isLoading: boolean
+  onUpdate: () => void
+  onNewClick?: () => void
+}
+
 export interface PastSession extends BaseSession {
   status: "past"
   date: string
+  time: string
   metrics: PastMetrics
   feedback?: Feedback
+}
+
+export interface PastSessionsProps {
+  sessions: PastSession[]
+  isLoading: boolean
 }
 
 export type Session = ActiveSession | UpcomingSession | PastSession
@@ -107,6 +130,7 @@ export type Session = ActiveSession | UpcomingSession | PastSession
 // ====== DASHBOARD CREATE SESSION
 export interface CreateSessionProps {
   onCancel: () => void
+  onSuccess: () => void
 }
 
 export interface CreateSessionFormData {
