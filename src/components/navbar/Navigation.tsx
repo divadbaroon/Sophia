@@ -3,6 +3,7 @@
 import { Menu, UserIcon } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,9 +23,9 @@ type NavigationProps = {
   user: any
 }
 
-
 export default function Navigation({ user }: NavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const pathname = usePathname()
 
   const navigationItems: (string | NavItem)[] = user 
     ? [
@@ -55,10 +56,14 @@ export default function Navigation({ user }: NavigationProps) {
                     ? `#${item.toLowerCase().replace(/\s+/g, "-")}` 
                     : item.href
                   }
-                  className="text-gray-900 hover:text-blue-600 transition-colors duration-200 relative group"
+                  className={`text-gray-900 hover:text-blue-600 transition-colors duration-200 relative group ${
+                    typeof item !== 'string' && pathname === item.href ? 'text-blue-600' : ''
+                  }`}
                 >
                   {typeof item === 'string' ? item : item.name}
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
+                  <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform transition-transform duration-200 ${
+                    typeof item !== 'string' && pathname === item.href ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                  }`} />
                 </Link>
               ))}
             </div>
@@ -129,10 +134,11 @@ export default function Navigation({ user }: NavigationProps) {
                   ? `#${item.toLowerCase().replace(/\s+/g, "-")}` 
                   : item.href
                 }
-                className="text-gray-900 hover:text-blue-600 transition-colors duration-200 relative group"
+                className={`block px-4 py-2 text-gray-900 hover:text-blue-600 transition-colors duration-200 ${
+                  typeof item !== 'string' && pathname === item.href ? 'text-blue-600 bg-blue-50' : ''
+                }`}
               >
                 {typeof item === 'string' ? item : item.name}
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
               </Link>
             ))}
             {user ? (
