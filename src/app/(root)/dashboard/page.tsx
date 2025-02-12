@@ -2,10 +2,10 @@
 
 import { useState } from "react"
 import Sidebar from "@/components/dashboard/Sidebar"
-import ActiveSessions from "@/components/dashboard/ActiveSessions"
-import UpcomingSessions from "@/components/dashboard/UpcomingSessions"
-import PastSessions from "@/components/dashboard/PastSessions"
-import CreateSession from "@/components/dashboard/CreateSession"
+import ActiveSessions from "@/components/dashboard/active/ActiveSessions"
+import UpcomingSessions from "@/components/dashboard/upcoming/UpcomingSessions"
+import PastSessions from "@/components/dashboard/past/PastSessions"
+import CreateSession from "@/components/dashboard/create/CreateSession"
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("active")
