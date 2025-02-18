@@ -2,14 +2,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid'
 type RoleType = 'host' | 'participant';
 
-interface VideoChatContextType {
-  role: RoleType;
-  setRole: (role: RoleType) => void;
-  chatId: string;
-  setChatId: (id: string) => void;
-  receiverId: string;
-  setReceiverId: (id: string) => void;
-}
+import { VideoChatContextType } from "@/types"
 
 const VideoChatContext = createContext<VideoChatContextType | undefined>(undefined);
 

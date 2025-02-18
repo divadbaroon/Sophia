@@ -4,23 +4,16 @@ import React, {
   useState,
   ReactNode,
 } from 'react'
-import{ FileSystemNode } from '@/utils/FileUtils'
+import { FileSystemNode } from '@/utils/FileUtils'
 
-type FileContextType = {
-  selectedFile: string | null
-  fileContent: string
-  cachedFileContent: string
-  filePath: string | null
-  fileNode: FileSystemNode | null;
-  setFileContent: (content: string) => void
-  selectFile: (fileName: string, content: string, path: string, node: FileSystemNode | null ) => void
-  updateCachedFileContent: (content: string) => void
-  setFileNode: (node: FileSystemNode | null) => void; 
-  errorContent: string  
-  setErrorContent: (error: string) => void  
-  isSaved: () => boolean
-  highlightedText: string; // Add this for the highlighted text
-  updateHighlightedText: (text: string) => void; // Add this for the update function
+import { FileContextType } from '@/types'
+
+interface TestCase {
+  input: {
+    nums: number[],
+    target: number
+  },
+  expected: number[]
 }
 
 const FileContext = createContext<FileContextType | undefined>(undefined)
@@ -30,29 +23,40 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [fileContent, setFileContent] = useState<string>('')
   const [cachedFileContent, setCachedFileContent] = useState<string>('')
   const [filePath, setFilePath] = useState<string | null>(null)
-  const [fileNode, setFileNode] = useState<FileSystemNode | null>(null); 
-  const [errorContent, setErrorContent] = useState('') 
-  const [highlightedText, setHighlightedText] = useState<string>('');
-
-  // useEffect(() => {
-  //   if (typeof window !== 'undefined') {
-  //     const initialFileState = JSON.parse(localStorage.getItem('fileContext') || '{}');
-  //     setSelectedFile(initialFileState.selectedFile || null);
-  //     setFileContent(initialFileState.fileContent || '');
-  //     setCachedFileContent(initialFileState.cachedFileContent || '');
-  //     setFilePath(initialFileState.filePath || null);
-  //   }
-  // }, []);
+  const [fileNode, setFileNode] = useState<FileSystemNode | null>(null)
+  const [errorContent, setErrorContent] = useState('')
+  const [executionOutput, setExecutionOutput] = useState<string>('')
+  const [highlightedText, setHighlightedText] = useState<string>('')
+  const [testCases, setTestCases] = useState<TestCase[]>([
+    {
+      input: {
+        nums: [2, 7, 11, 15],
+        target: 9
+      },
+      expected: [0, 1]
+    },
+    {
+      input: {
+        nums: [3, 2, 4],
+        target: 6
+      },
+      expected: [1, 2]
+    },
+    {
+      input: {
+        nums: [3, 3],
+        target: 6
+      },
+      expected: [0, 1]
+    }
+  ])
 
   const updateHighlightedText = (text: string) => {
-    setHighlightedText(text);
-  };
+    setHighlightedText(text)
+  }
 
-  const saveToLocalStorage = (state: Partial<FileContextType>) => {
-    // if (typeof window === 'undefined') return;
-    // const currentState = JSON.parse(localStorage.getItem('fileContext') || '{}');
-    // const newState = { ...currentState, ...state };
-    // localStorage.setItem('fileContext', JSON.stringify(newState));
+  const updateExecutionOutput = (output: string) => {
+    setExecutionOutput(output)
   }
 
   const selectFile = (fileName: string, content: string, path: string) => {
@@ -60,17 +64,14 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     setFileContent(content)
     setCachedFileContent(content)
     setFilePath(path)
-    saveToLocalStorage({
-      selectedFile: fileName,
-      fileContent: content,
-      cachedFileContent: content,
-      filePath: path,
-    })
   }
 
   const updateCachedFileContent = (content: string) => {
     setCachedFileContent(content)
-    saveToLocalStorage({ cachedFileContent: content })
+  }
+
+  const updateTestCases = (newTestCases: TestCase[]) => {
+    setTestCases(newTestCases)
   }
 
   const isSaved = () => {
@@ -89,11 +90,15 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         setFileContent,
         errorContent,
         setErrorContent,
+        executionOutput,
+        updateExecutionOutput,
         isSaved,
         fileNode,
         setFileNode,
-        highlightedText, // Include highlightedText in context
-        updateHighlightedText, // Include update function
+        highlightedText,
+        updateHighlightedText,
+        testCases,
+        updateTestCases,
       }}>
       {children}
     </FileContext.Provider>
