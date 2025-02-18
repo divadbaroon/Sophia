@@ -1,11 +1,12 @@
+'use client'
+
 import React from 'react'
-
 import dynamic from 'next/dist/shared/lib/dynamic'
-
 import { Button } from '@/components/ui/button'
 import { HelpCircle } from 'lucide-react'
-
 import { VideoChatProvider } from '@/components/context/VideoChatContext'
+import { DeepgramContextProvider } from '@/components/audio/DeepgramContextProvider'
+import { DeepgramInitializer } from '@/components/audio/DeepgramInitializer'
 
 type PanelType = 'question' | 'none'
 
@@ -36,7 +37,11 @@ const MainPanel = () => {
 
   return (
     <VideoChatProvider>
-      <div className="h-full">{renderPanel()}</div>
+      <DeepgramContextProvider>
+        <DeepgramInitializer>
+          <div className="h-full">{renderPanel()}</div>
+        </DeepgramInitializer>
+      </DeepgramContextProvider>
     </VideoChatProvider>
   )
 }
