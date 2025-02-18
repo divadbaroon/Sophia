@@ -41,7 +41,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
   const conversationContentRef = useRef<HTMLDivElement>(null)
 
   // ElevenLabs integration
-  const { connectToVoice, disconnect, isConnected, error, isInitialized } = useElevenLabs();
+  const { connectToVoice, isConnected, error, isInitialized } = useElevenLabs();
   const [isSpeaking, setIsSpeaking] = useState(false);
   // This ref will accumulate all the text before sending it to ElevenLabs
   const accumulatedTextRef = useRef<string>('');
@@ -300,6 +300,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
     } catch (error) {
       console.error('Error fetching AI response:', error);
       setVoiceError('Failed to fetch AI response');
+      console.log(voiceError)
     } finally {
       setIsProcessing(false);
       setIsSpeaking(false);
