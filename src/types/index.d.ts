@@ -204,7 +204,61 @@ export interface FileSystemDirectoryHandle extends FileSystemHandle {
   getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>;
 }
 
-export interface FileSystemHandle {
-  kind: 'file' | 'directory';
-  name: string;
+interface TestCase {
+  input: {
+    nums: number[],
+    target: number
+  },
+  expected: number[]
+}
+
+export interface FileContextType {
+  selectedFile: string | null
+  fileContent: string
+  filePath: string | null
+  selectFile: (fileName: string, content: string, path: string) => void
+  cachedFileContent: string
+  updateCachedFileContent: (content: string) => void
+  setFileContent: (content: string) => void
+  errorContent: string
+  setErrorContent: (error: string) => void
+  executionOutput: string
+  updateExecutionOutput: (output: string) => void
+  isSaved: () => boolean
+  fileNode: FileSystemNode | null
+  setFileNode: (node: FileSystemNode | null) => void
+  highlightedText: string
+  updateHighlightedText: (text: string) => void
+  testCases: TestCase[]
+  updateTestCases: (testCases: TestCase[]) => void
+}
+
+export type FolderContextType = {
+  selectedFolder: string | null;
+  fileStructure: FileSystemNode[];
+  setSelectedFolder: (folderName: string | null) => void;
+  setFileStructure: (structure: FileSystemNode[]) => void;
+};
+
+export interface VideoChatContextType {
+  role: RoleType;
+  setRole: (role: RoleType) => void;
+  chatId: string;
+  setChatId: (id: string) => void;
+  receiverId: string;
+  setReceiverId: (id: string) => void;
+}
+
+export interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface TaskSidebarProps {
+  title: string
+  difficulty: "Easy" | "Medium" | "Hard"
+  description: string
+  examples: Example[]
+  constraints: string[]
 }
