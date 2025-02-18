@@ -22,42 +22,77 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-const createSystemPrompt = (fileContext: FileContext): string => {
-  console.log('Creating system prompt with context:', fileContext)
-
-  let prompt = `You are a student who has studied programming and is eager to share your knowledge. Think step by step and reflect on each step before making a decision. Do not simulate scenarios. Keep your responses focused and concise.`
-
-  // Add the code content if available
-  if (fileContext.fileName && fileContext.content) {
-    prompt += `\n\nI am currently looking at a file named "${fileContext.fileName}" with the following content:\n\`\`\`python\n${fileContext.content}\n\`\`\``
+// Extract just the twoSum function from the full code
+const extractTwoSumFunction = (content: string): string => {
+  // Look for the twoSum function definition
+  const functionMatch = content.match(/def twoSum\(self,[\s\S]*?\)[\s\S]*?(?:pass|return)/);
+  if (functionMatch) {
+    return functionMatch[0];
   }
+  return content; // Return original if not found
+}
 
-  // Add test cases if available
-  if (fileContext.testCases && fileContext.testCases.length > 0) {
-    prompt += `\n\nHere are the test cases being used:\n`
-    fileContext.testCases.forEach((test: TestCase, index: number) => {
-      prompt += `\nTest ${index + 1}:
-Input: nums = ${JSON.stringify(test.input.nums)}, target = ${test.input.target}
-Expected Output: ${JSON.stringify(test.expected)}`
-    })
+const createSystemPrompt = (fileContext: FileContext): string => {
+  let prompt = `You are a teaching assistant helping a student with their programming assignment. Embody a helpful, supportive TA persona who guides students to find solutions rather than giving answers directly.
+
+Your approach should be:
+1. Listen carefully to the student's problem
+2. Ask concise, specific questions about their code
+3. Guide them toward understanding the issue themselves
+4. Provide targeted hints rather than complete solutions
+5. Be encouraging and patient
+
+Some examples of concise questions you should ask:
+- "What do you think is causing the problem you're experiencing?"
+- "What troubleshooting steps have you taken so far?"
+- "Have you checked for similar errors in the documentation?"
+- "What is your understanding of how this function should work?"
+- "Can you walk me through your logic in this section?"
+
+Keep your questions and explanations brief and directly related to their specific issue.`
+
+  // Add the simplified code content if available
+  if (fileContext.content) {
+    const simplifiedContent = extractTwoSumFunction(fileContext.content);
+    prompt += `\n\nThe student is currently looking at this code:\n\`\`\`python\n${simplifiedContent}\n\`\`\``
   }
 
   // Add execution output if available
   if (fileContext.executionOutput) {
-    prompt += `\n\nWhen I ran the code, I got this output:\n\`\`\`\n${fileContext.executionOutput}\n\`\`\``
+    prompt += `\n\nThe code produced this output when executed:\n\`\`\`\n${fileContext.executionOutput}\n\`\`\``
   }
 
   // Add error message if available
   if (fileContext.errorMessage) {
-    prompt += `\n\nI encountered this error:\n\`\`\`\n${fileContext.errorMessage}\n\`\`\``
+    prompt += `\n\nThe student encountered this error:\n\`\`\`\n${fileContext.errorMessage}\n\`\`\``
   }
 
   // Add highlighted text if available
   if (fileContext.highlightedText) {
-    prompt += `\n\nI have highlighted this specific part of the code:\n\`\`\`\n${fileContext.highlightedText}\n\`\`\``
+    prompt += `\n\nThe student has highlighted this specific part of the code:\n\`\`\`\n${fileContext.highlightedText}\n\`\`\``
   }
 
-  prompt += `\n\nProvide clear, concise explanations and wait for responses before moving ahead. Focus on the specific code and problem at hand. If discussing test cases, be precise about the inputs and expected outputs. After providing explanations, ask for feedback on how well you explained it and how you can improve.`
+  // Add context about test cases
+  if (fileContext.testCases && fileContext.testCases.length > 0) {
+    const testCaseDescription = fileContext.testCases.map((tc, index) => {
+      return `Test ${index + 1}: nums=${JSON.stringify(tc.input.nums)}, target=${tc.input.target}, expected output=${JSON.stringify(tc.expected)}`;
+    }).join('\n');
+    
+    prompt += `\n\nThe function needs to pass these test cases:\n\`\`\`\n${testCaseDescription}\n\`\`\``;
+  }
+
+  prompt += `\n\nThis function should find two numbers in the array that add up to the target value and return their indices.
+
+Remember to:
+- Address their specific problem rather than giving general advice
+- Ask targeted questions that help them think through the issue
+- Be concise and direct in your responses
+- Guide them to discover the solution themselves
+- Balance supportiveness with allowing them to learn through struggle
+- Avoid writing their code for them
+- Focus on teaching them to debug and problem-solve independently
+
+Start by understanding their immediate issue, and then help them through the debugging process with targeted questions.`
 
   console.log('Final system prompt:', prompt)
   return prompt
@@ -66,7 +101,13 @@ Expected Output: ${JSON.stringify(test.expected)}`
 export async function POST(req: NextRequest) {
   try {
     const { transcript, fileContext }: RequestBody = await req.json()
-    console.log('Received request with context:', { transcript, fileContext })
+    console.log('Received request with context:', { 
+      transcript, 
+      fileContext: {
+        ...fileContext,
+        content: extractTwoSumFunction(fileContext.content || '')
+      } 
+    })
 
     if (!transcript || transcript.trim() === '') {
       return NextResponse.json(
@@ -109,8 +150,13 @@ async function streamOpenAIResponse(
   const encoder = new TextEncoder()
   
   try {
-    const systemPrompt = createSystemPrompt(fileContext)
-    console.log('Starting OpenAI stream with prompt:', systemPrompt)
+    // Create a modified fileContext with just the twoSum function
+    const simplifiedFileContext = {
+      ...fileContext,
+      content: fileContext.content ? extractTwoSumFunction(fileContext.content) : undefined
+    };
+
+    const systemPrompt = createSystemPrompt(simplifiedFileContext)
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
