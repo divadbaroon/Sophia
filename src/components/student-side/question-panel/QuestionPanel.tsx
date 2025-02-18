@@ -1,178 +1,431 @@
-'use client'
+"use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Mic, Bot } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from '@/components/ui/card'
+import { motion } from 'framer-motion'
+import { 
+  useDeepgram, 
+  SOCKET_STATES, 
+  LiveTranscriptionEvents,
+  type LiveTranscriptionEvent 
+} from '@/components/audio/DeepgramContextProvider'
+import { useFile } from '@/components/context/FileContext'
 
 interface QuestionPanelProps {
   onBack: () => void
 }
 
 const QuestionPanel: React.FC<QuestionPanelProps> = ({ onBack }) => {
+  // State for managing the conversation flow
   const [isStarted, setIsStarted] = useState(false)
+  const [transcript, setTranscript] = useState("")
+  const [aiResponse, setAiResponse] = useState("")
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [conversationHistory, setConversationHistory] = useState<Array<{role: 'user' | 'assistant', content: string}>>([])
+  const [currentQuestion, setCurrentQuestion] = useState("")
 
+  // Audio recording states and refs
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const responseDivRef = useRef<HTMLDivElement>(null)
+
+  // Deepgram connection for speech-to-text
+  const { 
+    connection, 
+    connectToDeepgram, 
+    connectionState, 
+    disconnectFromDeepgram 
+  } = useDeepgram()
+
+  // Get complete file context for code understanding
+  const { 
+    fileContent, 
+    errorContent, 
+    selectedFile,
+    highlightedText,
+    executionOutput,
+    testCases
+  } = useFile()
+
+  // Debug logging for context changes
+  useEffect(() => {
+    console.log('File Context Update:', {
+      fileContent,
+      testCases,
+      executionOutput,
+      errorContent,
+      highlightedText
+    })
+  }, [fileContent, testCases, executionOutput, errorContent, highlightedText])
+  
+  // Create and configure the MediaRecorder
+  const createRecorder = (stream: MediaStream) => {
+    const recorder = new MediaRecorder(stream, {
+      mimeType: "audio/webm;codecs=opus",
+    })
+
+    // Send audio data to Deepgram when available
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0 && connection && connectionState === SOCKET_STATES.open) {
+        connection.send(e.data)
+      }
+    }
+
+    mediaRecorderRef.current = recorder
+    return recorder
+  }
+
+  // Handle media stream and recording state changes
+  useEffect(() => {
+    if (!mediaStream || !connection) return
+
+    if (connectionState === SOCKET_STATES.open) {
+      const recorder = createRecorder(mediaStream)
+      recorder.start(250) // Start recording in 250ms chunks
+    } else if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop()
+    }
+  }, [connectionState, connection, mediaStream]) 
+
+  // Handle Deepgram transcription events
+  useEffect(() => {
+    if (!connection) return
+
+    const handleTranscript = (event: LiveTranscriptionEvent) => {
+      if (event.is_final && event.channel?.alternatives?.[0]?.transcript) {
+        const transcriptText = event.channel.alternatives[0].transcript
+        if (transcriptText.trim()) {
+          // Handle new question
+          if (!currentQuestion) {
+            setCurrentQuestion(transcriptText.trim())
+            setTranscript(transcriptText.trim())
+            fetchAiResponse(transcriptText.trim())
+          } else {
+            // Handle additions to existing question
+            const newTranscript = `${transcript} ${transcriptText}`.trim()
+            setTranscript(newTranscript)
+            setCurrentQuestion(newTranscript)
+            
+            // Only fetch new response if significant change
+            if (newTranscript.length > transcript.length + 5) {
+              fetchAiResponse(newTranscript)
+            }
+          }
+        }
+      }
+    }
+
+    connection.addListener(LiveTranscriptionEvents.Transcript, handleTranscript)
+    return () => {
+      connection.removeListener(LiveTranscriptionEvents.Transcript, handleTranscript)
+    }
+  }, [connection, transcript, currentQuestion])
+
+  // Fetch AI response with complete context
+  const fetchAiResponse = async (text: string) => {
+    if (!text.trim() || isProcessing) return
+    
+    try {
+      setIsProcessing(true)
+      setAiResponse("")
+      
+      const questionBeingProcessed = text
+      
+      // Create complete context object with code state
+      const contextData = {
+        transcript: text,
+        fileContext: {
+          fileName: selectedFile,
+          content: fileContent,
+          errorMessage: errorContent,
+          executionOutput: executionOutput,
+          testCases: testCases,
+          highlightedText: highlightedText
+        }
+      }
+
+      console.log('Sending request to API:', contextData)
+      
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(contextData),
+      })
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+  
+      // Handle streaming response
+      const reader = response.body?.getReader()
+      if (!reader) {
+        throw new Error("Failed to get response stream")
+      }
+  
+      const decoder = new TextDecoder()
+      let done = false
+      let fullResponse = ""
+  
+      while (!done) {
+        const { value, done: doneReading } = await reader.read()
+        done = doneReading
+        
+        if (value) {
+          const chunk = decoder.decode(value, { stream: true })
+          
+          // Process SSE format
+          const lines = chunk.split('\n\n')
+          for (const line of lines) {
+            const match = line.match(/^data: (.+)$/m)
+            if (!match) continue
+            
+            const data = match[1]
+            if (data === '[DONE]') continue
+            
+            try {
+              const parsed = JSON.parse(data)
+              if (parsed.text) {
+                fullResponse += parsed.text
+                setAiResponse(fullResponse)
+                
+                // Auto-scroll to latest response
+                if (responseDivRef.current) {
+                  responseDivRef.current.scrollTop = responseDivRef.current.scrollHeight
+                }
+              }
+            } catch (e) {
+              console.error('Error parsing JSON:', e)
+            }
+          }
+        }
+      }
+      
+      console.log('Stream complete, full response:', fullResponse)
+      
+      if (fullResponse) {
+        // Update conversation history
+        setConversationHistory(prev => [
+          ...prev,
+          { role: 'user', content: questionBeingProcessed },
+          { role: 'assistant', content: fullResponse }
+        ])
+        
+        // Reset for next question
+        setTranscript("")
+        setCurrentQuestion("")
+      }
+      
+    } catch (error) {
+      console.error('Error fetching AI response:', error)
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  // Initialize audio recording
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          noiseSuppression: true,
+          echoCancellation: true,
+        },
+      })
+      setMediaStream(stream)
+
+      // Connect to Deepgram with optimal settings
+      await connectToDeepgram({
+        model: "nova-3",
+        interim_results: true,
+        smart_format: true,
+        language: "en-US",
+        utterance_end_ms: 3000,
+        filler_words: true,
+      })
+    } catch (error) {
+      console.error("Error starting recording:", error)
+    }
+  }
+
+  // Clean up recording resources
+  const stopRecording = () => {
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop()
+    }
+    mediaStream?.getTracks().forEach((track) => track.stop())
+    setMediaStream(null)
+    disconnectFromDeepgram()
+  }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopRecording()
+    }
+  }, [])
+
+  // Initial welcome screen
   if (!isStarted) {
     return (
-      <div className="flex flex-col h-full p-4">
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold">Audio Question Assistant</h2>
-        </div>
-        <div className="mt-4 h-[calc(100%-60px)]">
-          <Card className="max-w-4xl mx-auto">
-            <CardHeader>
-              <CardDescription>
-                This tool will help you formulate a clear and effective question
-                about your coding problem using voice input.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <ol className="space-y-3 list-decimal pl-6">
-                  <li>Start speaking when ready - the system listens automatically</li>
-                  <li>Pause naturally when you finish a thought</li>
-                  <li>The system will analyze your response and guide you</li>
-                  <li>Continue until you've built a complete question</li>
-                </ol>
-              </div>
+      <div className="p-6">
+        <div className="space-y-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center"
+          >
+            <Mic className="h-12 w-12 mx-auto text-primary mb-3" />
+            <p className="text-muted-foreground">I'm here to help understand your coding problems.</p>
+          </motion.div>
 
-              <div className="bg-muted p-4 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  💡 <span className="font-medium">Tip:</span> Don't worry about getting
-                  everything perfect in your first response.
-                </p>
-              </div>
-
-              <div className="flex justify-center pt-4">
-                <Button onClick={() => setIsStarted(true)} size="lg">
-                  Begin
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="text-center"
+          >
+            <Button 
+              onClick={() => {
+                setIsStarted(true)
+                startRecording()
+              }} 
+              size="default"
+              className="px-4 py-2"
+            >
+              Begin Conversation
+            </Button>
+          </motion.div>
         </div>
       </div>
     )
   }
 
-  const rubric = [
-    {
-      title: 'Clear Description',
-      description: 'Sufficient context about goals and clear task explanation',
-      score: 0,
-      maxScore: 5,
-      key: 'description',
-    },
-    {
-      title: 'Issue Details',
-      description: 'Description of unexpected behavior and when it occurs',
-      score: 0,
-      maxScore: 5,
-      key: 'details',
-    },
-    {
-      title: 'Troubleshooting',
-      description: 'Previous resolution attempts and hypotheses about causes',
-      score: 0,
-      maxScore: 5,
-      key: 'troubleshooting',
-    },
-    {
-      title: 'Clarity',
-      description: 'Well-structured question with logical flow',
-      score: 0,
-      maxScore: 5,
-      key: 'clarity',
-    },
-  ]
-
+  // Main conversation interface
   return (
-    <div className="flex flex-col h-full p-4">
-      <div className="mt-4 h-[calc(100%-60px)]">
-        <Card className="h-full">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Audio Question Assistant</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="question">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="question">Question</TabsTrigger>
-                <TabsTrigger value="rubric">Rubric</TabsTrigger>
-                <TabsTrigger value="conversation">Conversation History</TabsTrigger>
-              </TabsList>
+    <div className="p-4">
+      {/* Header with recording status and controls */}
+      <div className="flex justify-between items-center mb-4">
+      </div>
+      
+      {/* Tabs for current question and conversation history */}
+      <Tabs defaultValue="question" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="question">Question</TabsTrigger>
+          <TabsTrigger value="conversation">Conversation</TabsTrigger>
+        </TabsList>
 
-              <TabsContent value="question">
-                <Card>
-                  <CardContent className="pt-6">
-                    <ScrollArea className="h-[200px]">
-                      <div className="flex flex-col items-center space-y-4 px-4">
-                        <div className="text-center space-y-4 py-8">
-                          <p className="text-lg text-primary">
-                            Listening for your question...
-                          </p>
-                        </div>
-                        <Progress value={0} />
+        {/* Current question tab */}
+        <TabsContent value="question" className="mt-4">
+          <ScrollArea className="h-[120px]">
+            <div className="flex items-center justify-center h-full">
+              {isProcessing || aiResponse ? (
+                <div className="p-3 w-full">
+                  <div className="flex items-start">
+                    <Bot className="h-5 w-5 mr-2 text-primary mt-1 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="prose prose-sm max-w-none">
+                        {aiResponse || (
+                          <div className="flex items-center">
+                            <div className="animate-pulse flex space-x-1">
+                              <div className="h-2 w-2 bg-muted-foreground rounded-full"></div>
+                              <div className="h-2 w-2 bg-muted-foreground rounded-full"></div>
+                              <div className="h-2 w-2 bg-muted-foreground rounded-full"></div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="rubric">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[200px]">Criteria</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="text-right">Score</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rubric.map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{item.title}</TableCell>
-                        <TableCell>{item.description}</TableCell>
-                        <TableCell className="text-right">
-                          {item.score}/{item.maxScore}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TabsContent>
-
-              <TabsContent value="conversation">
-                <ScrollArea className="h-[250px]">
-                  <div className="space-y-4">
-                    <div className="p-2 rounded bg-gray-100">
-                      <strong>You: </strong>
-                      Example conversation history will appear here
                     </div>
                   </div>
-                </ScrollArea>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
+                </div>
+              ) : (
+                <p className="text-lg text-muted-foreground">
+                  {currentQuestion || "Listening for your question..."}
+                </p>
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        {/* Conversation history tab */}
+        <TabsContent value="conversation" className="mt-4">
+          <ScrollArea className="h-[300px]" ref={responseDivRef}>
+            <div className="space-y-4">
+              {/* Display past conversation */}
+              {conversationHistory.map((message, index) => (
+                <div key={index} className={`p-3 rounded-lg ${message.role === 'user' ? 'bg-muted' : 'border'}`}>
+                  {message.role === 'user' ? (
+                    <>
+                      <strong className="text-primary">You: </strong>
+                      {message.content}
+                    </>
+                  ) : (
+                    <div className="flex items-start">
+                      <Bot className="h-5 w-5 mr-2 text-primary mt-1 flex-shrink-0" />
+                      <div className="flex-1">
+                        <strong className="text-primary">Assistant: </strong>
+                        <div className="prose prose-sm mt-1">
+                          {message.content}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              {/* Current question display */}
+              {currentQuestion && !aiResponse && !isProcessing && (
+                <div className="p-3 rounded-lg bg-muted">
+                  <strong className="text-primary">You: </strong>
+                  {currentQuestion}
+                </div>
+              )}
+              
+              {/* Active response display */}
+              {currentQuestion && (aiResponse || isProcessing) && (
+                <>
+                  <div className="p-3 rounded-lg bg-muted">
+                    <strong className="text-primary">You: </strong>
+                    {currentQuestion}
+                  </div>
+                  
+                  <div className="p-3 rounded-lg border">
+                    <div className="flex items-start">
+                      <Bot className="h-5 w-5 mr-2 text-primary mt-1 flex-shrink-0" />
+                      <div className="flex-1">
+                        <strong className="text-primary">Assistant: </strong>
+                        <div className="prose prose-sm mt-1">
+                          {aiResponse || (
+                            <div className="flex items-center">
+                              <div className="animate-pulse flex space-x-1">
+                              <div className="h-2 w-2 bg-muted-foreground rounded-full"></div>
+                                <div className="h-2 w-2 bg-muted-foreground rounded-full"></div>
+                                <div className="h-2 w-2 bg-muted-foreground rounded-full"></div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {/* Empty state */}
+              {!currentQuestion && !aiResponse && !isProcessing && conversationHistory.length === 0 && (
+                <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                  Your conversation will appear here
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
