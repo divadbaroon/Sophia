@@ -73,7 +73,7 @@ export const WorkspaceLayout = () => {
                   
                   {isMainPanelVisible && (
                     <Card className="absolute top-16 right-4 w-[400px] z-50 shadow-lg mt-6 mr-1">
-                      <MainPanel />
+                      <MainPanel isVisible={isMainPanelVisible} />
                     </Card>
                   )}
                 </div>
