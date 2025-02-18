@@ -41,7 +41,7 @@ export default function Navigation({ user }: NavigationProps) {
       : ["About", "Features", "Documentation"]
 
   return (
-    <nav className="fixed w-full backdrop-blur-md bg-white/80 shadow-lg z-50">
+    <nav className="fixed w-full bg-white/80 shadow-lg z-50">
       <div className="px-6 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
