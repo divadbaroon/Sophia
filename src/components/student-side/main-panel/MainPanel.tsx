@@ -7,10 +7,15 @@ import { HelpCircle } from 'lucide-react'
 import { VideoChatProvider } from '@/components/context/VideoChatContext'
 import { DeepgramContextProvider } from '@/components/audio/DeepgramContextProvider'
 import { DeepgramInitializer } from '@/components/audio/DeepgramInitializer'
+import { ElevenLabsProvider } from '@/components/audio/ElevenLabsProvider';
 
 type PanelType = 'question' | 'none'
 
-const MainPanel = () => {
+interface MainPanelProps {
+  isVisible?: boolean;
+}
+
+const MainPanel: React.FC<MainPanelProps> = ({ isVisible = true }) => {
   const [panelType, setPanelType] = React.useState<PanelType>('question')
 
   const renderPanel = () => {
@@ -19,7 +24,7 @@ const MainPanel = () => {
         const QuestionPanel = dynamic(() => import('@/components/student-side/question-panel/QuestionPanel'), {
           ssr: false,
         })
-        return <QuestionPanel onBack={() => setPanelType('none')} />
+        return <QuestionPanel onBack={() => setPanelType('none')} isVisible={isVisible} />
       }
       default:
         return (
@@ -37,11 +42,13 @@ const MainPanel = () => {
 
   return (
     <VideoChatProvider>
-      <DeepgramContextProvider>
-        <DeepgramInitializer>
-          <div className="h-full">{renderPanel()}</div>
-        </DeepgramInitializer>
-      </DeepgramContextProvider>
+      <ElevenLabsProvider>
+        <DeepgramContextProvider>
+          <DeepgramInitializer>
+            <div className="h-full">{renderPanel()}</div>
+          </DeepgramInitializer>
+        </DeepgramContextProvider>
+      </ElevenLabsProvider>
     </VideoChatProvider>
   )
 }
