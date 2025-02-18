@@ -14,7 +14,7 @@ export default function HeroSection() {
       />
       <div className="container mx-auto text-center relative">
         <div className="inline-block mb-6 px-6 py-2 bg-blue-100 rounded-full">
-          <span className="text-blue-600 font-semibold">New: AI-Powered Office Hours</span>
+          <span className="text-blue-600 font-semibold">AI-Powered Office Hours</span>
         </div>
         <h2 className="text-5xl font-bold mb-6 text-gray-900">
           Transform Your<span className="text-blue-600"> Office Hours</span>
