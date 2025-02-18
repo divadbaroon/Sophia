@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
@@ -13,32 +13,78 @@ import {
   type LiveTranscriptionEvent 
 } from '@/components/audio/DeepgramContextProvider'
 import { useFile } from '@/components/context/FileContext'
+import { useElevenLabs } from '@/components/audio/ElevenLabsProvider';
 
 interface QuestionPanelProps {
-  onBack: () => void
+  onBack: () => void;
+  isVisible?: boolean;
 }
 
-const QuestionPanel: React.FC<QuestionPanelProps> = () => {
-  // State for managing the conversation flow
-  const [isStarted, setIsStarted] = useState(false)
-  const [transcript, setTranscript] = useState("")
-  const [aiResponse, setAiResponse] = useState("")
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [conversationHistory, setConversationHistory] = useState<Array<{role: 'user' | 'assistant', content: string}>>([])
-  const [currentQuestion, setCurrentQuestion] = useState("")
+const QuestionPanel: React.FC<QuestionPanelProps> = ({ onBack, isVisible = true }) => {
+  // -----------------------------
+  // 1) Load from localStorage (lazy initialization)
+  // -----------------------------
+  const [conversationHistory, setConversationHistory] = useState<Array<{role: 'user' | 'assistant', content: string}>>(() => {
+    if (typeof window !== 'undefined') {
+      const savedHistory = localStorage.getItem('conversationHistory')
+      return savedHistory ? JSON.parse(savedHistory) : []
+    }
+    return []
+  })
 
-  // Audio recording states and refs
+  const [currentQuestion, setCurrentQuestion] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('lastQuestion') || ''
+    }
+    return ''
+  })
+
+  // Keep track of the "transcript" as it's forming
+  const [transcript, setTranscript] = useState<string>("")
+  // Keep track of the real-time AI response as it streams
+  const [aiResponse, setAiResponse] = useState<string>("")
+  const [isProcessing, setIsProcessing] = useState(false)
+  // State to control whether the user has started the conversation
+  const [isStarted, setIsStarted] = useState(false)
+
+  // ElevenLabs (TTS) states
+  const { connectToVoice, disconnect, isConnected, error, isInitialized } = useElevenLabs()
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [voiceError, setVoiceError] = useState<string | null>(null)
+
+  // The accumulated text for TTS
+  const accumulatedTextRef = useRef<string>('')
+
+  // Deepgram (STT) states
+  const { connection, connectToDeepgram, connectionState, disconnectFromDeepgram } = useDeepgram()
+
+  // Media recording states
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+
+  // For auto-scrolling the conversation
   const responseDivRef = useRef<HTMLDivElement>(null)
 
-  // Deepgram connection for speech-to-text
-  const { 
-    connection, 
-    connectToDeepgram, 
-    connectionState, 
-    disconnectFromDeepgram 
-  } = useDeepgram()
+  // -----------------------------
+  // 2) Sync to localStorage whenever conversation or question changes
+  // -----------------------------
+  useEffect(() => {
+    localStorage.setItem('conversationHistory', JSON.stringify(conversationHistory))
+  }, [conversationHistory])
+
+  useEffect(() => {
+    localStorage.setItem('lastQuestion', currentQuestion)
+  }, [currentQuestion])
+
+  // Debug logging for voice integration
+  useEffect(() => {
+    console.log('Voice Integration Status:', {
+      isConnected,
+      isSpeaking,
+      isInitialized,
+      error
+    })
+  }, [isConnected, isSpeaking, isInitialized, error])
 
   // Get complete file context for code understanding
   const { 
@@ -98,18 +144,18 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
       if (event.is_final && event.channel?.alternatives?.[0]?.transcript) {
         const transcriptText = event.channel.alternatives[0].transcript
         if (transcriptText.trim()) {
-          // Handle new question
+          // If there's no current question in state, this is a new question
           if (!currentQuestion) {
             setCurrentQuestion(transcriptText.trim())
             setTranscript(transcriptText.trim())
             fetchAiResponse(transcriptText.trim())
           } else {
-            // Handle additions to existing question
+            // Otherwise, we are appending to the existing question
             const newTranscript = `${transcript} ${transcriptText}`.trim()
             setTranscript(newTranscript)
             setCurrentQuestion(newTranscript)
-            
-            // Only fetch new response if significant change
+
+            // Only fetch new response if significantly different in length
             if (newTranscript.length > transcript.length + 5) {
               fetchAiResponse(newTranscript)
             }
@@ -124,17 +170,18 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
     }
   }, [connection, transcript, currentQuestion])
 
-  // Fetch AI response with complete context
+  // Main AI call
   const fetchAiResponse = async (text: string) => {
     if (!text.trim() || isProcessing) return
     
     try {
       setIsProcessing(true)
       setAiResponse("")
+      accumulatedTextRef.current = ''
+      setVoiceError(null)
       
       const questionBeingProcessed = text
       
-      // Create complete context object with code state
       const contextData = {
         transcript: text,
         fileContext: {
@@ -147,8 +194,6 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
         }
       }
 
-      console.log('Sending request to API:', contextData)
-      
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -161,7 +206,6 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
   
-      // Handle streaming response
       const reader = response.body?.getReader()
       if (!reader) {
         throw new Error("Failed to get response stream")
@@ -170,7 +214,9 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
       const decoder = new TextDecoder()
       let done = false
       let fullResponse = ""
-  
+      
+      setIsSpeaking(true)
+
       while (!done) {
         const { value, done: doneReading } = await reader.read()
         done = doneReading
@@ -178,7 +224,6 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
         if (value) {
           const chunk = decoder.decode(value, { stream: true })
           
-          // Process SSE format
           const lines = chunk.split('\n\n')
           for (const line of lines) {
             const match = line.match(/^data: (.+)$/m)
@@ -193,7 +238,10 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
                 fullResponse += parsed.text
                 setAiResponse(fullResponse)
                 
-                // Auto-scroll to latest response
+                // Accumulate text for TTS
+                accumulatedTextRef.current += parsed.text
+
+                // Auto-scroll if needed
                 if (responseDivRef.current) {
                   responseDivRef.current.scrollTop = responseDivRef.current.scrollHeight
                 }
@@ -205,29 +253,39 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
         }
       }
       
-      console.log('Stream complete, full response:', fullResponse)
+      // Once streaming is done, send to ElevenLabs for TTS
+      if (accumulatedTextRef.current.trim() && isInitialized) {
+        try {
+          await connectToVoice(accumulatedTextRef.current)
+        } catch (voiceErr) {
+          console.error('Error connecting to voice:', voiceErr)
+          setVoiceError('Failed to connect to voice service')
+        }
+        accumulatedTextRef.current = ''
+      }
       
       if (fullResponse) {
-        // Update conversation history
+        // Update conversation history with user question + AI response
         setConversationHistory(prev => [
           ...prev,
           { role: 'user', content: questionBeingProcessed },
           { role: 'assistant', content: fullResponse }
         ])
-        
-        // Reset for next question
+
+        // Clear out the text states
         setTranscript("")
         setCurrentQuestion("")
       }
-      
     } catch (error) {
       console.error('Error fetching AI response:', error)
+      setVoiceError('Failed to fetch AI response')
     } finally {
       setIsProcessing(false)
+      setIsSpeaking(false)
     }
   }
 
-  // Initialize audio recording
+  // Start audio recording
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -238,7 +296,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
       })
       setMediaStream(stream)
 
-      // Connect to Deepgram with optimal settings
+      // Connect to Deepgram with your desired settings
       await connectToDeepgram({
         model: "nova-3",
         interim_results: true,
@@ -252,15 +310,26 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
     }
   }
 
-  // Clean up recording resources
+  // Stop audio recording
   const stopRecording = () => {
     if (mediaRecorderRef.current?.state === "recording") {
       mediaRecorderRef.current.stop()
     }
-    mediaStream?.getTracks().forEach((track) => track.stop())
-    setMediaStream(null)
+    if (mediaStream) {
+      mediaStream.getTracks().forEach((track) => track.stop())
+      setMediaStream(null)
+    }
     disconnectFromDeepgram()
   }
+
+  // Effect for handling visibility changes
+  useEffect(() => {
+    if (isVisible && isStarted) {
+      startRecording()
+    } else {
+      stopRecording()
+    }
+  }, [isVisible, isStarted])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -268,6 +337,10 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
       stopRecording()
     }
   }, [])
+
+  // -----------------------------
+  // RENDER
+  // -----------------------------
 
   // Initial welcome screen
   if (!isStarted) {
@@ -281,7 +354,9 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
             className="text-center"
           >
             <Mic className="h-12 w-12 mx-auto text-primary mb-3" />
-            <p className="text-muted-foreground">I&apos;m here to help understand your coding problems.</p>
+            <p className="text-muted-foreground">
+              I&apos;m here to help understand your coding problems.
+            </p>
           </motion.div>
 
           <motion.div 
@@ -293,7 +368,9 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
             <Button 
               onClick={() => {
                 setIsStarted(true)
-                startRecording()
+                if (isVisible) {
+                  startRecording()
+                }
               }} 
               size="default"
               className="px-4 py-2"
@@ -309,11 +386,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
   // Main conversation interface
   return (
     <div className="p-4">
-      {/* Header with recording status and controls */}
-      <div className="flex justify-between items-center mb-4">
-      </div>
-      
-      {/* Tabs for current question and conversation history */}
+      {/* Tabs for question & conversation */}
       <Tabs defaultValue="question" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="question">Question</TabsTrigger>
@@ -356,9 +429,12 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
         <TabsContent value="conversation" className="mt-4">
           <ScrollArea className="h-[300px]" ref={responseDivRef}>
             <div className="space-y-4">
-              {/* Display past conversation */}
+              {/* Past conversation */}
               {conversationHistory.map((message, index) => (
-                <div key={index} className={`p-3 rounded-lg ${message.role === 'user' ? 'bg-muted' : 'border'}`}>
+                <div 
+                  key={index} 
+                  className={`p-3 rounded-lg ${message.role === 'user' ? 'bg-muted' : 'border'}`}
+                >
                   {message.role === 'user' ? (
                     <>
                       <strong className="text-primary">You: </strong>
@@ -378,7 +454,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
                 </div>
               ))}
               
-              {/* Current question display */}
+              {/* If question is active but no AI response yet */}
               {currentQuestion && !aiResponse && !isProcessing && (
                 <div className="p-3 rounded-lg bg-muted">
                   <strong className="text-primary">You: </strong>
@@ -386,7 +462,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
                 </div>
               )}
               
-              {/* Active response display */}
+              {/* If question is active and AI is responding */}
               {currentQuestion && (aiResponse || isProcessing) && (
                 <>
                   <div className="p-3 rounded-lg bg-muted">
@@ -403,7 +479,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
                           {aiResponse || (
                             <div className="flex items-center">
                               <div className="animate-pulse flex space-x-1">
-                              <div className="h-2 w-2 bg-muted-foreground rounded-full"></div>
+                                <div className="h-2 w-2 bg-muted-foreground rounded-full"></div>
                                 <div className="h-2 w-2 bg-muted-foreground rounded-full"></div>
                                 <div className="h-2 w-2 bg-muted-foreground rounded-full"></div>
                               </div>
@@ -416,7 +492,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
                 </>
               )}
               
-              {/* Empty state */}
+              {/* Empty state (no conversation yet) */}
               {!currentQuestion && !aiResponse && !isProcessing && conversationHistory.length === 0 && (
                 <div className="flex items-center justify-center h-[200px] text-muted-foreground">
                   Your conversation will appear here
