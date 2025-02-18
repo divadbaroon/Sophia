@@ -38,8 +38,8 @@ export const activeSessionData: ActiveSession[] = [
           name: "Introduction to Programming",
           code: "CS101"
         },
-        startTime: new Date(CURRENT_TIME.getTime() - HOUR_IN_MS).toISOString(),
-        expectedEndTime: new Date(CURRENT_TIME.getTime() + HOUR_IN_MS).toISOString(),
+        date: new Date(CURRENT_TIME.getTime() - HOUR_IN_MS).toISOString(),
+        time: new Date(CURRENT_TIME.getTime() - HOUR_IN_MS).toLocaleTimeString(),
         duration: 120,
         location: {
           type: "physical",
@@ -52,7 +52,6 @@ export const activeSessionData: ActiveSession[] = [
           activeTime: 60
         },
         status: "active",
-        students: 5
     },
     {
         id: 2,
@@ -62,8 +61,8 @@ export const activeSessionData: ActiveSession[] = [
           name: "Data Structures and Algorithms",
           code: "CS201"
         },
-        startTime: new Date(CURRENT_TIME.getTime() - 30 * 60000).toISOString(),
-        expectedEndTime: new Date(CURRENT_TIME.getTime() + 90 * 60000).toISOString(),
+        date: new Date(CURRENT_TIME.getTime() - 30 * 60000).toISOString(),
+        time: new Date(CURRENT_TIME.getTime() - 30 * 60000).toLocaleTimeString(),
         duration: 120,
         location: {
           type: "virtual",
@@ -76,7 +75,6 @@ export const activeSessionData: ActiveSession[] = [
           activeTime: 30
         },
         status: "active",
-        students: 7
     },
     {
         id: 3,
@@ -86,8 +84,8 @@ export const activeSessionData: ActiveSession[] = [
           name: "Advanced Algorithms",
           code: "CS301"
         },
-        startTime: new Date(CURRENT_TIME.getTime() - 15 * 60000).toISOString(),
-        expectedEndTime: new Date(CURRENT_TIME.getTime() + 75 * 60000).toISOString(),
+        date: new Date(CURRENT_TIME.getTime() - 15 * 60000).toISOString(),
+        time: new Date(CURRENT_TIME.getTime() - 15 * 60000).toLocaleTimeString(),
         duration: 90,
         location: {
           type: "hybrid",
@@ -100,9 +98,9 @@ export const activeSessionData: ActiveSession[] = [
           activeTime: 15
         },
         status: "active",
-        students: 3
     }
 ]
+
 
 // Upcoming session data with discussion details
 export const upcomingSessionData: UpcomingSession[] = [
@@ -174,6 +172,7 @@ export const pastSessionData: PastSession[] = [
         },
         status: "past",
         date: new Date(CURRENT_TIME.getTime() - 2 * DAY_IN_MS).toISOString(),
+        time: new Date(CURRENT_TIME.getTime() - 2 * DAY_IN_MS).toLocaleTimeString(),
         duration: 90,
         location: {
             type: "physical",
@@ -215,6 +214,7 @@ export const pastSessionData: PastSession[] = [
         },
         status: "past",
         date: new Date(CURRENT_TIME.getTime() - 3 * DAY_IN_MS).toISOString(),
+        time: new Date(CURRENT_TIME.getTime() - 3 * DAY_IN_MS).toLocaleTimeString(),
         duration: 120,
         location: {
             type: "virtual",
