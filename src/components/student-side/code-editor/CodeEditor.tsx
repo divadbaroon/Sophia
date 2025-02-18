@@ -1,54 +1,145 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react';
-
+import React, { useEffect, useRef, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { Button } from '@/components/ui/button';
-
-import { javascript } from '@codemirror/lang-javascript';
 import CodeMirror from '@uiw/react-codemirror';
+import { python } from '@codemirror/lang-python';
 import { vscodeLight } from '@uiw/codemirror-theme-vscode';
-
 import { useFile } from '@/components/context/FileContext';
+import { EditorView } from '@codemirror/view';
+import { ViewUpdate } from '@uiw/react-codemirror';
 
-const CodeEditor = () => {
-  const { filePath, cachedFileContent, updateCachedFileContent, fileContent, fileNode, setFileContent, highlightedText, updateHighlightedText} = useFile();
-  const editorViewRef = useRef<any>(null); // Ref to store the editor instance
+// The main function template that the user will edit
+const functionTemplate = `def twoSum(self, nums: List[int], target: int) -> List[int]:
+    # Write your solution here
+    pass`;
 
-  const handleSave = async () => {
-    if (!fileNode || !fileNode.handle || typeof fileNode.handle.createWritable !== 'function') {
-      console.error("No valid file node or file handle to save.");
-      return;
-    }
+// The full template with proper indentation
+const generateFullTemplate = (userCode: string): string => {
+  return `from typing import List
 
-    try {
-      const writableStream = await fileNode.handle.createWritable();
-      await writableStream.write(cachedFileContent);
-      await writableStream.close();
-      setFileContent(cachedFileContent);
-      console.log("File saved successfully.");
-    } catch (error) {
-      console.error("Error saving file:", error);
-    }
-  };
+class Solution:
+    ${userCode.replace(/\n/g, '\n    ')}
 
-  const handleCodeChange = (value: string) => {
-    updateCachedFileContent(value);
-  };
+# Simple function call
+if __name__ == "__main__":
+    solution = Solution()
+    result = solution.twoSum([2, 7, 11, 15], 9)
+    print(f"Result: {result}")`;
+};
 
+interface CodeEditorProps {}
+
+const CodeEditor: React.FC<CodeEditorProps> = () => {
+  const { 
+    fileContent,
+    cachedFileContent,
+    updateCachedFileContent, 
+    setFileContent, 
+    highlightedText,
+    updateHighlightedText,
+    updateExecutionOutput,
+    setErrorContent
+  } = useFile();
+  
+  const editorViewRef = useRef<EditorView | null>(null);
+  const [userCode, setUserCode] = useState<string>(functionTemplate);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [lastEditTime, setLastEditTime] = useState<number>(0);
+  
+  // Debug the file content state
   useEffect(() => {
-    const handleMouseUp = () => {
+    console.log("CodeEditor state:", {
+      userCodeLength: userCode?.length || 0,
+      fileContentLength: fileContent?.length || 0,
+      cachedContentLength: cachedFileContent?.length || 0
+    });
+  }, [userCode, fileContent, cachedFileContent]);
+
+  // Initialize code only once
+  useEffect(() => {
+    if (isInitialized) return;
+    
+    console.log("CodeEditor initializing...");
+    
+    // Generate and set initial content with proper indentation
+    const initialFullCode = generateFullTemplate(functionTemplate);
+    setFileContent(initialFullCode);
+    updateCachedFileContent(initialFullCode);
+    
+    // Clear any previous results
+    updateExecutionOutput('');
+    setErrorContent('');
+    
+    console.log("CodeEditor initialized with template");
+    setIsInitialized(true);
+  }, [isInitialized, updateCachedFileContent, setFileContent, updateExecutionOutput, setErrorContent]);
+
+  // Extract user code from full template if fileContent changes externally
+  useEffect(() => {
+    if (!isInitialized || !fileContent || fileContent === cachedFileContent) return;
+    
+    // Extract the twoSum function from the full code
+    const regex = /class Solution:\n\s+(def twoSum[\s\S]*?)(?=\n\n|$)/;
+    const match = fileContent.match(regex);
+    
+    if (match && match[1] && match[1].trim() !== userCode.trim()) {
+      // Remove the 4-space indentation that comes from the class
+      const extractedCode = match[1].replace(/\n\s{4}/g, '\n');
+      console.log("Extracted code from fileContent:", extractedCode);
+      setUserCode(extractedCode);
+    }
+  }, [isInitialized, fileContent, cachedFileContent, userCode]);
+
+  // Auto-save code changes after a delay
+  useEffect(() => {
+    if (!isInitialized || !fileContent) return;
+    
+    // Only auto-save if we have a recent edit
+    if (lastEditTime === 0) return;
+    
+    const autoSaveDelay = 500; // ms
+    
+    const autoSaveTimer = setTimeout(() => {
+      if (fileContent !== cachedFileContent) {
+        updateCachedFileContent(fileContent);
+        console.log("Auto-saved code");
+      }
+    }, autoSaveDelay);
+    
+    return () => clearTimeout(autoSaveTimer);
+  }, [isInitialized, fileContent, cachedFileContent, lastEditTime, updateCachedFileContent]);
+
+  // Handle code changes in the editor
+  const handleCodeChange = (value: string): void => {
+    setUserCode(value);
+    setLastEditTime(Date.now());
+    
+    // Generate the full template with updated user code
+    const updatedTemplate = generateFullTemplate(value);
+    
+    // Update the file content with the new template
+    setFileContent(updatedTemplate);
+    
+    console.log("Code updated:", {
+      userCodeLength: value.length,
+      updatedTemplateLength: updatedTemplate.length
+    });
+    
+    // Clear previous execution results
+    updateExecutionOutput('');
+    setErrorContent('');
+  };
+
+  // Handle text selection for context
+  useEffect(() => {
+    const handleMouseUp = (): void => {
       if (editorViewRef.current) {
         const state = editorViewRef.current.state;
         const { from, to } = state.selection.main;
   
         if (from !== to) {
           const selectedText = state.sliceDoc(from, to);
-          console.log("selected")
-          console.log(selectedText)
-          console.log("highlighted")
-          console.log(highlightedText)
           if (selectedText !== highlightedText) {
             updateHighlightedText(selectedText);
           }
@@ -62,7 +153,6 @@ const CodeEditor = () => {
   
     if (editorElement) {
       editorElement.addEventListener('mouseup', handleMouseUp);
-  
       return () => {
         editorElement.removeEventListener('mouseup', handleMouseUp);
       };
@@ -70,47 +160,46 @@ const CodeEditor = () => {
   }, [editorViewRef, updateHighlightedText, highlightedText]);
 
   return (
-    <>
-      {filePath ? (
-        <div className="flex justify-between items-center mt-20">
-          <Breadcrumb className="pl-4 m-3">
-            <BreadcrumbList>
-              {filePath.split('/').filter(Boolean).map((part, index) => (
-                <React.Fragment key={index}>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink>
-                      {part}
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  {index < filePath.split('/').filter(Boolean).length - 1 && <BreadcrumbSeparator />}
-                </React.Fragment>
-              ))}
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="flex gap-2 m-2">
-            {fileContent !== cachedFileContent && (
-              <Button className="h-6 w-12" onClick={handleSave}>Save</Button>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="flex justify-center items-center h-full">
-          <p>Please select a file on the left.</p>
-        </div>
-      )}
-      <ScrollArea className="h-full w-full">
+    <div className="h-full flex flex-col">
+      <ScrollArea className="flex-1">
         <CodeMirror
-          value={fileContent}
-          height="100%"
+          value={userCode}
+          height="540px"
           theme={vscodeLight}
-          extensions={[javascript()]}
+          extensions={[python()]}
           onChange={handleCodeChange}
-          onUpdate={(viewUpdate) => {
+          onUpdate={(viewUpdate: ViewUpdate): void => {
             editorViewRef.current = viewUpdate.view;
+          }}
+          basicSetup={{
+            lineNumbers: true,
+            highlightActiveLineGutter: false,
+            highlightSpecialChars: true,
+            history: true,
+            foldGutter: true,
+            drawSelection: true,
+            dropCursor: true,
+            allowMultipleSelections: true,
+            indentOnInput: true,
+            syntaxHighlighting: true,
+            bracketMatching: true,
+            closeBrackets: true,
+            autocompletion: true,
+            rectangularSelection: true,
+            crosshairCursor: true,
+            highlightActiveLine: false,
+            highlightSelectionMatches: true,
+            closeBracketsKeymap: true,
+            defaultKeymap: true,
+            searchKeymap: true,
+            historyKeymap: true,
+            foldKeymap: true,
+            completionKeymap: true,
+            lintKeymap: true,
           }}
         />
       </ScrollArea>
-    </>
+    </div>
   );
 };
 
