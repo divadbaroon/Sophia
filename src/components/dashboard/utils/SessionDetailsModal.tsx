@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 import { 
   Clock, 
@@ -33,6 +34,7 @@ export default function SessionDetailsModal({
 }: SessionDetailsModalProps) {
   const [isGeneratingLink, setIsGeneratingLink] = useState(false)
   const [showCheckmark, setShowCheckmark] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     if (showCheckmark) {
@@ -59,6 +61,13 @@ export default function SessionDetailsModal({
       console.error('Error copying link:', err)
     } finally {
       setIsGeneratingLink(false)
+    }
+  }
+
+  // Redirect to the student dashboard when a queued student is clicked
+  const handleStudentRedirect = (studentId: string) => {
+    if (session && session.id) {
+      router.push(`/sessions/${session.id}/${studentId}/`)
     }
   }
 
@@ -229,7 +238,8 @@ export default function SessionDetailsModal({
           <TabsContent value="queue" className="space-y-4 mt-4">
             {queueData?.map((student) => (
               <div 
-                key={student.id}
+                key={student.id || `queue-student-1`}  // Use student ID if available, fall back to index-based key
+                onClick={() => handleStudentRedirect("queue-student-12345")}
                 className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
               >
                 <div className="flex items-center justify-between">
