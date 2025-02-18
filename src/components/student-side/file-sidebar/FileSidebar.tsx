@@ -47,8 +47,7 @@ export default function FileSidebar() {
     // Simulate fetching file content
     const content = await fetchFileContent(fileName);
     const filePath = findFilePath(fileStructure, fileName);
-    const fileNode = findFileNode(fileStructure, fileName)
-    selectFile(fileName, content, filePath, fileNode);
+    selectFile(fileName, content, filePath);
   };
 
   const renderFileSystem = (nodes: FileSystemNode[], level = 1) => {
