@@ -9,13 +9,20 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { signOut } from "@/app/(auth)/login/actions"
 
+interface User {
+  email?: string
+  id: string
+  name?: string
+  // Add other user properties as needed
+}
+
 type NavItem = {
   name: string
   href: string
 }
 
 type NavigationProps = {
-  user: any
+  user: User | null
 }
 
 export default function Navigation({ user }: NavigationProps) {

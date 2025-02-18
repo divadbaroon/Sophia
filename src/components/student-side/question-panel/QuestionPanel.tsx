@@ -18,7 +18,7 @@ interface QuestionPanelProps {
   onBack: () => void
 }
 
-const QuestionPanel: React.FC<QuestionPanelProps> = ({ onBack }) => {
+const QuestionPanel: React.FC<QuestionPanelProps> = () => {
   // State for managing the conversation flow
   const [isStarted, setIsStarted] = useState(false)
   const [transcript, setTranscript] = useState("")
@@ -281,7 +281,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({ onBack }) => {
             className="text-center"
           >
             <Mic className="h-12 w-12 mx-auto text-primary mb-3" />
-            <p className="text-muted-foreground">I'm here to help understand your coding problems.</p>
+            <p className="text-muted-foreground">I`&apos;`m here to help understand your coding problems.</p>
           </motion.div>
 
           <motion.div 

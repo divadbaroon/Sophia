@@ -1,13 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { TestCase } from '@/types' 
 
 export const runtime = 'edge'
+
+interface FileContext {
+  fileName?: string;
+  content?: string;
+  testCases?: TestCase[];
+  executionOutput?: string;
+  errorMessage?: string;
+  highlightedText?: string;
+}
+
+interface RequestBody {
+  transcript: string;
+  fileContext: FileContext;
+}
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-const createSystemPrompt = (fileContext: any) => {
+const createSystemPrompt = (fileContext: FileContext): string => {
   console.log('Creating system prompt with context:', fileContext)
 
   let prompt = `You are a student who has studied programming and is eager to share your knowledge. Think step by step and reflect on each step before making a decision. Do not simulate scenarios. Keep your responses focused and concise.`
@@ -18,9 +33,9 @@ const createSystemPrompt = (fileContext: any) => {
   }
 
   // Add test cases if available
-  if (fileContext.testCases?.length > 0) {
+  if (fileContext.testCases && fileContext.testCases.length > 0) {
     prompt += `\n\nHere are the test cases being used:\n`
-    fileContext.testCases.forEach((test: any, index: number) => {
+    fileContext.testCases.forEach((test: TestCase, index: number) => {
       prompt += `\nTest ${index + 1}:
 Input: nums = ${JSON.stringify(test.input.nums)}, target = ${test.input.target}
 Expected Output: ${JSON.stringify(test.expected)}`
@@ -50,7 +65,7 @@ Expected Output: ${JSON.stringify(test.expected)}`
 
 export async function POST(req: NextRequest) {
   try {
-    const { transcript, fileContext } = await req.json()
+    const { transcript, fileContext }: RequestBody = await req.json()
     console.log('Received request with context:', { transcript, fileContext })
 
     if (!transcript || transcript.trim() === '') {
@@ -88,8 +103,8 @@ export async function POST(req: NextRequest) {
 
 async function streamOpenAIResponse(
   transcript: string, 
-  fileContext: any, 
-  writer: WritableStreamDefaultWriter
+  fileContext: FileContext, 
+  writer: WritableStreamDefaultWriter<Uint8Array>
 ) {
   const encoder = new TextEncoder()
   

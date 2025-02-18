@@ -57,7 +57,7 @@ export const AuthDialog = ({
         <DialogHeader>
           <DialogTitle>Join Office Hours Assistance</DialogTitle>
           <DialogDescription>
-            We're excited to help you out! Please fill in your details below.
+            We`&apos;`re excited to help you out! Please fill in your details below.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">

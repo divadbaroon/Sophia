@@ -326,7 +326,7 @@ export default function SessionDetailsModal({
               <div className="space-y-4 mt-4">
                 {pastSession.feedback.comments.map((comment, index) => (
                   <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-gray-600">"{comment}"</p>
+                    <p className="text-gray-600">&ldquo;{comment}&rdquo;</p>
                   </div>
                 ))}
               </div>

@@ -6,6 +6,12 @@ import { createBrowserClient } from '@supabase/ssr'
 import { CreateSessionFormData } from '@/types'
 import { createSession } from '@/lib/actions/sessions'
 
+type FieldValue = 
+  | string 
+  | number 
+  | { id: string; name: string; code: string }
+  | { type: 'physical' | 'virtual' | 'hybrid'; details: string }
+
 export function useCreateSession() {
   const router = useRouter()
   const supabase = createBrowserClient(
@@ -46,7 +52,7 @@ export function useCreateSession() {
     checkAuth()
   }, [router, supabase])
 
-  const handleInputChange = (field: keyof CreateSessionFormData, value: any) => {
+  const handleInputChange = (field: keyof CreateSessionFormData, value: FieldValue) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -82,8 +88,11 @@ export function useCreateSession() {
 
       router.push('/dashboard')
       router.refresh()
-    } catch (err) {
-      setError('Failed to create session')
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to create session'
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }

@@ -14,8 +14,13 @@ import usePythonRunner from '@/utils/PythonExecuter'
 import { useFile } from '@/components/context/FileContext'
 import { useToast } from '@/hooks/use-toast'
 
-// Test cases for the twoSum problem
-const testCases = [
+interface TestCase {
+  nums: number[]
+  target: number
+  expected: number[]
+}
+
+const testCases: TestCase[] = [
   {
     nums: [2, 7, 11, 15],
     target: 9,
@@ -167,9 +172,18 @@ test_output = output_buffer.getvalue()
             variant: 'default',
           });
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.log('Detailed error:', error);
-        const errorMessage = error.toString();
+        let errorMessage: string;
+        
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        } else {
+          errorMessage = 'An unknown error occurred';
+        }
+        
         setOutput(errorMessage);
         setErrorContent(errorMessage);
         toast({

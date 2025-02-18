@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-
 import { Calendar as CalendarIcon } from "lucide-react"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
@@ -13,18 +12,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
-
 import { createSession } from "@/lib/actions/sessions"
-
 import { CreateSessionProps } from "@/types"
+
+type LocationType = 'physical' | 'virtual' | 'hybrid' | ''
+
+interface FormData {
+  name: string
+  course: {
+    id: string
+    name: string
+    code: string
+  }
+  description: string
+  date: string
+  duration: number
+  location: {
+    type: LocationType
+    details: string
+  }
+}
+
+type FormField = keyof FormData | 'location.details'
 
 export default function CreateSession({ onCancel, onSuccess }: CreateSessionProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     course: {
       id: '',
@@ -35,19 +51,30 @@ export default function CreateSession({ onCancel, onSuccess }: CreateSessionProp
     date: '',
     duration: 60,
     location: {
-      type: '' as '' | 'physical' | 'virtual' | 'hybrid',
+      type: '',
       details: ''
     }
   })
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
+  const handleInputChange = (field: FormField, value: string | number | { id: string; name: string; code: string }) => {
+    setFormData(prev => {
+      if (field === 'location.details') {
+        return {
+          ...prev,
+          location: {
+            ...prev.location,
+            details: value as string
+          }
+        }
+      }
+      return {
+        ...prev,
+        [field]: value
+      }
+    })
   }
 
-  const handleLocationChange = (type: 'physical' | 'virtual' | 'hybrid') => {
+  const handleLocationChange = (type: LocationType) => {
     setFormData(prev => ({
       ...prev,
       location: {
@@ -81,8 +108,9 @@ export default function CreateSession({ onCancel, onSuccess }: CreateSessionProp
       }
 
       onSuccess()
-    } catch (err) {
-      setError('Failed to create session')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create session'
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -153,7 +181,6 @@ export default function CreateSession({ onCancel, onSuccess }: CreateSessionProp
             </div>
           </div>
 
-          {/* Schedule */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Schedule</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -176,7 +203,7 @@ export default function CreateSession({ onCancel, onSuccess }: CreateSessionProp
                     <Calendar
                       mode="single"
                       selected={formData.date ? new Date(formData.date) : undefined}
-                      onSelect={(date) => handleInputChange('date', date?.toISOString())}
+                      onSelect={(date) => handleInputChange('date', date?.toISOString() ?? '')}
                       initialFocus
                     />
                   </PopoverContent>
@@ -195,13 +222,12 @@ export default function CreateSession({ onCancel, onSuccess }: CreateSessionProp
             </div>
           </div>
 
-          {/* Location */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Location</h3>
             <RadioGroup 
               defaultValue=""
               value={formData.location.type}
-              onValueChange={(value: 'physical' | 'virtual' | 'hybrid') => handleLocationChange(value)}
+              onValueChange={(value: LocationType) => handleLocationChange(value)}
               className="grid grid-cols-3 gap-4"
             >
               <div>
@@ -238,7 +264,7 @@ export default function CreateSession({ onCancel, onSuccess }: CreateSessionProp
                 className="focus-visible:ring-0 focus-visible:ring-offset-0" 
                 placeholder="Room number, Zoom link, or both for hybrid" 
                 value={formData.location.details}
-                onChange={(e) => handleInputChange('location', { ...formData.location, details: e.target.value })}
+                onChange={(e) => handleInputChange('location.details', e.target.value)}
               />
             </div>
           </div>

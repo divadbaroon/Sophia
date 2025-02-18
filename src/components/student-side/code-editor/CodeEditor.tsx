@@ -28,9 +28,12 @@ if __name__ == "__main__":
     print(f"Result: {result}")`;
 };
 
-interface CodeEditorProps {}
+type CodeEditorProps = {
+  className?: string;
+  readOnly?: boolean;
+};
 
-const CodeEditor: React.FC<CodeEditorProps> = () => {
+const CodeEditor: React.FC<CodeEditorProps> = ({ className = '', readOnly = false }) => {
   const { 
     fileContent,
     cachedFileContent,
@@ -160,7 +163,7 @@ const CodeEditor: React.FC<CodeEditorProps> = () => {
   }, [editorViewRef, updateHighlightedText, highlightedText]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className={`h-full flex flex-col ${className}`}>
       <ScrollArea className="flex-1">
         <CodeMirror
           value={userCode}
@@ -171,6 +174,7 @@ const CodeEditor: React.FC<CodeEditorProps> = () => {
           onUpdate={(viewUpdate: ViewUpdate): void => {
             editorViewRef.current = viewUpdate.view;
           }}
+          readOnly={readOnly}
           basicSetup={{
             lineNumbers: true,
             highlightActiveLineGutter: false,
