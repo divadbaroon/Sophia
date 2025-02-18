@@ -11,11 +11,7 @@ import { ElevenLabsProvider } from '@/components/audio/ElevenLabsProvider';
 
 type PanelType = 'question' | 'none'
 
-interface MainPanelProps {
-  isVisible?: boolean;
-}
-
-const MainPanel: React.FC<MainPanelProps> = ({ isVisible = true }) => {
+const MainPanel = () => {
   const [panelType, setPanelType] = React.useState<PanelType>('question')
 
   const renderPanel = () => {
@@ -24,7 +20,7 @@ const MainPanel: React.FC<MainPanelProps> = ({ isVisible = true }) => {
         const QuestionPanel = dynamic(() => import('@/components/student-side/question-panel/QuestionPanel'), {
           ssr: false,
         })
-        return <QuestionPanel onBack={() => setPanelType('none')} isVisible={isVisible} />
+        return <QuestionPanel onBack={() => setPanelType('none')} />
       }
       default:
         return (
@@ -43,11 +39,11 @@ const MainPanel: React.FC<MainPanelProps> = ({ isVisible = true }) => {
   return (
     <VideoChatProvider>
       <ElevenLabsProvider>
-        <DeepgramContextProvider>
-          <DeepgramInitializer>
-            <div className="h-full">{renderPanel()}</div>
-          </DeepgramInitializer>
-        </DeepgramContextProvider>
+      <DeepgramContextProvider>
+        <DeepgramInitializer>
+          <div className="h-full">{renderPanel()}</div>
+        </DeepgramInitializer>
+      </DeepgramContextProvider>
       </ElevenLabsProvider>
     </VideoChatProvider>
   )
