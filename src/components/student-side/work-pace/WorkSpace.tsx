@@ -5,14 +5,14 @@ import { HelpCircle } from "lucide-react"
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
 import CodeEditor from "@/components/student-side/code-editor/CodeEditor"
 import Terminal from "@/components/student-side/terminal/Terminal"
-import MainPanel from "@/components/student-side/main-panel/MainPanel"
+import QuestionPanelWrapper from "@/components/student-side/question-panel/QuestionPanelWrapper"
 import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader"
 import { Card } from "@/components/ui/card"
 
 import { TaskSidebarProps } from "@/types"
 
 export const WorkspaceLayout = () => {
-  const [isMainPanelVisible, setIsMainPanelVisible] = useState(false)
+  const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
 
   const twoSumTask: TaskSidebarProps = {
     title: "1.) Two Sum",
@@ -48,12 +48,12 @@ export const WorkspaceLayout = () => {
           variant="outline"
           size="lg"
           className={`absolute top-3.5 right-16 mr-3 z-50 gap-2 font-medium ${
-            isMainPanelVisible ? 'bg-secondary' : 'bg-background hover:bg-secondary/80'
+            isQuestionPanelVisible ? 'bg-secondary' : 'bg-background hover:bg-secondary/80'
           }`}
-          onClick={() => setIsMainPanelVisible(!isMainPanelVisible)}
+          onClick={() => setIsQuestionPanelVisible(!isQuestionPanelVisible)}
         >
           <HelpCircle className="h-5 w-5" />
-          {isMainPanelVisible ? 'Hide Help' : 'Get Help'}
+          {isQuestionPanelVisible ? 'Hide Help' : 'Get Help'}
         </Button>
 
         <ResizablePanelGroup direction="horizontal">
@@ -71,9 +71,9 @@ export const WorkspaceLayout = () => {
                     <CodeEditor />
                   </PanelWithHeader>
                   
-                  {isMainPanelVisible && (
+                  {isQuestionPanelVisible && (
                     <Card className="absolute top-16 right-4 w-[400px] z-50 shadow-lg mt-6 mr-1">
-                      <MainPanel />
+                      <QuestionPanelWrapper />
                     </Card>
                   )}
                 </div>
