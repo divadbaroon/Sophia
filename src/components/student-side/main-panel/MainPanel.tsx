@@ -5,9 +5,8 @@ import dynamic from 'next/dist/shared/lib/dynamic'
 import { Button } from '@/components/ui/button'
 import { HelpCircle } from 'lucide-react'
 import { VideoChatProvider } from '@/components/context/VideoChatContext'
-import { DeepgramContextProvider } from '@/components/audio/DeepgramContextProvider'
-import { DeepgramInitializer } from '@/components/audio/DeepgramInitializer'
-import { ElevenLabsProvider } from '@/components/audio/ElevenLabsProvider';
+import { ElevenLabsProvider } from '@/components/audio/ElevenLabsProvider'
+import { DeepgramProvider } from '@/components/audio/DeepgramContext'
 
 type PanelType = 'question' | 'none'
 
@@ -39,11 +38,9 @@ const MainPanel = () => {
   return (
     <VideoChatProvider>
       <ElevenLabsProvider>
-      <DeepgramContextProvider>
-        <DeepgramInitializer>
+        <DeepgramProvider>
           <div className="h-full">{renderPanel()}</div>
-        </DeepgramInitializer>
-      </DeepgramContextProvider>
+        </DeepgramProvider>
       </ElevenLabsProvider>
     </VideoChatProvider>
   )
