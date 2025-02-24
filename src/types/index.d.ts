@@ -262,3 +262,21 @@ export interface TaskSidebarProps {
   examples: Example[]
   constraints: string[]
 }
+
+export interface MessageWithHighlight {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface DeepgramContextType {
+  isStarted: boolean;
+  setIsStarted: (value: boolean) => void;
+  transcript: string;
+  conversationHistory: MessageWithHighlight[];
+  isRecording: boolean;
+  isSpeaking: boolean;
+  error: string | null;
+  startRecording: () => Promise<void>;
+  stopRecording: () => void;
+  clearError: () => void;
+}
