@@ -9,12 +9,10 @@ import { useFile } from '@/components/context/FileContext';
 import { EditorView } from '@codemirror/view';
 import { ViewUpdate } from '@uiw/react-codemirror';
 
-// The main function template that the user will edit
 const functionTemplate = `def twoSum(self, nums: List[int], target: int) -> List[int]:
     # Write your solution here
     pass`;
 
-// The full template with proper indentation
 const generateFullTemplate = (userCode: string): string => {
   return `from typing import List
 
@@ -48,9 +46,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ className = '', readOnly = fals
   const editorViewRef = useRef<EditorView | null>(null);
   const [userCode, setUserCode] = useState<string>(functionTemplate);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
-  const [lastEditTime, setLastEditTime] = useState<number>(0);
   
-  // Debug the file content state
   useEffect(() => {
     console.log("CodeEditor state:", {
       userCodeLength: userCode?.length || 0,
@@ -59,7 +55,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ className = '', readOnly = fals
     });
   }, [userCode, fileContent, cachedFileContent]);
 
-  // Initialize code only once
   useEffect(() => {
     if (isInitialized) return;
     
@@ -97,10 +92,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ className = '', readOnly = fals
   // Auto-save code changes after a delay
   useEffect(() => {
     if (!isInitialized || !fileContent) return;
-    
-    // Only auto-save if we have a recent edit
-    if (lastEditTime === 0) return;
-    
+        
     const autoSaveDelay = 500; // ms
     
     const autoSaveTimer = setTimeout(() => {
@@ -111,12 +103,10 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ className = '', readOnly = fals
     }, autoSaveDelay);
     
     return () => clearTimeout(autoSaveTimer);
-  }, [isInitialized, fileContent, cachedFileContent, lastEditTime, updateCachedFileContent]);
+  }, [isInitialized, fileContent, cachedFileContent, updateCachedFileContent]);
 
-  // Handle code changes in the editor
   const handleCodeChange = (value: string): void => {
     setUserCode(value);
-    setLastEditTime(Date.now());
     
     // Generate the full template with updated user code
     const updatedTemplate = generateFullTemplate(value);
