@@ -231,6 +231,8 @@ export interface FileContextType {
   updateHighlightedText: (text: string) => void
   testCases: TestCase[]
   updateTestCases: (testCases: TestCase[]) => void
+  studentTask: string
+  updateStudentTask: (task: string) => void
 }
 
 export type FolderContextType = {
@@ -263,8 +265,8 @@ export interface TaskSidebarProps {
   constraints: string[]
 }
 
-export interface MessageWithHighlight {
-  role: 'user' | 'assistant';
+export interface ClaudeMessage {
+  role: 'user' | 'assistant' | 'system';
   content: string;
 }
 
@@ -272,7 +274,7 @@ export interface DeepgramContextType {
   isStarted: boolean;
   setIsStarted: (value: boolean) => void;
   transcript: string;
-  conversationHistory: MessageWithHighlight[];
+  conversationHistory: ClaudeMessage[];
   isRecording: boolean;
   isSpeaking: boolean;
   error: string | null;
