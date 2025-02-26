@@ -27,6 +27,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [errorContent, setErrorContent] = useState('')
   const [executionOutput, setExecutionOutput] = useState<string>('')
   const [highlightedText, setHighlightedText] = useState<string>('')
+  const [studentTask, setStudentTask] = useState<string>('')
   const [testCases, setTestCases] = useState<TestCase[]>([
     {
       input: {
@@ -74,6 +75,10 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     setTestCases(newTestCases)
   }
 
+  const updateStudentTask = (task: string) => {
+    setStudentTask(task)
+  }
+
   const isSaved = () => {
     return fileContent === cachedFileContent
   }
@@ -99,6 +104,8 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         updateHighlightedText,
         testCases,
         updateTestCases,
+        studentTask,
+        updateStudentTask,
       }}>
       {children}
     </FileContext.Provider>
