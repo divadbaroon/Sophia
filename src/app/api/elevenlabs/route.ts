@@ -53,6 +53,7 @@ export async function POST(req: Request) {
         const errorData = await elevenLabsResponse.json();
         errorDetail = errorData.detail || elevenLabsResponse.statusText;
       } catch (e) {
+        console.log(e)
         errorDetail = elevenLabsResponse.statusText;
       }
       

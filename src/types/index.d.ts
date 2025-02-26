@@ -282,3 +282,13 @@ export interface DeepgramContextType {
   stopRecording: () => void;
   clearError: () => void;
 }
+
+export interface LiveTranscriptionResponse {
+  is_final: boolean;
+  channel: {
+    alternatives: Array<{
+      transcript: string;
+      confidence?: number;
+    }>;
+  };
+}

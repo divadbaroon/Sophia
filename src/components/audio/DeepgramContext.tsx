@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { createClient } from '@deepgram/sdk';
-import { LiveTranscriptionEvents } from '@deepgram/sdk';
-import { ClaudeMessage, DeepgramContextType } from "@/types";
+import { LiveTranscriptionEvents, LiveClient } from '@deepgram/sdk';
+import { ClaudeMessage, DeepgramContextType, LiveTranscriptionResponse } from "@/types";
 import { queryClaudeAPI } from "@/lib/services/ClaudeService";
 import { useFile } from '@/components/context/FileContext';
 import { useElevenLabs } from '@/lib/hooks/useElevenLabs';
@@ -49,7 +49,7 @@ export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [ttsError]);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const dgConnectionRef = useRef<any>(null);
+  const dgConnectionRef = useRef<LiveClient | null>(null);
   const accumulatedTranscriptRef = useRef<string>("");
   const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -165,7 +165,7 @@ export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         mediaRecorderRef.current = recorder;
       });
 
-      dgConnection.addListener(LiveTranscriptionEvents.Transcript, (data: any) => {
+      dgConnection.addListener(LiveTranscriptionEvents.Transcript, (data: LiveTranscriptionResponse) => {
         const transcriptText = data.channel.alternatives[0].transcript.trim();
         
         if (transcriptText) {
@@ -200,7 +200,7 @@ export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
       });
 
-      dgConnection.addListener(LiveTranscriptionEvents.Error, (error: any) => {
+      dgConnection.addListener(LiveTranscriptionEvents.Error, (error: Error) => {
         console.error('Deepgram error:', error);
         setError('Error during transcription. Please try again.');
         stopRecording();

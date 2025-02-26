@@ -10,7 +10,7 @@ interface QuestionPanelProps {
   isVisible?: boolean;
 }
 
-const QuestionPanel: React.FC<QuestionPanelProps> = ({ onBack, isVisible = true }) => {
+const QuestionPanel: React.FC<QuestionPanelProps> = () => {
   const {
     isStarted,
     setIsStarted,
@@ -54,7 +54,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({ onBack, isVisible = true 
       setTimeout(() => {
         const newHeight = contentRef.current?.scrollHeight || 120;
         // Set a minimum height of 120px, and increase max to 400px
-        setContentHeight(Math.max(120, Math.min(newHeight + 24, 400))); // +24px for padding
+        setContentHeight(Math.max(120, Math.min(newHeight + 24, 400))); 
       }, 0);
     }
   }, [lastAssistantMessage, transcript, isSpeaking]);
@@ -84,7 +84,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({ onBack, isVisible = true 
       <div className="p-6 text-center">
         <Mic className="h-12 w-12 mx-auto text-primary mb-3" />
         <p className="text-muted-foreground mb-4">
-          I'm here to help understand your coding problems.
+          I&apos;m here to help understand your coding problems.
         </p>
         <Button 
           onClick={() => setIsStarted(true)} 
