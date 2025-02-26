@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
 import { HelpCircle } from "lucide-react"
@@ -8,11 +8,12 @@ import Terminal from "@/components/student-side/terminal/Terminal"
 import QuestionPanelWrapper from "@/components/student-side/question-panel/QuestionPanelWrapper"
 import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader"
 import { Card } from "@/components/ui/card"
-
+import { useFile } from '@/components/context/FileContext'
 import { TaskSidebarProps } from "@/types"
 
 export const WorkspaceLayout = () => {
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
+  const { updateStudentTask } = useFile()
 
   const twoSumTask: TaskSidebarProps = {
     title: "1.) Two Sum",
@@ -40,6 +41,11 @@ export const WorkspaceLayout = () => {
       "Only one valid answer exists.",
     ],
   }
+
+  useEffect(() => {
+    // Save the task description to the FileContext
+    updateStudentTask(twoSumTask.description)
+  }, [updateStudentTask])
 
   return (
     <main className="flex flex-col h-screen">
