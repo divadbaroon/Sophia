@@ -1,7 +1,10 @@
-import React, { createContext, useContext, useState, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { createClient } from '@deepgram/sdk';
 import { LiveTranscriptionEvents } from '@deepgram/sdk';
-import { MessageWithHighlight, DeepgramContextType } from "@/types"
+import { ClaudeMessage, DeepgramContextType } from "@/types";
+import { queryClaudeAPI } from "@/lib/services/ClaudeService";
+import { useFile } from '@/components/context/FileContext';
+import { useElevenLabs } from '@/lib/hooks/useElevenLabs';
 
 const DEEPGRAM_API_KEY = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY;
 
@@ -18,10 +21,32 @@ export const useDeepgram = () => {
 export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isStarted, setIsStarted] = useState(false);
   const [displayTranscript, setDisplayTranscript] = useState("");
-  const [conversationHistory, setConversationHistory] = useState<MessageWithHighlight[]>([]);
+  const [conversationHistory, setConversationHistory] = useState<ClaudeMessage[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [autoTTS, setAutoTTS] = useState(true);
+  
+  // Get fileContext to pass to Claude
+  const fileContext = useFile();
+  
+  // Initialize ElevenLabs hook
+  const { 
+    speakMessage, 
+    speakLastResponse, 
+    stopSpeaking, 
+    isLoading: ttsLoading, 
+    error: ttsError, 
+    isPlaying 
+  } = useElevenLabs();
+  
+  // Set error if TTS fails
+  useEffect(() => {
+    if (ttsError) {
+      setError(ttsError);
+    }
+  }, [ttsError]);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const dgConnectionRef = useRef<any>(null);
@@ -33,33 +58,47 @@ export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setError(null);
   }, []);
 
+  // Modified to include TTS functionality
+  const handleQueryClaudeAPI = useCallback(async (message: string) => {
+    const response = await queryClaudeAPI(
+      message, 
+      conversationHistory, 
+      setConversationHistory, 
+      setError, 
+      setIsProcessing,
+      fileContext  
+    );
+    
+    // If auto TTS is enabled, speak Claude's response
+    if (autoTTS && response && response.role === 'assistant') {
+      await speakMessage(response.content);
+    }
+    
+    return response;
+  }, [conversationHistory, fileContext, autoTTS, speakMessage]);  
+
   const finalizeTranscript = useCallback(() => {
-    console.log('Finalizing transcript after 3 seconds of silence');
+    console.log('Finalizing transcript after silence');
     console.log('Current accumulated transcript:', accumulatedTranscriptRef.current);
     
     const finalTranscript = accumulatedTranscriptRef.current.trim();
     if (finalTranscript) {
-      console.log('Finalizing and adding to history:', finalTranscript);
+      console.log('Finalizing transcript:', finalTranscript);
       
-      // Update conversation history with correct type
-      setConversationHistory(prev => {
-        console.log('Previous history:', prev);
-        const newHistory: MessageWithHighlight[] = [...prev, {
-          role: 'user' as const,
-          content: finalTranscript
-        }];
-        console.log('New history:', newHistory);
-        return newHistory;
-      });
-      
-      // Clear current transcripts
+      // Clear current transcripts first
       setDisplayTranscript("");
       accumulatedTranscriptRef.current = "";
       setIsSpeaking(false);
+      
+      // Set a small timeout to ensure state has updated before querying Claude
+      setTimeout(() => {
+        console.log('Automatically querying Claude with finalized transcript');
+        handleQueryClaudeAPI(finalTranscript);
+      }, 100);
     } else {
       console.log('No transcript to finalize');
     }
-  }, []);
+  }, [handleQueryClaudeAPI]);
 
   const resetSilenceTimeout = useCallback(() => {
     console.log('Resetting silence timeout');
@@ -81,6 +120,9 @@ export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     try {
+      // Stop any ongoing TTS before starting to record
+      stopSpeaking();
+      
       setError(null);
       setIsRecording(true);
       setDisplayTranscript("");
@@ -134,6 +176,9 @@ export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           });
           
           setIsSpeaking(true);
+          
+          // Update display transcript for real-time feedback
+          setDisplayTranscript(transcriptText);
           
           // Accumulate transcript
           if (data.is_final) {
@@ -202,6 +247,16 @@ export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     accumulatedTranscriptRef.current = "";
   }, [finalizeTranscript]);
 
+  // Toggle auto TTS
+  const toggleAutoTTS = useCallback(() => {
+    setAutoTTS(prev => !prev);
+  }, []);
+
+  // Speak last Claude response
+  const speakLastClaudeResponse = useCallback(() => {
+    speakLastResponse(conversationHistory);
+  }, [speakLastResponse, conversationHistory]);
+
   const value = {
     isStarted,
     setIsStarted,
@@ -210,9 +265,18 @@ export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     isRecording,
     isSpeaking,
     error,
+    isProcessing,
     startRecording,
     stopRecording,
-    clearError
+    clearError,
+    queryClaudeAPI: handleQueryClaudeAPI,
+    // TTS related properties
+    isTTSLoading: ttsLoading,
+    isTTSPlaying: isPlaying,
+    autoTTS,
+    toggleAutoTTS,
+    speakLastResponse: speakLastClaudeResponse,
+    stopSpeaking
   };
 
   return (
