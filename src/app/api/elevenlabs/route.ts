@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     console.log(`ElevenLabs API Route: Processing request for voice ${voiceId} with text length ${text.length}`);
 
     console.log('ElevenLabs API Route: Calling ElevenLabs API');
-    const elevenLabsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    const elevenLabsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/obDMvQMCqA8OIZn2IX30`, {
       method: 'POST',
       headers: {
         'Accept': 'audio/mpeg',
