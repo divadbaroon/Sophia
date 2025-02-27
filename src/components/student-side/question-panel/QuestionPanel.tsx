@@ -1,82 +1,87 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mic, Bot } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useDeepgram } from '@/components/audio/DeepgramContext';
+import React, { useRef, useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Mic, Bot } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useConversationManagerContext } from '@/lib/context/ConversationManagerContext'
 
 interface QuestionPanelProps {
-  onBack: () => void;
-  isVisible?: boolean;
+  onBack: () => void
+  isVisible?: boolean
 }
 
 const QuestionPanel: React.FC<QuestionPanelProps> = () => {
   const {
-    isStarted,
-    setIsStarted,
-    transcript,
-    conversationHistory,
     isRecording,
     isSpeaking,
+    isProcessing,
+    transcript,
+    conversationHistory,
     error,
+    autoTTS,
     startRecording,
-    clearError
-  } = useDeepgram();
+    stopRecording,
+    clearError,
+    toggleAutoTTS,
+    speakLastResponse,
+    stopSpeaking
+  } = useConversationManagerContext()
 
-  // State for content height
-  const [contentHeight, setContentHeight] = useState<number>(120); // Default minimum height
-  const contentRef = useRef<HTMLDivElement>(null);
+  const [isStarted, setIsStarted] = useState(false)
+  const [contentHeight, setContentHeight] = useState<number>(120)
+  const contentRef = useRef<HTMLDivElement>(null)
 
-  // Filter out system messages - only show user and assistant messages
+  // Filter out system messages to only show user and assistant messages
   const displayMessages = conversationHistory.filter(
     message => message.role === 'user' || message.role === 'assistant'
-  );
+  )
 
   // Find the most recent assistant message
   const getLastAssistantMessage = () => {
-    if (displayMessages.length === 0) return null;
+    if (displayMessages.length === 0) return null
     
     // Loop from the end to find the most recent assistant message
     for (let i = displayMessages.length - 1; i >= 0; i--) {
       if (displayMessages[i].role === 'assistant') {
-        return displayMessages[i];
+        return displayMessages[i]
       }
     }
-    return null;
-  };
+    return null
+  }
   
-  const lastAssistantMessage = getLastAssistantMessage();
+  const lastAssistantMessage = getLastAssistantMessage()
 
   // Update the height when content changes
   useEffect(() => {
     if (contentRef.current) {
       // Add a small delay to ensure content has rendered properly
       setTimeout(() => {
-        const newHeight = contentRef.current?.scrollHeight || 120;
+        const newHeight = contentRef.current?.scrollHeight || 120
         // Set a minimum height of 120px, and increase max to 400px
-        setContentHeight(Math.max(120, Math.min(newHeight + 24, 400))); 
-      }, 0);
+        setContentHeight(Math.max(120, Math.min(newHeight + 24, 400)))
+      }, 0)
     }
-  }, [lastAssistantMessage, transcript, isSpeaking]);
+  }, [lastAssistantMessage, transcript, isSpeaking])
 
-  React.useEffect(() => {
+  // Start recording when session begins
+  useEffect(() => {
     if (isStarted && !isRecording) {
-      startRecording();
+      startRecording()
     }
-  }, [isStarted, isRecording, startRecording]);
+  }, [isStarted, isRecording, startRecording])
 
   if (error) {
     return (
       <div className="p-6 text-center">
         <div className="text-red-500 mb-4">{error}</div>
         <Button onClick={() => {
-          clearError();
-          setIsStarted(false);
+          clearError()
+          setIsStarted(false)
         }}>
           Try Again
         </Button>
       </div>
-    );
+    )
   }
 
   if (!isStarted) {
@@ -93,11 +98,11 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
           Begin Conversation
         </Button>
       </div>
-    );
+    )
   }
 
   const renderRecordingStatus = () => {
-    if (!isRecording) return <span>Recording stopped</span>;
+    if (!isRecording) return <span>Recording stopped</span>
     
     if (isSpeaking) {
       return (
@@ -105,11 +110,11 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
           <span className="text-muted-foreground">Recording: </span>
           <span className="text-primary">{transcript}</span>
         </>
-      );
+      )
     }
     
-    return <span>{transcript || "Waiting for speech..."}</span>;
-  };
+    return <span>{transcript || "Waiting for speech..."}</span>
+  }
 
   return (
     <div className="p-4">
@@ -120,7 +125,6 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
         </TabsList>
 
         <TabsContent value="question" className="mt-4">
-          {/* Remove ScrollArea to allow natural height */}
           <div 
             className="rounded-md border p-4"
             style={{ 
@@ -129,13 +133,19 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
             }}
           >
             <div ref={contentRef}>
-              {isSpeaking || transcript ? (
+              {isProcessing && (
+                <div className="flex flex-col items-center justify-center py-4">
+                  <div className="text-lg text-muted-foreground">Processing...</div>
+                </div>
+              )}
+              
+              {(isSpeaking || transcript) && !isProcessing ? (
                 <div className="flex flex-col items-center justify-center">
                   <div className="text-lg text-muted-foreground">
                     {renderRecordingStatus()}
                   </div>
                 </div>
-              ) : lastAssistantMessage ? (
+              ) : lastAssistantMessage && !isProcessing ? (
                 <div className="flex items-start p-2">
                   <Bot className="h-5 w-5 mr-2 text-primary mt-1 flex-shrink-0" />
                   <div className="flex-1">
@@ -145,13 +155,13 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
                     </div>
                   </div>
                 </div>
-              ) : (
+              ) : !isProcessing ? (
                 <div className="flex flex-col items-center justify-center h-24">
                   <div className="text-lg text-muted-foreground">
-                    Waiting for speech...
+                    Waiting for question...
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </TabsContent>
@@ -195,7 +205,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
         </TabsContent>
       </Tabs>
     </div>
-  );
-};
+  )
+}
 
-export default QuestionPanel;
+export default QuestionPanel
