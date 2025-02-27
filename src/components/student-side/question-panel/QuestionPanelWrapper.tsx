@@ -3,10 +3,8 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { HelpCircle } from 'lucide-react'
-import { VideoChatProvider } from '@/components/context/VideoChatContext'
-import { ElevenLabsProvider } from '@/components/audio/ElevenLabsProvider'
-import { DeepgramProvider } from '@/components/audio/DeepgramContext'
 import QuestionPanel from '@/components/student-side/question-panel/QuestionPanel'
+import { ConversationManagerProvider } from '@/lib/context/ConversationManagerContext'
 
 type PanelType = 'question' | 'none'
 
@@ -32,13 +30,9 @@ const QuestionPanelWrapper = () => {
   }
 
   return (
-    <VideoChatProvider>
-      <ElevenLabsProvider>
-        <DeepgramProvider>
-          <div className="h-full">{renderPanel()}</div>
-        </DeepgramProvider>
-      </ElevenLabsProvider>
-    </VideoChatProvider>
+    <ConversationManagerProvider>
+      <div className="h-full">{renderPanel()}</div>
+    </ConversationManagerProvider>
   )
 }
 
