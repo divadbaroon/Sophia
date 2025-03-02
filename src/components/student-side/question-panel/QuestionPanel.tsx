@@ -5,6 +5,15 @@ import { Mic, Bot } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useConversationManagerContext } from '@/lib/context/ConversationManagerContext'
 
+// Bouncing Dots Animation Component
+const BouncingDots = () => (
+  <div className="flex items-center justify-center space-x-2">
+    <div className="w-3 h-3 bg-primary rounded-full animate-[bounce_1s_infinite_0ms]" />
+    <div className="w-3 h-3 bg-primary rounded-full animate-[bounce_1s_infinite_200ms]" />
+    <div className="w-3 h-3 bg-primary rounded-full animate-[bounce_1s_infinite_400ms]" />
+  </div>
+)
+
 interface QuestionPanelProps {
   onBack: () => void
   isVisible?: boolean
@@ -101,21 +110,6 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
     )
   }
 
-  const renderRecordingStatus = () => {
-    if (!isRecording) return <span>Recording stopped</span>
-    
-    if (isSpeaking) {
-      return (
-        <>
-          <span className="text-muted-foreground">Recording: </span>
-          <span className="text-primary">{transcript}</span>
-        </>
-      )
-    }
-    
-    return <span>{transcript || "Waiting for speech..."}</span>
-  }
-
   return (
     <div className="p-4">
       <Tabs defaultValue="question" className="w-full">
@@ -133,35 +127,26 @@ const QuestionPanel: React.FC<QuestionPanelProps> = () => {
             }}
           >
             <div ref={contentRef}>
-              {isProcessing && (
-                <div className="flex flex-col items-center justify-center py-4">
-                  <div className="text-lg text-muted-foreground">Processing...</div>
+              {isProcessing ? (
+                <div className="flex flex-col items-center justify-center py-4 mt-7">
+                  <BouncingDots />
                 </div>
-              )}
-              
-              {(isSpeaking || transcript) && !isProcessing ? (
-                <div className="flex flex-col items-center justify-center">
-                  <div className="text-lg text-muted-foreground">
-                    {renderRecordingStatus()}
-                  </div>
-                </div>
-              ) : lastAssistantMessage && !isProcessing ? (
+              ) : lastAssistantMessage ? (
                 <div className="flex items-start p-2">
                   <Bot className="h-5 w-5 mr-2 text-primary mt-1 flex-shrink-0" />
                   <div className="flex-1">
-                    <strong className="text-primary">Last response: </strong>
                     <div className="prose prose-sm mt-1">
                       {lastAssistantMessage.content}
                     </div>
                   </div>
                 </div>
-              ) : !isProcessing ? (
+              ) : (
                 <div className="flex flex-col items-center justify-center h-24">
                   <div className="text-lg text-muted-foreground">
-                    Waiting for question...
+                    <span>listening..</span>
                   </div>
                 </div>
-              ) : null}
+              )}
             </div>
           </div>
         </TabsContent>
