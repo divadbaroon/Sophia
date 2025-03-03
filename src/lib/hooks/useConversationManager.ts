@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ConversationManager, ConversationState, ConversationManagerOptions } from '@/lib/services/ConversationManager';
+import { ConversationManager, ConversationManagerOptions, ConversationState, StreamingSentence } from '@/lib/services/ConversationManager';
 import { ElevenLabsService, ElevenLabsOptions } from '@/lib/services/ElevenLabsService';
 import { useFile } from '@/components/context/FileContext';
 
@@ -19,6 +19,7 @@ export const useConversationManager = () => {
     isProcessing: false,
     transcript: "",
     conversationHistory: [],
+    currentStreamingMessage: null,
     error: null,
     autoTTS: true
   });
@@ -50,6 +51,19 @@ export const useConversationManager = () => {
     
     // Initialize
     manager.initialize();
+    
+    // Set up event listeners for streaming events
+    manager.on('sentenceAdded', ({ messageId, sentence }) => {
+      console.log(`[EVENT] Sentence added to message ${messageId}:`, sentence.text);
+    });
+    
+    manager.on('messageCompleted', ({ messageId, content, sentences, duration }) => {
+      console.log(`[EVENT] Message ${messageId} completed in ${duration}ms`);
+    });
+    
+    manager.on('streamingError', ({ error }) => {
+      console.error('[EVENT] Streaming error:', error);
+    });
     
     // Store reference
     managerRef.current = manager;
@@ -105,6 +119,28 @@ export const useConversationManager = () => {
     getManager().analyzeCode(code);
   }, [getManager]);
   
+  // Event subscription methods
+  const onSentenceAdded = useCallback((callback: (data: {messageId: string, sentence: StreamingSentence}) => void) => {
+    const manager = getManager();
+    manager.on('sentenceAdded', callback);
+    return () => {
+      manager.off('sentenceAdded', callback);
+    };
+  }, [getManager]);
+  
+  const onMessageCompleted = useCallback((callback: (data: {
+    messageId: string, 
+    content: string, 
+    sentences: StreamingSentence[], 
+    duration: number
+  }) => void) => {
+    const manager = getManager();
+    manager.on('messageCompleted', callback);
+    return () => {
+      manager.off('messageCompleted', callback);
+    };
+  }, [getManager]);
+  
   return {
     // State
     ...state,
@@ -117,6 +153,10 @@ export const useConversationManager = () => {
     speakLastResponse,
     stopSpeaking,
     clearError,
-    analyzeCode
+    analyzeCode,
+    
+    // Event subscriptions
+    onSentenceAdded,
+    onMessageCompleted
   };
 };
