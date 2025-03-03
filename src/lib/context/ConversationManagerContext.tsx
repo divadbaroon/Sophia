@@ -3,6 +3,7 @@
 import React, { createContext, useContext, ReactNode } from 'react'
 import { useConversationManager } from '@/lib/hooks/useConversationManager'
 import { ClaudeMessage } from '@/types'
+import { StreamingMessage, StreamingSentence } from '@/lib/services/ConversationManager'
 
 // Define the shape of the context
 export interface ConversationManagerContextType {
@@ -12,6 +13,7 @@ export interface ConversationManagerContextType {
   isProcessing: boolean
   transcript: string
   conversationHistory: ClaudeMessage[]
+  currentStreamingMessage: StreamingMessage | null
   error: string | null
   autoTTS: boolean
   
@@ -24,6 +26,19 @@ export interface ConversationManagerContextType {
   stopSpeaking: () => void
   clearError: () => void
   analyzeCode: (code: string) => void
+  
+  // Streaming event subscriptions
+  onSentenceAdded: (callback: (data: {
+    messageId: string, 
+    sentence: StreamingSentence
+  }) => void) => () => void
+  
+  onMessageCompleted: (callback: (data: {
+    messageId: string, 
+    content: string, 
+    sentences: StreamingSentence[], 
+    duration: number
+  }) => void) => () => void
 }
 
 // Create the context
