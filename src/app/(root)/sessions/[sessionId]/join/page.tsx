@@ -4,7 +4,7 @@ import React from 'react';
 import { AuthDialog } from '@/components/student-side/auth/AuthDialog';
 import { WorkspaceLayout } from '@/components/student-side/work-pace/WorkSpace';
 import { FolderProvider } from '@/components/context/FolderContext';
-import { FileProvider } from '@/components/context/FileContext';
+import { FileProvider } from '@/lib/context/FileContext';
 import { useAuth } from '@/hooks/useAuth';
 
 const JoinSessionPage: React.FC = () => {
