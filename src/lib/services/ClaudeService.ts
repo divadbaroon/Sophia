@@ -1,5 +1,5 @@
 import { ClaudeMessage } from "@/types";
-import { prepareTeachingAssistantPrompt } from "@/utils/claude/claudeTeachingAssistantPrompt";
+import { prepareClaudePrompt } from "@/utils/claude/claudePromptCreation";
 import { FileContextType } from "@/types";
 
 /**
@@ -8,7 +8,7 @@ import { FileContextType } from "@/types";
 export function initializeTeachingAssistantConversation(
   fileContext?: FileContextType | null
 ): ClaudeMessage[] {
-  return prepareTeachingAssistantPrompt(fileContext);
+  return prepareClaudePrompt(fileContext);
 }
 
 /**
