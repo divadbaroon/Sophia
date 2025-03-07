@@ -1,19 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
 import { HelpCircle } from "lucide-react"
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
-import CodeEditor from "@/components/student-side/code-editor/CodeEditor"
+import CodeEditor, { CodeEditorRef } from "@/components/student-side/code-editor/CodeEditor"
 import Terminal from "@/components/student-side/terminal/Terminal"
 import QuestionPanelWrapper from "@/components/student-side/question-panel/QuestionPanelWrapper"
 import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader"
 import { Card } from "@/components/ui/card"
-import { useFile } from '@/components/context/FileContext'
+import { useFile } from '@/lib/context/FileContext'
 import { TaskSidebarProps } from "@/types"
 
 export const WorkspaceLayout = () => {
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
   const { updateStudentTask } = useFile()
+  
+  const codeEditorRef = useRef<CodeEditorRef>(null)
 
   const twoSumTask: TaskSidebarProps = {
     title: "1.) Two Sum",
@@ -74,12 +76,12 @@ export const WorkspaceLayout = () => {
               <ResizablePanel defaultSize={70}>
                 <div className="relative h-full">
                   <PanelWithHeader>
-                    <CodeEditor />
+                    <CodeEditor ref={codeEditorRef} />
                   </PanelWithHeader>
                   
                   {isQuestionPanelVisible && (
                     <Card className="absolute top-16 right-4 w-[400px] z-50 shadow-lg mt-6 mr-1">
-                      <QuestionPanelWrapper />
+                      <QuestionPanelWrapper editorRef={codeEditorRef} />
                     </Card>
                   )}
                 </div>
