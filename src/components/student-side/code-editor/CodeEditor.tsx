@@ -1,13 +1,21 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import CodeMirror from '@uiw/react-codemirror';
 import { python } from '@codemirror/lang-python';
 import { vscodeLight } from '@uiw/codemirror-theme-vscode';
-import { useFile } from '@/components/context/FileContext';
+import { useFile } from '@/lib/context/FileContext';
 import { EditorView } from '@codemirror/view';
 import { ViewUpdate } from '@uiw/react-codemirror';
+import { SelectionRange, EditorState, Extension } from '@codemirror/state';
+import { highlightActiveLine } from '@codemirror/view';
+import { Decoration, DecorationSet } from '@codemirror/view';
+
+export interface CodeEditorRef {
+  highlightLine: (lineNumber: number) => void;
+  clearHighlight: () => void;
+}
 
 const functionTemplate = `def twoSum(self, nums: List[int], target: int) -> List[int]:
     # Write your solution here
@@ -26,12 +34,32 @@ if __name__ == "__main__":
     print(f"Result: {result}")`;
 };
 
+// Create a custom extension for line highlighting
+const createLineHighlightExtension = (lineNumber: number) => {
+  const highlightLine = Decoration.line({
+    attributes: { class: "bg-yellow-100" } // Tailwind class for subtle yellow highlight
+  });
+
+  return EditorView.decorations.of((view) => {
+    const decorations: any[] = []; // Use any[] instead of Range<Decoration>[]
+    
+    // Ensure lineNumber is valid
+    if (lineNumber > 0 && lineNumber <= view.state.doc.lines) {
+      const line = view.state.doc.line(lineNumber);
+      decorations.push(highlightLine.range(line.from));
+    }
+    
+    return Decoration.set(decorations);
+  });
+};
+
 type CodeEditorProps = {
   className?: string;
   readOnly?: boolean;
 };
 
-const CodeEditor: React.FC<CodeEditorProps> = ({ className = '', readOnly = false }) => {
+// Convert to forwardRef to expose the ref interface
+const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '', readOnly = false }, ref) => {
   const { 
     fileContent,
     cachedFileContent,
@@ -46,14 +74,63 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ className = '', readOnly = fals
   const editorViewRef = useRef<EditorView | null>(null);
   const [userCode, setUserCode] = useState<string>(functionTemplate);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [localHighlightedText, setLocalHighlightedText] = useState<string>('');
+  const [highlightedLineNumber, setHighlightedLineNumber] = useState<number | null>(null);
+  const [customExtensions, setCustomExtensions] = useState<Extension[]>([]);
+  
+  // Function to highlight a specific line by line number
+  const highlightLineByNumber = (lineNumber: number) => {
+    console.log("Highlighting line:", lineNumber);
+    setHighlightedLineNumber(lineNumber);
+    
+    // Optionally, also scroll to this line
+    if (editorViewRef.current) {
+      const state = editorViewRef.current.state;
+      if (lineNumber > 0 && lineNumber <= state.doc.lines) {
+        const line = state.doc.line(lineNumber);
+        
+        // Create a selection at the start of the line
+        const selection = { anchor: line.from, head: line.from };
+        
+        // Dispatch a transaction to update selection and scroll to it
+        editorViewRef.current.dispatch({
+          selection,
+          scrollIntoView: true
+        });
+      }
+    }
+  };
+  
+  // Function to clear the highlighted line
+  const clearHighlightedLine = () => {
+    console.log("Clearing highlighted line");
+    setHighlightedLineNumber(null);
+  };
+  
+  // Expose functions via ref
+  useImperativeHandle(ref, () => ({
+    highlightLine: highlightLineByNumber,
+    clearHighlight: clearHighlightedLine
+  }));
+  
+  // Debug logging for initial values
+  useEffect(() => {
+    console.log("Initial values from FileContext:", {
+      highlightedText,
+      updateHighlightedText: typeof updateHighlightedText === 'function',
+    });
+  }, []);
   
   useEffect(() => {
     console.log("CodeEditor state:", {
       userCodeLength: userCode?.length || 0,
       fileContentLength: fileContent?.length || 0,
-      cachedContentLength: cachedFileContent?.length || 0
+      cachedContentLength: cachedFileContent?.length || 0,
+      highlightedText,
+      localHighlightedText,
+      highlightedLineNumber,
     });
-  }, [userCode, fileContent, cachedFileContent]);
+  }, [userCode, fileContent, cachedFileContent, highlightedText, localHighlightedText, highlightedLineNumber]);
 
   useEffect(() => {
     if (isInitialized) return;
@@ -88,6 +165,27 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ className = '', readOnly = fals
       setUserCode(extractedCode);
     }
   }, [isInitialized, fileContent, cachedFileContent, userCode]);
+
+  // Update custom extensions when highlighted line changes
+  useEffect(() => {
+    const extensions: Extension[] = [];
+    
+    if (highlightedLineNumber !== null) {
+      extensions.push(createLineHighlightExtension(highlightedLineNumber));
+    }
+    
+    setCustomExtensions(extensions);
+    
+    // If editor view exists, force a refresh to show the highlight
+    if (editorViewRef.current) {
+      setTimeout(() => {
+        // Just dispatch a minimal transaction to force redraw
+        editorViewRef.current?.dispatch({
+          changes: { from: 0, to: 0, insert: "" }
+        });
+      }, 100);
+    }
+  }, [highlightedLineNumber]);
 
   // Auto-save code changes after a delay
   useEffect(() => {
@@ -124,33 +222,55 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ className = '', readOnly = fals
     setErrorContent('');
   };
 
-  // Handle text selection for context
-  useEffect(() => {
-    const handleMouseUp = (): void => {
-      if (editorViewRef.current) {
-        const state = editorViewRef.current.state;
-        const { from, to } = state.selection.main;
-  
-        if (from !== to) {
-          const selectedText = state.sliceDoc(from, to);
-          if (selectedText !== highlightedText) {
-            updateHighlightedText(selectedText);
-          }
-        } else {
-          updateHighlightedText('');
-        }
-      }
-    };
-  
-    const editorElement = editorViewRef.current?.dom;
-  
-    if (editorElement) {
-      editorElement.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        editorElement.removeEventListener('mouseup', handleMouseUp);
-      };
+  // Handle updates from CodeMirror including selection changes
+  const handleEditorUpdate = (viewUpdate: ViewUpdate): void => {
+    // Store the editor view reference
+    editorViewRef.current = viewUpdate.view;
+    
+    // Check if this update includes selection changes
+    if (viewUpdate.selectionSet) {
+      const selection = viewUpdate.state.selection.main;
+      handleSelectionChange(selection);
     }
-  }, [editorViewRef, updateHighlightedText, highlightedText]);
+  };
+  
+  // Handle selection changes, both from mouse and keyboard
+  const handleSelectionChange = (selection: SelectionRange): void => {
+    if (selection.from !== selection.to) {
+      // There is a selection
+      const selectedText = editorViewRef.current?.state.sliceDoc(selection.from, selection.to) || '';
+      
+      console.log("Selection changed:", {
+        from: selection.from,
+        to: selection.to,
+        text: selectedText
+      });
+      
+      // Update local state
+      setLocalHighlightedText(selectedText);
+      
+      // Update file context
+      if (typeof updateHighlightedText === 'function') {
+        console.log("Calling updateHighlightedText with:", selectedText);
+        updateHighlightedText(selectedText);
+      } else {
+        console.error("updateHighlightedText is not a function!");
+      }
+    } else {
+      // No selection
+      console.log("Selection cleared");
+      setLocalHighlightedText('');
+      
+      if (typeof updateHighlightedText === 'function') {
+        updateHighlightedText('');
+      }
+    }
+  };
+
+  // Add this effect to monitor highlightedText changes from context
+  useEffect(() => {
+    console.log("Highlighted text in context changed to:", highlightedText);
+  }, [highlightedText]);
 
   return (
     <div className={`h-full flex flex-col ${className}`}>
@@ -159,11 +279,9 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ className = '', readOnly = fals
           value={userCode}
           height="540px"
           theme={vscodeLight}
-          extensions={[python()]}
+          extensions={[python(), ...customExtensions]}
           onChange={handleCodeChange}
-          onUpdate={(viewUpdate: ViewUpdate): void => {
-            editorViewRef.current = viewUpdate.view;
-          }}
+          onUpdate={handleEditorUpdate}
           readOnly={readOnly}
           basicSetup={{
             lineNumbers: true,
@@ -195,6 +313,9 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ className = '', readOnly = fals
       </ScrollArea>
     </div>
   );
-};
+});
+
+// Add a display name for better debugging
+CodeEditor.displayName = 'CodeEditor';
 
 export default CodeEditor;
