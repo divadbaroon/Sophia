@@ -230,9 +230,15 @@ export interface FileContextType {
   highlightedText: string
   updateHighlightedText: (text: string) => void
   testCases: TestCase[]
-  updateTestCases: (testCases: TestCase[]) => void
+  updateTestCases: (newTestCases: TestCase[]) => void
   studentTask: string
   updateStudentTask: (task: string) => void
+  speakTo: 'student' | 'ta'
+  updateSpeakTo: (role: 'student' | 'ta') => void
+  scenario: 'one-on-one' | 'group'
+  updateScenario: (scenario: 'one-on-one' | 'group') => void
+  lineNumber: number | null
+  updateLineNumber: (line: number | null) => void
 }
 
 export type FolderContextType = {
@@ -291,4 +297,48 @@ export interface LiveTranscriptionResponse {
       confidence?: number;
     }>;
   };
+}
+
+export interface TestCase {
+  input: {
+    nums: number[],
+    target: number
+  },
+  expected: number[]
+}
+
+// Define streaming interfaces
+export interface StreamingSentence {
+  text: string;
+  complete: boolean;
+  timestamp: number;
+}
+
+export interface StreamingMessage {
+  id: string;
+  role: 'assistant';
+  sentences: StreamingSentence[];
+  content: string; // The complete message content, updated as sentences come in
+  isComplete: boolean;
+  startTimestamp: number;
+  endTimestamp: number | null;
+}
+
+// Conversation options
+export interface ConversationManagerOptions {
+  silenceThreshold: number; // ms before considering speech complete
+  deepgramApiKey: string;
+  fileContext?: FileContextType | null;
+}
+
+// Conversation state
+export interface ConversationState {
+  isRecording: boolean;
+  isSpeaking: boolean;
+  isProcessing: boolean;
+  transcript: string;
+  conversationHistory: ClaudeMessage[];
+  currentStreamingMessage: StreamingMessage | null;
+  error: string | null;
+  autoTTS: boolean;
 }
