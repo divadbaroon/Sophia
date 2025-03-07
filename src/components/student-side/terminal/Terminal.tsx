@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import usePythonRunner from '@/utils/PythonExecuter'
-import { useFile } from '@/components/context/FileContext'
+import { useFile } from '@/lib/context/FileContext'
 import { useToast } from '@/hooks/use-toast'
 
 interface TestCase {
