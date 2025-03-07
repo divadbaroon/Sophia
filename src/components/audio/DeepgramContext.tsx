@@ -3,7 +3,7 @@ import { createClient } from '@deepgram/sdk';
 import { LiveTranscriptionEvents, LiveClient } from '@deepgram/sdk';
 import { ClaudeMessage, DeepgramContextType, LiveTranscriptionResponse } from "@/types";
 import { queryClaudeAPI } from "@/lib/services/ClaudeService";
-import { useFile } from '@/components/context/FileContext';
+import { useFile } from '@/lib/context/FileContext';
 import { useElevenLabs } from '@/lib/hooks/useElevenLabs';
 
 const DEEPGRAM_API_KEY = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY;
@@ -70,7 +70,7 @@ export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
     
     // If auto TTS is enabled, speak Claude's response
-    if (autoTTS && response && response.role === 'assistant') {
+    if (autoTTS && response) {
       await speakMessage(response.content);
     }
     
