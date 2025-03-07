@@ -15,7 +15,7 @@ import { ExpandLess, ExpandMore } from '@mui/icons-material';
 
 import { readDirectory, FileSystemNode } from '@/utils/FileUtils'
 
-import { useFile } from '@/components/context/FileContext';
+import { useFile } from '@/lib/context/FileContext';
 import { useFolder } from '@/components/context/FolderContext';
 
 export default function FileSidebar() {
