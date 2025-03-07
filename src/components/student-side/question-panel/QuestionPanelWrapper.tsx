@@ -84,7 +84,6 @@ const QuestionPanelContent: React.FC<QuestionPanelContentProps> = ({ editorRef, 
   }));
 
   // Ensure we clear highlights when the panel itself unmounts
-  // MOVE THIS USEEFFECT BEFORE THE CONDITIONAL RETURN
   React.useEffect(() => {
     return () => {
       clearHighlight();
@@ -96,7 +95,6 @@ const QuestionPanelContent: React.FC<QuestionPanelContentProps> = ({ editorRef, 
     return <InitializationStatus onRetry={() => setRetryCount(prev => prev + 1)} />;
   }
 
-  // Render the actual panel content when initialized
   const renderPanel = () => {
     switch (panelType) {
       case 'question':
@@ -136,8 +134,5 @@ const QuestionPanelWrapper = forwardRef<QuestionPanelWrapperRef, QuestionPanelWr
     );
   }
 );
-
-// Add display name for better debugging
-QuestionPanelWrapper.displayName = 'QuestionPanelWrapper';
 
 export default QuestionPanelWrapper;
