@@ -6,15 +6,7 @@ import React, {
 } from 'react'
 import { FileSystemNode } from '@/utils/FileUtils'
 
-import { FileContextType } from '@/types'
-
-interface TestCase {
-  input: {
-    nums: number[],
-    target: number
-  },
-  expected: number[]
-}
+import { FileContextType, TestCase } from '@/types'
 
 const FileContext = createContext<FileContextType | undefined>(undefined)
 
@@ -24,10 +16,14 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [cachedFileContent, setCachedFileContent] = useState<string>('')
   const [filePath, setFilePath] = useState<string | null>(null)
   const [fileNode, setFileNode] = useState<FileSystemNode | null>(null)
+
   const [errorContent, setErrorContent] = useState('')
   const [executionOutput, setExecutionOutput] = useState<string>('')
   const [highlightedText, setHighlightedText] = useState<string>('')
   const [studentTask, setStudentTask] = useState<string>('')
+
+  const [lineNumber, setLineNumber] = useState<number | null>(null)
+  
   const [testCases, setTestCases] = useState<TestCase[]>([
     {
       input: {
@@ -51,6 +47,9 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
       expected: [0, 1]
     }
   ])
+
+  const [speakTo, setSpeakTo] = useState<'student' | 'ta'>('ta')
+  const [scenario, setScenario] = useState<'one-on-one' | 'group'>('one-on-one')
 
   const updateHighlightedText = (text: string) => {
     setHighlightedText(text)
@@ -79,8 +78,22 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     setStudentTask(task)
   }
 
+  const updateLineNumber = (line: number | null) => {
+    setLineNumber(line)
+  }
+
   const isSaved = () => {
     return fileContent === cachedFileContent
+  }
+
+  // Update the speakTo role - simplified
+  const updateSpeakTo = (role: 'student' | 'ta') => {
+    setSpeakTo(role)
+  }
+
+  // Update the scenario - simplified
+  const updateScenario = (newScenario: 'one-on-one' | 'group') => {
+    setScenario(newScenario)
   }
 
   return (
@@ -106,6 +119,12 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         updateTestCases,
         studentTask,
         updateStudentTask,
+        speakTo,
+        updateSpeakTo,
+        scenario,
+        updateScenario,
+        lineNumber,
+        updateLineNumber,
       }}>
       {children}
     </FileContext.Provider>
