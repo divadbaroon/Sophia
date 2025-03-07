@@ -1,46 +1,10 @@
 import { createClient } from '@deepgram/sdk';
 import { LiveTranscriptionEvents, LiveClient } from '@deepgram/sdk';
 import { ClaudeMessage, LiveTranscriptionResponse } from "@/types";
-import { FileContextType } from '@/types';
+import { FileContextType, StreamingSentence, StreamingMessage, ConversationManagerOptions, ConversationState  } from '@/types';
 import { ElevenLabsService } from '@/lib/services/ElevenLabsService';
-import { prepareTeachingAssistantPrompt } from "@/utils/claude/claudeTeachingAssistantPrompt";
+import { prepareClaudePrompt } from "@/utils/claude/claudePromptCreation";
 import { EventEmitter } from 'events';
-
-// Define streaming interfaces
-export interface StreamingSentence {
-  text: string;
-  complete: boolean;
-  timestamp: number;
-}
-
-export interface StreamingMessage {
-  id: string;
-  role: 'assistant';
-  sentences: StreamingSentence[];
-  content: string; // The complete message content, updated as sentences come in
-  isComplete: boolean;
-  startTimestamp: number;
-  endTimestamp: number | null;
-}
-
-// Conversation options
-export interface ConversationManagerOptions {
-  silenceThreshold: number; // ms before considering speech complete
-  deepgramApiKey: string;
-  fileContext?: FileContextType | null;
-}
-
-// Conversation state
-export interface ConversationState {
-  isRecording: boolean;
-  isSpeaking: boolean;
-  isProcessing: boolean;
-  transcript: string;
-  conversationHistory: ClaudeMessage[];
-  currentStreamingMessage: StreamingMessage | null;
-  error: string | null;
-  autoTTS: boolean;
-}
 
 // State listener type
 export type ConversationStateListener = (state: ConversationState) => void;
@@ -130,7 +94,7 @@ export class ConversationManager extends EventEmitter {
    * Initialize a new conversation with teaching assistant prompt
    */
   public initializeConversation(fileContext?: FileContextType | null): void {
-    const initialMessages = prepareTeachingAssistantPrompt(fileContext);
+    const initialMessages = prepareClaudePrompt(fileContext);
     this.updateState({ conversationHistory: initialMessages });
   }
   
@@ -318,6 +282,9 @@ export class ConversationManager extends EventEmitter {
   public speakLastClaudeResponse(): void {
     const lastAssistantMessage = this.findLastAssistantMessage();
     if (lastAssistantMessage && lastAssistantMessage.content.trim()) {
+      // Set speaking to true immediately to show the text while audio is loading
+      this.updateState({ isSpeaking: true });
+      
       this.elevenLabsService.speak(lastAssistantMessage.content)
         .then(audioBlob => {
           if (this.audioElement && audioBlob) {
@@ -334,6 +301,9 @@ export class ConversationManager extends EventEmitter {
                 isSpeaking: false
               });
             });
+          } else {
+            // If no audioBlob was returned (already playing or empty content)
+            console.log('No audioBlob returned from speak method');
           }
         })
         .catch(error => {
