@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
-import { HelpCircle } from "lucide-react"
+import { HelpCircle, Clock } from "lucide-react"
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
 import CodeEditor, { CodeEditorRef } from "@/components/student-side/code-editor/CodeEditor"
 import Terminal from "@/components/student-side/terminal/Terminal"
@@ -13,6 +13,8 @@ import { TaskSidebarProps } from "@/types"
 
 export const WorkspaceLayout = () => {
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
+  const [helpAvailable, setHelpAvailable] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState(5 * 5) // 5 minutes in seconds
   const { updateStudentTask } = useFile()
   
   const codeEditorRef = useRef<CodeEditorRef>(null)
@@ -44,10 +46,33 @@ export const WorkspaceLayout = () => {
     ],
   }
 
+  // Format time as MM:SS
+  const formatTime = (seconds: any) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  }
+
   useEffect(() => {
     // Save the task description to the FileContext
     updateStudentTask(twoSumTask.description)
   }, [updateStudentTask])
+
+  useEffect(() => {
+    // Timer for help button availability
+    const timer = setInterval(() => {
+      setTimeRemaining((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(timer);
+          setHelpAvailable(true);
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <main className="flex flex-col h-screen">
@@ -56,12 +81,23 @@ export const WorkspaceLayout = () => {
           variant="outline"
           size="lg"
           className={`absolute top-3.5 right-16 mr-3 z-50 gap-2 font-medium ${
-            isQuestionPanelVisible ? 'bg-secondary' : 'bg-background hover:bg-secondary/80'
+            isQuestionPanelVisible ? 'bg-secondary' : 
+            helpAvailable ? 'bg-background hover:bg-secondary/80' : 'bg-secondary/30 cursor-not-allowed'
           }`}
-          onClick={() => setIsQuestionPanelVisible(!isQuestionPanelVisible)}
+          onClick={() => helpAvailable && setIsQuestionPanelVisible(!isQuestionPanelVisible)}
+          disabled={!helpAvailable}
         >
-          <HelpCircle className="h-5 w-5" />
-          {isQuestionPanelVisible ? 'Hide Help' : 'Get Help'}
+          {helpAvailable ? (
+            <>
+              <HelpCircle className="h-5 w-5" />
+              {isQuestionPanelVisible ? 'Hide Help' : 'Get Help'}
+            </>
+          ) : (
+            <>
+              <Clock className="h-5 w-5" />
+              {`Help in ${formatTime(timeRemaining)}`}
+            </>
+          )}
         </Button>
 
         <ResizablePanelGroup direction="horizontal">
