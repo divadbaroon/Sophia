@@ -14,7 +14,7 @@ import { TaskSidebarProps } from "@/types"
 export const WorkspaceLayout = () => {
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
   const [helpAvailable, setHelpAvailable] = useState(false)
-  const [timeRemaining, setTimeRemaining] = useState(5 * 5) // 5 minutes in seconds
+  const [timeRemaining, setTimeRemaining] = useState(5 * 1) 
   const { updateStudentTask } = useFile()
   
   const codeEditorRef = useRef<CodeEditorRef>(null)
