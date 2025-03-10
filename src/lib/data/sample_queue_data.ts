@@ -8,9 +8,9 @@ const DAY_IN_MS = 24 * HOUR_IN_MS
 export const queueData: Student[] = [
     {
         id: 1,
-        name: "John Smith",
-        waitTime: "10m",
-        conceptGaps: ["String Methods", "Type Conversion"],
+        name: "David Barron",
+        waitTime: "1m",
+        conceptGaps: ["Hash Map", "Key-Value Pair Management"],
         status: "In Queue",
         joinedAt: "2024-02-11T14:30:00Z",
         previousVisits: 3,
