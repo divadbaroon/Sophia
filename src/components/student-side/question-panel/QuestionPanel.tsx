@@ -113,6 +113,26 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
     onSentenceAdded,
     queryClaudeWithText
   } = useConversationManagerContext()
+
+  const [isUserSpeaking, setIsUserSpeaking] = useState(false);
+
+// Update this effect to monitor transcript changes
+useEffect(() => {
+  // When transcript changes and is not empty, user is speaking
+  if (transcript && transcript.trim() !== '') {
+    setIsUserSpeaking(true);
+  } else {
+    // Add small delay before setting to false to prevent flickering
+    const timer = setTimeout(() => {
+      setIsUserSpeaking(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }
+}, [transcript]);
+
+  useEffect(() => {
+    console.log("SPEAKING STATE", isSpeaking)
+  }, [isSpeaking])
   
   // Get FileContext
   const { 
@@ -443,8 +463,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
             }}
           >
             <div ref={contentRef}>
-              {/* Prioritize content display - fixed rendering logic */}
-              {lastAssistantContent ? (
+              {isSpeaking && lastAssistantContent ? (
                 <div className="flex items-start p-2">
                   <div className="flex-1">
                     <div className="prose prose-sm mt-1">
@@ -453,16 +472,27 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
                         : lastAssistantContent
                       }
                       {currentStreamingMessage && 
-                       typeof currentStreamingMessage === 'object' && 
-                       !currentStreamingMessage.isComplete && (
+                      typeof currentStreamingMessage === 'object' && 
+                      !currentStreamingMessage.isComplete && (
                         <span className="inline-block animate-pulse">▋</span>
                       )}
                     </div>
                   </div>
                 </div>
-              ) : showProcessing ? (
+              ) : isProcessing ? (
                 <div className="flex flex-col items-center justify-center py-4 mt-7">
                   <BouncingDots />
+                </div>
+              ) : lastAssistantContent ? (
+                <div className="flex items-start p-2">
+                  <div className="flex-1">
+                    <div className="prose prose-sm mt-1">
+                      {fileScenario === 'group' 
+                        ? formatGroupConversation(lastAssistantContent)
+                        : lastAssistantContent
+                      }
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-24">
