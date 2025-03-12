@@ -282,18 +282,26 @@ export class ConversationManager extends EventEmitter {
   public speakLastClaudeResponse(): void {
     const lastAssistantMessage = this.findLastAssistantMessage();
     if (lastAssistantMessage && lastAssistantMessage.content.trim()) {
-      // Set speaking to true immediately to show the text while audio is loading
-      this.updateState({ isSpeaking: true });
-      
       this.elevenLabsService.speak(lastAssistantMessage.content)
         .then(audioBlob => {
           if (this.audioElement && audioBlob) {
             const audioUrl = URL.createObjectURL(audioBlob);
             this.audioElement.src = audioUrl;
+            
+            // Set up event handlers
+            this.audioElement.onplay = () => {
+              console.log('Audio playback started');
+              this.updateState({ isSpeaking: true });
+            };
+            
             this.audioElement.onended = () => {
+              console.log('Audio playback ended');
               this.updateState({ isSpeaking: false });
               URL.revokeObjectURL(audioUrl);
             };
+            
+            this.updateState({ isSpeaking: true });
+            
             this.audioElement.play().catch(error => {
               console.error('Error playing audio:', error);
               this.updateState({ 
@@ -301,8 +309,15 @@ export class ConversationManager extends EventEmitter {
                 isSpeaking: false
               });
             });
+            
+            // Add a safety check - if 500ms after play() and still not playing, set isSpeaking manually
+            setTimeout(() => {
+              if (!this.audioElement?.paused && this.audioElement?.currentTime === 0) {
+                console.log('Audio not playing after 500ms - manually setting isSpeaking');
+                this.updateState({ isSpeaking: true });
+              }
+            }, 500);
           } else {
-            // If no audioBlob was returned (already playing or empty content)
             console.log('No audioBlob returned from speak method');
           }
         })
@@ -403,8 +418,13 @@ export class ConversationManager extends EventEmitter {
             is_speaking: true
           });
           
+          // Stop any ongoing TTS when user speaks
+          if (this.state.isSpeaking) {
+            this.stopSpeaking();
+          }
+          
+          // Update with user's transcript
           this.updateState({
-            isSpeaking: true,
             transcript: transcriptText
           });
           
