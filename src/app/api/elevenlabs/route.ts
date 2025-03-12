@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(req: Request) {
   console.log('ElevenLabs API Route: Request received');
   
-  const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
+  const ELEVENLABS_API_KEY = process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY;
   
   if (!ELEVENLABS_API_KEY) {
     console.error('ElevenLabs API Route: ElevenLabs API key is not configured');
