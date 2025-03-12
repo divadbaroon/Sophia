@@ -36,19 +36,38 @@ export class ElevenLabsService {
     document.addEventListener('touchstart', initAudioContext);
   }
   
-  public async speak(text: string): Promise<void> {
-    if (!text.trim()) return Promise.resolve();
+  public async speak(text: string): Promise<Blob | null> {
+    if (!text.trim()) return Promise.resolve(null);
     
-    // Queue the text to be spoken
-    this.audioQueue.push(text);
-    
-    // If already playing or loading, don't start a new request
-    if (this.isPlaying || this.isLoading) {
-      return Promise.resolve();
+    try {
+      // Make API request directly without queueing
+      const apiUrl = '/api/elevenlabs';
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: text,
+          voiceId: this.options.voiceId,
+          modelId: this.options.modelId,
+          stability: this.options.stability,
+          similarityBoost: this.options.similarityBoost
+        })
+      });
+      
+      if (!response.ok) {
+        // Error handling
+        throw new Error(`TTS error: ${response.status}`);
+      }
+      
+      // Return the blob for ConversationManager to play
+      return await response.blob();
+    } catch (error) {
+      console.error('ElevenLabs TTS error:', error);
+      throw error;
     }
-    
-    // Process the queue
-    return this.processQueue();
   }
   
   private async processQueue(): Promise<void> {
