@@ -144,6 +144,35 @@ export const useConversationManager = () => {
     if (manager) manager.analyzeCode(code);
   }, [getManager]);
   
+  const createUnderstandingMatrix = useCallback((problemDescription: string) => {
+    const manager = getManager();
+    if (manager) return manager.createUnderstandingMatrix(problemDescription);
+    return Promise.resolve(undefined);
+  }, [getManager]);
+  
+  const updateCategory = useCallback((
+    category: string, 
+    currentUnderstanding: {[subcategory: string]: number}
+  ) => {
+    const manager = getManager();
+    if (manager) return manager.updateCategory(category, currentUnderstanding);
+    return Promise.resolve(currentUnderstanding);
+  }, [getManager]);
+  
+  const createPivot = useCallback((
+    understandingMatrix: {
+      categories: {
+        [category: string]: {
+          [subcategory: string]: number
+        }
+      }
+    }
+  ) => {
+    const manager = getManager();
+    if (manager) return manager.createPivot(understandingMatrix);
+    return Promise.resolve("The student may benefit from exploring hash maps and time complexity concepts. Consider asking how different data structures could improve their solution's efficiency.");
+  }, [getManager]);
+  
   // Event subscription methods
   const onSentenceAdded = useCallback((callback: (data: {messageId: string, sentence: StreamingSentence}) => void) => {
     const manager = getManager();
@@ -184,6 +213,9 @@ export const useConversationManager = () => {
     stopSpeaking,
     clearError,
     analyzeCode,
+    createUnderstandingMatrix,
+    updateCategory,
+    createPivot,
     
     // Event subscriptions
     onSentenceAdded,

@@ -15,6 +15,26 @@ type ConversationManagerContextType = ConversationState & {
   stopSpeaking: () => void;
   clearError: () => void;
   analyzeCode: (code: string) => void;
+  createUnderstandingMatrix: (problemDescription: string) => Promise<{
+    categories: {
+      [category: string]: {
+        [subcategory: string]: number
+      }
+    }
+  }>;
+  updateCategory: (
+    category: string, 
+    currentUnderstanding: {[subcategory: string]: number}
+  ) => Promise<{[subcategory: string]: number}>;
+  createPivot: (
+    understandingMatrix: {
+      categories: {
+        [category: string]: {
+          [subcategory: string]: number
+        }
+      }
+    }
+  ) => Promise<string>;
   onSentenceAdded: (callback: (data: {messageId: string, sentence: StreamingSentence}) => void) => () => void;
   onMessageCompleted: (callback: (data: {
     messageId: string, 

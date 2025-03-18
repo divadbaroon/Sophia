@@ -706,6 +706,289 @@ export class ConversationManager extends EventEmitter {
     });
   }
   
+
+  public async createUnderstandingMatrix(problemDescription: string): Promise<any> {
+    // The example problem map to keep as a constant
+    const exampleProblemMap = {
+      "categories": {
+        "String Processing": {
+          "Parsing": 1,
+          "Character Mapping": 1,
+          "Pattern Recognition": 1,
+          "Iteration Strategies": 1
+        },
+        "Data Structures": {
+          "Hash Maps": 1,
+          "Arrays": 1,
+          "Stacks": 1,
+          "Lists": 1
+        },
+        "Algorithm Design": {
+          "Greedy Algorithm": 1,
+          "Edge Case Handling": 1,
+          "Time Complexity": 1,
+          "Recursive Approach": 1
+        }
+      }
+    };
+
+    const prompt = `I am going to give you a coding problem description. Your Job is to come out with a LIST of about 3 categories and 4 subcategories for each category. You may you more or less than that but each category needs a subcategory. These will represent a mind map of the problem encompassing concepts that one needs to understand to take this problem. This mind map should be overarching enough to be reused for similar problems. Focus mostly on Computer Science categories and subcategories. Keep the names of the categories and short (at most 4 words). Json mode.
+
+IMPORTANT: Your response must ONLY include a valid JSON object without any additional text or explanation before or after it. Use this exact format:
+
+{
+  "categories": {
+    "Category Name": {
+      "Subcategory 1": 1,
+      "Subcategory 2": 1,
+      "Subcategory 3": 1,
+      "Subcategory 4": 1
+    },
+    ...more categories...
+  }
+}
+
+Here is an example problem map for a different problem description than the one you are assigned:
+
+${JSON.stringify(exampleProblemMap, null, 2)}
+
+Here is your problem:
+
+${problemDescription}`;
+
+    try {
+      this.updateState({ isProcessing: true });
+      
+      this.addUserMessage(prompt);
+      
+      const messageId = this.beginStreamingMessage();
+      
+      const systemMessages = this.state.conversationHistory.filter(msg => msg.role === 'system');
+      const nonSystemMessages = this.state.conversationHistory.filter(msg => 
+        msg.role !== 'system' && (msg.role !== 'assistant' || msg.content.trim() !== '')
+      );
+      
+      const systemContent = systemMessages.length > 0 
+        ? systemMessages.map(msg => msg.content).join('\n\n')
+        : undefined;
+      
+      console.log('Creating understanding matrix with problem description:', { 
+        systemContent: systemContent ? 'Yes' : 'No', 
+        messageCount: nonSystemMessages.length 
+      });
+      
+      const response = await fetch('/api/claude', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: nonSystemMessages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          })),
+          system: systemContent
+        }),
+      });
+      
+      if (!response.ok || !response.body) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      
+      let currentSentence = '';
+      let fullResponse = '';
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        fullResponse += chunk;
+        
+        currentSentence += chunk;
+        
+        const sentenceRegex = /[.!?]\s+|[.!?]$/g;
+        let match;
+        let lastIndex = 0;
+        
+        while ((match = sentenceRegex.exec(currentSentence)) !== null) {
+          const completedSentence = currentSentence.substring(lastIndex, match.index + 1);
+          lastIndex = match.index + match[0].length;
+          
+          this.addSentence(completedSentence);
+        }
+        
+        if (lastIndex > 0) {
+          currentSentence = currentSentence.substring(lastIndex);
+        }
+      }
+      
+      if (currentSentence.trim()) {
+        this.addSentence(currentSentence.trim(), true);
+      }
+      
+      this.completeStreamingMessage();
+      
+      try {
+        console.log('Full response:', fullResponse);
+        
+        const firstBrace = fullResponse.indexOf('{');
+        const lastBrace = fullResponse.lastIndexOf('}');
+        
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          const jsonString = fullResponse.substring(firstBrace, lastBrace + 1);
+          console.log('Extracted JSON string:', jsonString);
+          
+          try {
+            const understandingMatrix = JSON.parse(jsonString);
+            console.log('Understanding Matrix:', understandingMatrix);
+            
+            return understandingMatrix;
+          } catch (jsonError) {
+            console.error('Failed to parse extracted JSON:', jsonError);
+            
+            const cleanedJson = jsonString
+              .replace(/[\r\n\t]/g, '')  // Remove newlines and tabs
+              .replace(/,\s*}/g, '}')    // Remove trailing commas
+              .replace(/,\s*]/g, ']');   // Remove trailing commas in arrays
+            
+            console.log('Cleaned JSON string:', cleanedJson);
+            
+            try {
+              const understandingMatrix = JSON.parse(cleanedJson);
+              console.log('Understanding Matrix (from cleaned JSON):', understandingMatrix);
+              return understandingMatrix;
+            } catch (cleanJsonError) {
+              console.error('Failed to parse cleaned JSON:', cleanJsonError);
+              
+              try {
+                const fallbackMatrix = {
+                  categories: {
+                    "Array Manipulation": {
+                      "Two-pointer Technique": 1,
+                      "Linear Search": 1,
+                      "Indexing": 1,
+                      "Element Comparison": 1
+                    },
+                    "Data Structures": {
+                      "Hash Map": 1,
+                      "Array": 1,
+                      "Key-Value Pair": 1,
+                      "Lookup Table": 1
+                    },
+                    "Algorithm Design": {
+                      "Time Complexity": 1,
+                      "Space Complexity": 1,
+                      "Edge Cases": 1,
+                      "Brute Force vs Optimal": 1
+                    }
+                  }
+                };
+                
+                console.log('Using fallback understanding matrix:', fallbackMatrix);
+                return fallbackMatrix;
+              } catch (fallbackError) {
+                console.error('Error creating fallback matrix:', fallbackError);
+              }
+            }
+          }
+        } else {
+          console.error('Could not find JSON object in response');
+          console.log('First brace index:', firstBrace);
+          console.log('Last brace index:', lastBrace);
+          
+          const fallbackMatrix = {
+            categories: {
+              "Array Manipulation": {
+                "Two-pointer Technique": 1,
+                "Linear Search": 1,
+                "Indexing": 1,
+                "Element Comparison": 1
+              },
+              "Data Structures": {
+                "Hash Map": 1,
+                "Array": 1,
+                "Key-Value Pair": 1,
+                "Lookup Table": 1
+              },
+              "Algorithm Design": {
+                "Time Complexity": 1,
+                "Space Complexity": 1,
+                "Edge Cases": 1,
+                "Brute Force vs Optimal": 1
+              }
+            }
+          };
+          
+          console.log('Using fallback understanding matrix:', fallbackMatrix);
+          return fallbackMatrix;
+        }
+      } catch (jsonError) {
+        console.error('Failed to parse understanding matrix:', jsonError);
+        console.log('Raw response:', fullResponse);
+        
+        const fallbackMatrix = {
+          categories: {
+            "Array Manipulation": {
+              "Two-pointer Technique": 1,
+              "Linear Search": 1,
+              "Indexing": 1,
+              "Element Comparison": 1
+            },
+            "Data Structures": {
+              "Hash Map": 1,
+              "Array": 1,
+              "Key-Value Pair": 1,
+              "Lookup Table": 1
+            },
+            "Algorithm Design": {
+              "Time Complexity": 1,
+              "Space Complexity": 1,
+              "Edge Cases": 1,
+              "Brute Force vs Optimal": 1
+            }
+          }
+        };
+        
+        console.log('Using fallback understanding matrix:', fallbackMatrix);
+        return fallbackMatrix;
+      }
+      
+    } catch (error) {
+      console.error('Error in createUnderstandingMatrix:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.handleStreamingError(new Error(errorMessage));
+      
+      return {
+        categories: {
+          "Array Manipulation": {
+            "Two-pointer Technique": 1,
+            "Linear Search": 1,
+            "Indexing": 1,
+            "Element Comparison": 1
+          },
+          "Data Structures": {
+            "Hash Map": 1,
+            "Array": 1,
+            "Key-Value Pair": 1,
+            "Lookup Table": 1
+          },
+          "Algorithm Design": {
+            "Time Complexity": 1,
+            "Space Complexity": 1,
+            "Edge Cases": 1,
+            "Brute Force vs Optimal": 1
+          }
+        }
+      };
+    } finally {
+      this.updateState({ isProcessing: false });
+    }
+  }
+  
   /**
    * Clean up resources
    */
@@ -714,5 +997,244 @@ export class ConversationManager extends EventEmitter {
     this.stopSpeaking();
     this.stateListeners = [];
     this.removeAllListeners();
+  }
+
+  public createUnderstanding(fileContext: FileContextType): void {
+    this.initializeConversation(fileContext);
+  }
+
+  public async createPivot(
+    understandingMatrix: {
+      categories: {
+        [category: string]: {
+          [subcategory: string]: number
+        }
+      }
+    }
+  ): Promise<string> {
+    try {
+      this.updateState({ isProcessing: true });
+      
+      const conversationHistory = this.getConversationHistory();
+      
+      const prompt = `As an AI teaching assistant, analyze the student's understanding matrix and recent conversation history. Then provide brief guidance (2-3 sentences) for the teaching assistant on what topics to steer the conversation toward.
+
+Focus on identifying:
+1. 1-2 key concepts where the student shows weakest understanding (scores below 0.5)
+2. How these concepts connect to their current discussion
+3. Specific conceptual questions the TA should ask to assess and improve understanding
+
+This guidance is for the TA only and will not be shown to the student directly.
+
+Understanding Matrix:
+${JSON.stringify(understandingMatrix, null, 2)}
+
+Recent Conversation:
+${conversationHistory
+  .filter(msg => msg.role !== 'system')
+  .slice(-10)
+  .map(msg => `${msg.role === 'user' ? 'Student' : 'TA'}: ${msg.content}`)
+  .join('\n\n')
+}
+
+Example guidance:
+- "The student shows weak understanding of hash maps (0.2) and time complexity (0.3). Guide the conversation toward how hash maps can improve the brute force solution's time complexity."
+- "The student's understanding of edge cases is low (0.2). Ask questions about what might happen with empty arrays or duplicate values to strengthen this area."
+
+Provide only the guidance without any additional explanation or commentary.`;
+
+      const systemMessages = this.state.conversationHistory.filter(msg => msg.role === 'system');
+      const nonSystemMessages = [{
+        role: 'user' as const,
+        content: prompt
+      }];
+      
+      const systemContent = systemMessages.length > 0 
+        ? systemMessages.map(msg => msg.content).join('\n\n')
+        : undefined;
+      
+      console.log('Creating conversation pivot based on understanding matrix');
+      
+      const response = await fetch('/api/claude', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: nonSystemMessages,
+          system: systemContent
+        }),
+      });
+      
+      if (!response.ok || !response.body) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      
+      let fullResponse = '';
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        fullResponse += chunk;
+      }
+      
+      console.log('Pivot guidance:', fullResponse);
+      
+      const cleanedResponse = fullResponse
+        .replace(/^```.*$/gm, '') 
+        .replace(/^>.*$/gm, '')   
+        .replace(/^\s*[-*]\s*/gm, '') 
+        .trim();
+      
+      return cleanedResponse;
+      
+    } catch (error) {
+      console.error('Error in createPivot:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.handleStreamingError(new Error(errorMessage));
+      
+      return "The student may benefit from exploring hash maps and time complexity concepts. Consider asking how different data structures could improve their solution's efficiency.";
+    } finally {
+      this.updateState({ isProcessing: false });
+    }
+  }
+
+  public async updateCategory(
+    category: string, 
+    currentUnderstanding: {[subcategory: string]: number}
+  ): Promise<{[subcategory: string]: number}> {
+    try {
+      this.updateState({ isProcessing: true });
+      
+      const conversationHistory = this.getConversationHistory();
+      const fileContext = this.options.fileContext;
+      
+      const studentCode = fileContext?.fileContent || "";
+      
+      const prompt = `You are given a problem description, a students code and a set of concepts to judge the students progress. You will be given the values of the students understanding before they made new changes to the code. Each category is given a score between 0 and 1. 0 being the student doesn't have any clue about the concept and a 1 being the student has shown that they understand the concept really well. All categories start at 0. You will also be given the conversation the student just had with a TA. 
+
+Your job is to update the student's score. Do not lower a students score unless they have explicitly shown a misunderstanding of the concept. Json response only. Do not add anything else to your response.
+
+Problem:
+${fileContext?.studentTask || ""}
+
+Student code:
+${studentCode}
+
+Conversation:
+${conversationHistory
+  .filter(msg => msg.role !== 'system')
+  .map(msg => `${msg.role === 'user' ? 'Student' : 'TA'}: ${msg.content}`)
+  .join('\n\n')
+}
+
+Categories:
+"${category}": ${JSON.stringify(currentUnderstanding, null, 6)}`;
+
+
+      console.log('Prompt:', prompt);
+      const systemMessages = this.state.conversationHistory.filter(msg => msg.role === 'system');
+      const nonSystemMessages = [{
+        role: 'user' as const,
+        content: prompt
+      }];
+      
+      const systemContent = systemMessages.length > 0 
+        ? systemMessages.map(msg => msg.content).join('\n\n')
+        : undefined;
+      
+      console.log('Updating category understanding for:', { 
+        category,
+        currentUnderstanding,
+        messageCount: nonSystemMessages.length 
+      });
+      
+      // Call the Claude API
+      const response = await fetch('/api/claude', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: nonSystemMessages,
+          system: systemContent
+        }),
+      });
+      
+      if (!response.ok || !response.body) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      
+      let fullResponse = '';
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        fullResponse += chunk;
+      }
+      
+      console.log('Full response:', fullResponse);
+      
+      try {
+        const firstBrace = fullResponse.indexOf('{');
+        const lastBrace = fullResponse.lastIndexOf('}');
+        
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          const jsonString = fullResponse.substring(firstBrace, lastBrace + 1);
+          console.log('Extracted JSON string:', jsonString);
+          
+          try {
+            const updatedUnderstanding = JSON.parse(jsonString);
+            
+            if (typeof updatedUnderstanding === 'object' && 
+                Object.keys(updatedUnderstanding).length > 0) {
+              console.log('Updated understanding:', updatedUnderstanding);
+              return updatedUnderstanding;
+            } else {
+              throw new Error('Invalid response format');
+            }
+          } catch (jsonError) {
+            console.error('Failed to parse extracted JSON:', jsonError);
+            
+            const cleanedJson = jsonString
+              .replace(/[\r\n\t]/g, '')
+              .replace(/,\s*}/g, '}')
+              .replace(/,\s*]/g, ']');
+            
+            try {
+              const updatedUnderstanding = JSON.parse(cleanedJson);
+              console.log('Updated understanding (from cleaned JSON):', updatedUnderstanding);
+              return updatedUnderstanding;
+            } catch (cleanJsonError) {
+              console.error('Failed to parse cleaned JSON:', cleanJsonError);
+              return currentUnderstanding;
+            }
+          }
+        } else {
+          console.error('Could not find JSON object in response');
+          return currentUnderstanding;
+        }
+      } catch (error) {
+        console.error('Error in updateCategory:', error);
+        return currentUnderstanding;
+      }
+    } catch (error) {
+      console.error('Error in updateCategory:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.handleStreamingError(new Error(errorMessage));
+      return currentUnderstanding;
+    } finally {
+      this.updateState({ isProcessing: false });
+    }
   }
 }
