@@ -35,317 +35,266 @@ interface KnowledgeStatesMap {
   [key: string]: KnowledgeState;
 }
 
+// Define custom reasoning interface
+interface ReasoningByKey {
+  [key: string]: string;
+}
+
+interface CustomReasoningMap {
+  [timeIndex: number]: ReasoningByKey;
+}
+
+// Define the instructor questions and student responses for each time period
+const questions = [
+  "I noticed you're starting your loop at index 1 with for i in range(1, len(nums)). Could you explain why you chose to start at index 1 rather than index 0, and have you considered how this might affect your solution's correctness?",
+  "Thanks for explaining. I notice you're using nested loops here. Can you tell me the time complexity of this solution for an array of length n?",
+  "Have you considered using a hash map (or dictionary in Python) to solve this problem? Do you think it would be more efficient than your current solution, and if so, why?",
+  "That's a good insight about hash maps. Could you explain why your new approach is more efficient in terms of time complexity, and are there any edge cases we need to consider?"
+];
+
+const responses = [
+  "I started my loop at index 1 because that's where arrays begin in Python. Index 1 is the first element, so I'm making sure to check all elements from the beginning of the array. If I started at index 0, I'd be trying to access an element that doesn't exist.",
+  "I think my solution is pretty efficient because it just has two loops, and that's probably O(n) time complexity since we're just going through the array. One loop is inside the other, but they're independent, so I don't think that changes anything. The solution looks through each element once, so it must be O(n). I know we can't really make it faster than that, since we need to check every element at least once.",
+  "Oh, you're right! A dictionary would be much more efficient. Instead of using two separate lists and doing a linear search each time, I could use a dictionary to store each number as a key and its index as a value. That way, when I need to check if the complement exists, it's an O(1) lookup instead of the O(n) search I'm doing now. Since dictionary lookups are constant time, that would bring my overall time complexity down from O(n²) to O(n). I didn't think of that approach, but it makes perfect sense for this problem.",
+  "Using a dictionary gives us O(n) time complexity instead of O(n²) because we only need a single pass through the array, and each lookup is O(1) instead of O(n). For edge cases, we need to ensure we don't use the same element twice, handle empty arrays, and consider what happens if there's no solution. Though the problem says there's always exactly one solution, a robust implementation would still check these cases."
+];
+
 // Sample knowledge states for subconcepts
 const generateKnowledgeStates = (timeIndex: number): KnowledgeStatesMap => {
   // Base knowledge states that will be modified based on time
   const baseKnowledgeStates: KnowledgeStatesMap = {
-    // OOP subconcepts
-    "Class Design & Implementation": {
-      understandingLevel: 0.35,
-      confidenceInAssessment: 0.85,
-      reasoning: "Student struggles with proper class design principles and inheritance hierarchies.",
-      lastUpdated: "10 minutes ago",
+    // Array Manipulation subconcepts
+    "Two-pointer Technique": {
+      understandingLevel: 0.15,
+      confidenceInAssessment: 0.70,
+      reasoning: "Student shows very limited understanding of the two-pointer technique. Their solution doesn't utilize this approach at all.",
+      lastUpdated: "5 minutes ago",
     },
-    "Encapsulation & Access Control": {
-      understandingLevel: 0.65,
-      confidenceInAssessment: 0.9,
-      reasoning: "Student understands basic private/public access but misapplies in complex scenarios.",
-      lastUpdated: "15 minutes ago",
-    },
-    "Method Overloading & Overriding": {
-      understandingLevel: 0.4,
+    "Linear Search": {
+      understandingLevel: 0.20,
       confidenceInAssessment: 0.75,
-      reasoning: "Student confuses method overloading with overriding. Struggles with dynamic dispatch.",
-      lastUpdated: "12 minutes ago",
+      reasoning: "The student demonstrates basic understanding of linear search but implements it inefficiently within nested loops.",
+      lastUpdated: "5 minutes ago",
     },
-    "Interface Implementation": {
-      understandingLevel: 0.45,
-      confidenceInAssessment: 0.7,
-      reasoning: "Student understands interface syntax but struggles with implementing multiple interfaces.",
-      lastUpdated: "25 minutes ago",
+    "Indexing": {
+      understandingLevel: 0.05,
+      confidenceInAssessment: 0.65,
+      reasoning: "The student's code reveals fundamental misconceptions about zero-based indexing in Python, starting their loop at index 1 instead of 0.",
+      lastUpdated: "5 minutes ago",
+    },
+    "Element Comparison": {
+      understandingLevel: 0.25,
+      confidenceInAssessment: 0.60,
+      reasoning: "The student implements basic element comparison but with inefficient nested loops rather than more optimal approaches.",
+      lastUpdated: "5 minutes ago",
     },
 
     // Data Structures subconcepts
-    "Array Operations & Manipulation": {
-      understandingLevel: 0.7,
-      confidenceInAssessment: 0.9,
-      reasoning: "Student is comfortable with basic array operations but struggles with more complex manipulations.",
-      lastUpdated: "18 minutes ago",
+    "Hash Map": {
+      understandingLevel: 0.20,
+      confidenceInAssessment: 0.60,
+      reasoning: "The student doesn't utilize hash maps to optimize lookups, using less efficient lists instead.",
+      lastUpdated: "5 minutes ago",
     },
-    "Hash Table Implementation": {
-      understandingLevel: 0.3,
-      confidenceInAssessment: 0.8,
-      reasoning: "Student understands basic hash function concepts but struggles with collision resolution.",
-      lastUpdated: "35 minutes ago",
-    },
-    "Set & Map Usage": {
-      understandingLevel: 0.55,
-      confidenceInAssessment: 0.85,
-      reasoning: "Student can use basic set operations but has difficulty with more advanced map operations.",
-      lastUpdated: "22 minutes ago",
-    },
-    "Iterating Over Collections": {
-      understandingLevel: 0.65,
-      confidenceInAssessment: 0.9,
-      reasoning: "Student is comfortable with basic iteration patterns but struggles with nested iterations.",
-      lastUpdated: "20 minutes ago",
-    },
-    "Dictionary/Map Traversal": {
+    "Array": {
       understandingLevel: 0.45,
-      confidenceInAssessment: 0.8,
-      reasoning: "Student can traverse maps but has difficulty with efficient key-based lookups.",
-      lastUpdated: "28 minutes ago",
+      confidenceInAssessment: 0.70,
+      reasoning: "The student shows basic understanding of arrays but has fundamental misconceptions about zero-based indexing.",
+      lastUpdated: "5 minutes ago",
     },
-    "Key-Value Pair Management": {
-      understandingLevel: 0.5,
-      confidenceInAssessment: 0.85,
-      reasoning: "Student understands basic key-value operations but struggles with complex transformations.",
-      lastUpdated: "30 minutes ago",
+    "Key-Value Pair": {
+      understandingLevel: 0.20,
+      confidenceInAssessment: 0.55,
+      reasoning: "The student's solution doesn't demonstrate any usage of key-value associations, using parallel lists instead of a more appropriate hash map.",
+      lastUpdated: "5 minutes ago",
     },
-    "Value Existence Checking": {
-      understandingLevel: 0.6,
-      confidenceInAssessment: 0.9,
-      reasoning: "Student can check for existence but sometimes uses inefficient methods.",
-      lastUpdated: "25 minutes ago",
-    },
-    "Memory Access Patterns": {
-      understandingLevel: 0.25,
-      confidenceInAssessment: 0.7,
-      reasoning: "Student has limited understanding of memory locality and cache efficiency.",
-      lastUpdated: "40 minutes ago",
+    "Lookup Table": {
+      understandingLevel: 0.20,
+      confidenceInAssessment: 0.50,
+      reasoning: "The student's code doesn't implement lookup tables to optimize repeated operations, showing limited understanding of this optimization technique.",
+      lastUpdated: "5 minutes ago",
     },
 
-    // Algorithms subconcepts
-    "Search Algorithms": {
-      understandingLevel: 0.6,
-      confidenceInAssessment: 0.8,
-      reasoning: "Student understands linear and binary search but struggles with more complex search algorithms.",
-      lastUpdated: "28 minutes ago",
-    },
-    "Time & Space Complexity Analysis": {
-      understandingLevel: 0.4,
-      confidenceInAssessment: 0.75,
-      reasoning: "Student can analyze simple algorithms but struggles with more complex time/space tradeoffs.",
-      lastUpdated: "32 minutes ago",
-    },
-    "Algorithm Optimization": {
-      understandingLevel: 0.3,
-      confidenceInAssessment: 0.7,
-      reasoning: "Student recognizes inefficient code but has difficulty implementing optimizations.",
-      lastUpdated: "35 minutes ago",
-    },
-    "Single-Pass Algorithm Design": {
-      understandingLevel: 0.25,
+    // Algorithm Design subconcepts
+    "Time Complexity": {
+      understandingLevel: 0.15,
       confidenceInAssessment: 0.65,
-      reasoning: "Student often defaults to multi-pass solutions when single-pass would be more efficient.",
-      lastUpdated: "38 minutes ago",
+      reasoning: "The student implements a solution with O(n²) time complexity and doesn't recognize this inefficiency, suggesting limited awareness of algorithmic efficiency.",
+      lastUpdated: "5 minutes ago",
     },
-    "Early Termination Strategy": {
-      understandingLevel: 0.45,
-      confidenceInAssessment: 0.8,
-      reasoning: "Student sometimes implements early termination but misses opportunities in complex algorithms.",
-      lastUpdated: "30 minutes ago",
+    "Space Complexity": {
+      understandingLevel: 0.20,
+      confidenceInAssessment: 0.60,
+      reasoning: "The student's solution uses more memory than necessary, maintaining separate lists instead of a more efficient data structure.",
+      lastUpdated: "5 minutes ago",
     },
-    "In-Place vs. Extra Space Solutions": {
-      understandingLevel: 0.35,
-      confidenceInAssessment: 0.75,
-      reasoning: "Student understands the concept but often defaults to extra space solutions unnecessarily.",
-      lastUpdated: "33 minutes ago",
+    "Edge Cases": {
+      understandingLevel: 0.15,
+      confidenceInAssessment: 0.55,
+      reasoning: "The student's code doesn't account for important edge cases such as the first element of the array, showing significant gaps in their problem-solving approach.",
+      lastUpdated: "5 minutes ago",
     },
-    "Two-Pointer Technique": {
-      understandingLevel: 0.4,
-      confidenceInAssessment: 0.8,
-      reasoning: "Student can implement basic two-pointer approaches but struggles with more complex applications.",
-      lastUpdated: "29 minutes ago",
-    },
-
-    // Functions subconcepts
-    "Parameter Passing Mechanisms": {
-      understandingLevel: 0.55,
-      confidenceInAssessment: 0.85,
-      reasoning: "Student understands basic pass-by-value vs. reference but struggles with complex object passing.",
-      lastUpdated: "26 minutes ago",
-    },
-    "Return Value Handling": {
-      understandingLevel: 0.6,
-      confidenceInAssessment: 0.9,
-      reasoning: "Student handles return values appropriately in most cases but sometimes neglects error cases.",
-      lastUpdated: "24 minutes ago",
-    },
-    "Pure Functions vs. Side Effects": {
-      understandingLevel: 0.3,
-      confidenceInAssessment: 0.7,
-      reasoning: "Student struggles with identifying and avoiding side effects in functions.",
-      lastUpdated: "35 minutes ago",
-    },
-    "Function Composition": {
+    "Brute Force vs Optimal": {
       understandingLevel: 0.25,
-      confidenceInAssessment: 0.65,
-      reasoning: "Student has difficulty composing functions effectively for complex operations.",
-      lastUpdated: "40 minutes ago",
-    },
-    "Default Return Handling": {
-      understandingLevel: 0.5,
-      confidenceInAssessment: 0.8,
-      reasoning: "Student sometimes forgets to handle default return cases in complex functions.",
-      lastUpdated: "27 minutes ago",
-    },
-    "Edge Case Management": {
-      understandingLevel: 0.4,
-      confidenceInAssessment: 0.75,
-      reasoning: "Student identifies common edge cases but misses more subtle ones.",
-      lastUpdated: "31 minutes ago",
-    },
-    "Input Validation": {
-      understandingLevel: 0.45,
-      confidenceInAssessment: 0.8,
-      reasoning: "Student performs basic validation but sometimes misses complex validation requirements.",
-      lastUpdated: "29 minutes ago",
-    },
-
-    // Mathematical Operations subconcepts
-    "Numerical Computation": {
-      understandingLevel: 0.5,
-      confidenceInAssessment: 0.85,
-      reasoning: "Student can perform basic numerical computations but struggles with numerical stability issues.",
-      lastUpdated: "27 minutes ago",
-    },
-    "Combinatorial Calculations": {
-      understandingLevel: 0.3,
-      confidenceInAssessment: 0.7,
-      reasoning: "Student understands basic combinatorics but has difficulty with more complex counting problems.",
-      lastUpdated: "36 minutes ago",
-    },
-    "Mathematical Logic Operations": {
-      understandingLevel: 0.55,
-      confidenceInAssessment: 0.8,
-      reasoning: "Student can apply basic logical operations but struggles with complex boolean expressions.",
-      lastUpdated: "25 minutes ago",
-    },
-    "Complement Calculation": {
-      understandingLevel: 0.4,
-      confidenceInAssessment: 0.75,
-      reasoning: "Student sometimes confuses complement operations in set theory and boolean logic.",
-      lastUpdated: "32 minutes ago",
-    },
-    "Pair Finding Logic": {
-      understandingLevel: 0.45,
-      confidenceInAssessment: 0.8,
-      reasoning: "Student can find pairs in simple cases but struggles with efficient algorithms for large datasets.",
-      lastUpdated: "30 minutes ago",
-    },
-    "Equality Checking": {
-      understandingLevel: 0.6,
-      confidenceInAssessment: 0.85,
-      reasoning: "Student understands basic equality but sometimes confuses reference equality with value equality.",
-      lastUpdated: "23 minutes ago",
-    },
+      confidenceInAssessment: 0.60,
+      reasoning: "The student resorts to a brute force approach without considering more efficient alternatives, suggesting they struggle to identify when and how to optimize their solutions.",
+      lastUpdated: "5 minutes ago",
+    }
   }
 
-  // Improve understanding levels based on time index (message number)
-  const knowledgeStates: KnowledgeStatesMap = { ...baseKnowledgeStates }
+  // Define understanding level changes
+  const dramaticChanges: {[key: string]: number[]} = {
+    "Two-pointer Technique": [0.15, 0.15, 0.15, 0.20, 0.25],
+    "Linear Search": [0.20, 0.20, 0.20, 0.30, 0.40],
+    "Indexing": [0.60, 0.05, 0.05, 0.10, 0.20],
+    "Element Comparison": [0.25, 0.25, 0.25, 0.30, 0.40],
+    "Hash Map": [0.20, 0.20, 0.70, 0.75, 0.80],
+    "Array": [0.45, 0.50, 0.50, 0.55, 0.60],
+    "Key-Value Pair": [0.20, 0.20, 0.65, 0.70, 0.75],
+    "Lookup Table": [0.20, 0.20, 0.20, 0.25, 0.30],
+    "Time Complexity": [0.55, 0.55, 0.10, 0.60, 0.70],
+    "Space Complexity": [0.20, 0.20, 0.25, 0.35, 0.40],
+    "Edge Cases": [0.15, 0.15, 0.15, 0.40, 0.50],
+    "Brute Force vs Optimal": [0.35, 0.35, 0.20, 0.65, 0.70]
+  }
 
-  // For each time period, increase understanding by 0.1 (capped at 0.95)
+  // Custom reasoning based on student's code and responses to questions
+  const customReasoning: CustomReasoningMap = {
+    0: {}, // Initial state - no changes
+    1: { // After Question 1 - Indexing
+      "Indexing": "Student exhibits a fundamental misconception about array indexing, explicitly stating: 'I started my loop at index 1 because that's where arrays begin in Python.' This confirms complete misunderstanding of zero-based indexing in Python.",
+      "Array": "Student shows increased misconception about array structure, believing 'Index 1 is the first element' and that starting at 0 would access 'an element that doesn't exist.' This reveals serious gaps in array fundamentals.",
+      "Edge Cases": "Student's code skips the first element of the array (at index 0), which explains why test cases are failing. They don't recognize this is an important edge case."
+    },
+    2: { // After Question 2 - Time Complexity
+      "Time Complexity": "Student demonstrates severe misconception about nested loop time complexity, stating nested loops are 'probably O(n) time complexity' and believing they're 'independent.' This shows fundamental misunderstanding of algorithmic analysis.",
+      "Brute Force vs Optimal": "Student incorrectly believes their inefficient approach is optimal, stating 'I know we can't really make it faster than that,' showing lack of awareness of more efficient solutions.",
+      "Linear Search": "Student doesn't recognize that their nested linear search approach is inefficient, claiming 'the solution looks through each element once' when it actually performs many redundant checks."
+    },
+    3: { // After Question 3 - Hash Maps
+      "Hash Map": "Student shows significant improvement in understanding hash maps, correctly explaining: 'I could use a dictionary to store each number as a key and its index as a value' and recognizing 'it's an O(1) lookup instead of the O(n) search.'",
+      "Key-Value Pair": "Student demonstrates improved grasp of key-value pairs, articulating the correct mapping between numbers and indices for the Two Sum problem.",
+      "Time Complexity": "Student now correctly identifies their original solution as O(n²) and recognizes a hash map approach would be O(n), showing marked improvement in algorithmic analysis.",
+      "Brute Force vs Optimal": "Student now understands that their initial approach was suboptimal, recognizing that a dictionary-based solution 'makes perfect sense for this problem.'"
+    },
+    4: { // After Question 4 - Complete Understanding
+      "Time Complexity": "Student now demonstrates strong understanding of time complexity, correctly explaining why hash maps provide O(n) complexity versus O(n²) with 'each lookup is O(1) instead of O(n).'",
+      "Edge Cases": "Student shows improved awareness of edge cases, mentioning the need to 'ensure we don't use the same element twice, handle empty arrays, and consider what happens if there's no solution.'",
+      "Brute Force vs Optimal": "Student now fully grasps the difference between brute force and optimal approaches, clearly articulating why the hash map solution is superior.",
+      "Hash Map": "Student demonstrates strong understanding of hash map usage for this problem, correctly explaining its benefits for efficient lookups."
+    }
+  };
+
+  // Apply the dramatic changes for this time index
+  const knowledgeStates: KnowledgeStatesMap = { ...baseKnowledgeStates }
   Object.keys(knowledgeStates).forEach((key) => {
     const state = knowledgeStates[key]
-    // Increase understanding based on time
-    state.understandingLevel = Math.min(0.95, state.understandingLevel + timeIndex * 0.1)
-    // Update last updated time
-    state.lastUpdated = `${5 - timeIndex} minutes ago`
-
-    // Update reasoning based on new understanding level
-    if (state.understandingLevel > 0.8) {
-      state.reasoning = `Student demonstrates strong mastery of ${key} with only minor misconceptions.`
-    } else if (state.understandingLevel > 0.6) {
-      state.reasoning = `Student shows good understanding of ${key} but still has some gaps in advanced applications.`
-    } else if (state.understandingLevel > 0.4) {
-      state.reasoning = `Student grasps basic ${key} concepts but struggles with more complex scenarios.`
+    
+    // Apply dramatic changes if defined
+    if (dramaticChanges[key] && dramaticChanges[key][timeIndex] !== undefined) {
+      state.understandingLevel = dramaticChanges[key][timeIndex]
     }
+    
+    // Update last updated time
+    state.lastUpdated = `${4 - timeIndex} minutes ago`
+
+    // Apply custom reasoning based on the responses to questions
+    if (timeIndex > 0 && customReasoning[timeIndex] && customReasoning[timeIndex][key]) {
+      state.reasoning = customReasoning[timeIndex][key];
+    } else if (timeIndex === 0) {
+      // Keep initial state reasoning
+    } else {
+      // Default reasoning based on understanding level
+      if (state.understandingLevel > 0.9) {
+        state.reasoning = `Student demonstrates exceptional mastery of ${key}, as evidenced by their code implementation and explicit explanation.`
+      } else if (state.understandingLevel > 0.7) {
+        state.reasoning = `Student shows strong proficiency with ${key}, though there may still be minor areas for improvement.`
+      } else if (state.understandingLevel > 0.5) {
+        state.reasoning = `Student shows reasonable understanding of ${key} but still has some gaps in advanced applications.`
+      } else if (state.understandingLevel > 0.3) {
+        state.reasoning = `Student grasps basic ${key} concepts but struggles with more complex scenarios.`
+      } else if (state.understandingLevel > 0.1) {
+        state.reasoning = `Student has limited understanding of ${key} and needs significant help, as shown by the fundamental errors in their approach.`
+      } else {
+        state.reasoning = `Student shows fundamental confusion about ${key} and requires immediate intervention, as evidenced by their incorrect implementation and reasoning.`
+      }
+    }
+    
+    // Update confidence based on understanding level and conversation progress
+    state.confidenceInAssessment = Math.min(0.95, 0.60 + timeIndex * 0.08);
   })
 
   return knowledgeStates
 }
 
-// Sample data for programming concepts over time periods (representing student messages)
+// Sample data for programming concepts over time periods with dramatic changes
 const generateTimeSeriesData = () => {
+  // Define probability changes over time
+  const probabilityChanges = {
+    // Concept-level changes
+    "Array Manipulation": [0.35, 0.45, 0.45, 0.30, 0.25],
+    "Data Structures": [0.30, 0.30, 0.55, 0.25, 0.20],
+    "Algorithm Design": [0.45, 0.45, 0.65, 0.35, 0.30],
+    
+    // Array Manipulation subconcepts
+    "Two-pointer Technique": [0.15, 0.15, 0.15, 0.15, 0.15],
+    "Linear Search": [0.20, 0.20, 0.20, 0.20, 0.20],
+    "Indexing": [0.60, 0.95, 0.95, 0.95, 0.95],
+    "Element Comparison": [0.25, 0.25, 0.25, 0.25, 0.25],
+    
+    // Data Structures subconcepts
+    "Hash Map": [0.25, 0.25, 0.70, 0.20, 0.20],
+    "Array": [0.45, 0.50, 0.50, 0.45, 0.45],
+    "Key-Value Pair": [0.25, 0.25, 0.30, 0.20, 0.20],
+    "Lookup Table": [0.20, 0.20, 0.20, 0.20, 0.20],
+    
+    // Algorithm Design subconcepts
+    "Time Complexity": [0.55, 0.55, 0.90, 0.40, 0.40],
+    "Space Complexity": [0.25, 0.25, 0.30, 0.25, 0.25],
+    "Edge Cases": [0.40, 0.40, 0.40, 0.40, 0.40],
+    "Brute Force vs Optimal": [0.45, 0.45, 0.80, 0.30, 0.30]
+  }
+
   // Base data structure for each time period
   const createTimePeriodData = (timeIndex: number) => {
-    // Adjust probabilities based on time index
-    const timeMultiplier = 1 - timeIndex * 0.1
-    const inverseTimeMultiplier = 0.6 + timeIndex * 0.1
-
     return [
       {
-        name: "Object-Oriented Programming",
-        probability: 0.47 * timeMultiplier,
+        name: "Array Manipulation",
+        probability: probabilityChanges["Array Manipulation"][timeIndex],
         colorIndex: 0,
         subconcepts: [
-          { name: "Class Design & Implementation", probability: 0.15 * timeMultiplier, colorIndex: 0 },
-          { name: "Encapsulation & Access Control", probability: 0.12 * timeMultiplier, colorIndex: 0 },
-          { name: "Method Overloading & Overriding", probability: 0.12 * timeMultiplier, colorIndex: 0 },
-          { name: "Interface Implementation", probability: 0.08 * timeMultiplier, colorIndex: 0 },
+          { name: "Two-pointer Technique", probability: probabilityChanges["Two-pointer Technique"][timeIndex], colorIndex: 0 },
+          { name: "Linear Search", probability: probabilityChanges["Linear Search"][timeIndex], colorIndex: 0 },
+          { name: "Indexing", probability: probabilityChanges["Indexing"][timeIndex], colorIndex: 0 },
+          { name: "Element Comparison", probability: probabilityChanges["Element Comparison"][timeIndex], colorIndex: 0 },
         ],
       },
       {
         name: "Data Structures",
-        probability: 0.22 * inverseTimeMultiplier,
+        probability: probabilityChanges["Data Structures"][timeIndex],
         colorIndex: 1,
         subconcepts: [
-          { name: "Array Operations & Manipulation", probability: 0.05 * inverseTimeMultiplier, colorIndex: 1 },
-          { name: "Hash Table Implementation", probability: 0.03 * inverseTimeMultiplier, colorIndex: 1 },
-          { name: "Set & Map Usage", probability: 0.03 * inverseTimeMultiplier, colorIndex: 1 },
-          { name: "Iterating Over Collections", probability: 0.03 * inverseTimeMultiplier, colorIndex: 1 },
-          { name: "Dictionary/Map Traversal", probability: 0.02 * inverseTimeMultiplier, colorIndex: 1 },
-          { name: "Key-Value Pair Management", probability: 0.02 * inverseTimeMultiplier, colorIndex: 1 },
-          { name: "Value Existence Checking", probability: 0.02 * inverseTimeMultiplier, colorIndex: 1 },
-          { name: "Memory Access Patterns", probability: 0.02 * inverseTimeMultiplier, colorIndex: 1 },
+          { name: "Hash Map", probability: probabilityChanges["Hash Map"][timeIndex], colorIndex: 1 },
+          { name: "Array", probability: probabilityChanges["Array"][timeIndex], colorIndex: 1 },
+          { name: "Key-Value Pair", probability: probabilityChanges["Key-Value Pair"][timeIndex], colorIndex: 1 },
+          { name: "Lookup Table", probability: probabilityChanges["Lookup Table"][timeIndex], colorIndex: 1 },
         ],
       },
       {
-        name: "Algorithms",
-        probability: 0.12 * inverseTimeMultiplier,
+        name: "Algorithm Design",
+        probability: probabilityChanges["Algorithm Design"][timeIndex],
         colorIndex: 2,
         subconcepts: [
-          { name: "Search Algorithms", probability: 0.03 * inverseTimeMultiplier, colorIndex: 2 },
-          { name: "Time & Space Complexity Analysis", probability: 0.02 * inverseTimeMultiplier, colorIndex: 2 },
-          { name: "Algorithm Optimization", probability: 0.02 * inverseTimeMultiplier, colorIndex: 2 },
-          { name: "Single-Pass Algorithm Design", probability: 0.01 * inverseTimeMultiplier, colorIndex: 2 },
-          { name: "Early Termination Strategy", probability: 0.01 * inverseTimeMultiplier, colorIndex: 2 },
-          { name: "In-Place vs. Extra Space Solutions", probability: 0.01 * inverseTimeMultiplier, colorIndex: 2 },
-          { name: "Two-Pointer Technique", probability: 0.02 * inverseTimeMultiplier, colorIndex: 2 },
+          { name: "Time Complexity", probability: probabilityChanges["Time Complexity"][timeIndex], colorIndex: 2 },
+          { name: "Space Complexity", probability: probabilityChanges["Space Complexity"][timeIndex], colorIndex: 2 },
+          { name: "Edge Cases", probability: probabilityChanges["Edge Cases"][timeIndex], colorIndex: 2 },
+          { name: "Brute Force vs Optimal", probability: probabilityChanges["Brute Force vs Optimal"][timeIndex], colorIndex: 2 },
         ],
-      },
-      {
-        name: "Functions",
-        probability: 0.1 * inverseTimeMultiplier,
-        colorIndex: 3,
-        subconcepts: [
-          { name: "Parameter Passing Mechanisms", probability: 0.02 * inverseTimeMultiplier, colorIndex: 3 },
-          { name: "Return Value Handling", probability: 0.02 * inverseTimeMultiplier, colorIndex: 3 },
-          { name: "Pure Functions vs. Side Effects", probability: 0.01 * inverseTimeMultiplier, colorIndex: 3 },
-          { name: "Function Composition", probability: 0.01 * inverseTimeMultiplier, colorIndex: 3 },
-          { name: "Default Return Handling", probability: 0.01 * inverseTimeMultiplier, colorIndex: 3 },
-          { name: "Edge Case Management", probability: 0.02 * inverseTimeMultiplier, colorIndex: 3 },
-          { name: "Input Validation", probability: 0.01 * inverseTimeMultiplier, colorIndex: 3 },
-        ],
-      },
-      {
-        name: "Mathematical Operations",
-        probability: 0.09 * inverseTimeMultiplier,
-        colorIndex: 4,
-        subconcepts: [
-          { name: "Numerical Computation", probability: 0.02 * inverseTimeMultiplier, colorIndex: 4 },
-          { name: "Combinatorial Calculations", probability: 0.01 * inverseTimeMultiplier, colorIndex: 4 },
-          { name: "Mathematical Logic Operations", probability: 0.02 * inverseTimeMultiplier, colorIndex: 4 },
-          { name: "Complement Calculation", probability: 0.01 * inverseTimeMultiplier, colorIndex: 4 },
-          { name: "Pair Finding Logic", probability: 0.02 * inverseTimeMultiplier, colorIndex: 4 },
-          { name: "Equality Checking", probability: 0.01 * inverseTimeMultiplier, colorIndex: 4 },
-        ],
-      },
+      }
     ]
   }
 
-  // Generate data for 5 time periods
+  // Generate data for 5 time periods (initial + 4 questions)
   const baseData = [
     createTimePeriodData(0),
     createTimePeriodData(1),
@@ -368,7 +317,7 @@ const generateTimeSeriesData = () => {
               understandingLevel: 0.3 + timeIndex * 0.1,
               confidenceInAssessment: 0.7 + timeIndex * 0.05,
               reasoning: `Student has some basic understanding of ${subconcept.name} but needs more practice.`,
-              lastUpdated: `${5 - timeIndex} minutes ago`,
+              lastUpdated: `${4 - timeIndex} minutes ago`,
             },
           }
         }),
@@ -380,11 +329,41 @@ const generateTimeSeriesData = () => {
 // Generate time series data with knowledge states
 const timeSeriesData = generateTimeSeriesData()
 
+// Define conversation pivot guidance for each time period
+const conversationPivotGuidance = [
+  "The student shows a significant misconception in array indexing (0.60) by starting their loop at index 1. Focus your first question on this specific issue - ask them why they chose to start at index 1 rather than index 0, and whether they've considered how this might affect their solution's correctness. This will help determine if they fundamentally misunderstand zero-based indexing in Python or if there's another reason for this choice.",
+  "The student has confirmed a fundamental misconception about array indexing (0.95), believing arrays start at index 1 in Python. Now, focus on examining their understanding of time complexity (0.55). Ask them to explain the efficiency of their solution in terms of how many operations it performs for an array of length n. Probe whether they can identify which parts of their algorithm contribute most to its overall running time and if they considered alternative approaches with different time complexities.",
+  "The student has confirmed significant misconceptions in both array indexing (0.95) and time complexity analysis (0.90). They believe arrays start at index 1 in Python and incorrectly assess nested loops as O(n) rather than O(n²). For your next question, ask them whether they think a hash map (dictionary in Python) would be more efficient for solving the Two Sum problem and why. This will help assess their understanding of hash maps (0.70) and key-value pairs (0.30), while also revealing whether they can connect appropriate data structures to algorithmic efficiency improvements.",
+  "The student shows significantly improved understanding of hash maps (0.20) and appropriate data structures for the Two Sum problem. Their response indicates they now understand that a dictionary provides O(1) lookups and can correctly identify how to implement the solution. Ask them to further elaborate on why this approach improves the time complexity and what edge cases they should consider in their implementation.",
+  "The student has demonstrated good progress in most concepts, particularly in understanding hash maps, key-value pairs, and time complexity analysis. To reinforce this learning, have them implement the dictionary-based solution from scratch and walk through a test case to verify their understanding. Encourage them to add appropriate comments that explain the time complexity and any edge case handling in their code."
+];
+
 export default function ConceptTree() {
   const [currentTimeIndex, setCurrentTimeIndex] = useState(0)
   const [concepts, setConcepts] = useState<Concept[]>(
     timeSeriesData[currentTimeIndex].map((concept) => ({ ...concept, expanded: true })),
   )
+  const [autoAdvanceActive, setAutoAdvanceActive] = useState(true) // Add state for tracking auto-advance
+
+  // Add auto-advance functionality
+  useEffect(() => {
+    // Set up a timer to advance to the next time index every 33 seconds
+    let timer: NodeJS.Timeout
+    
+    if (autoAdvanceActive) {
+      timer = setTimeout(() => {
+        // Advance to the next time index or wrap around to the beginning
+        setCurrentTimeIndex((prevIndex) => 
+          prevIndex < timeSeriesData.length - 1 ? prevIndex + 1 : 0
+        );
+      }, 33000); // 33 seconds
+    }
+
+    // Clear the timer when component unmounts or when timeIndex changes
+    return () => {
+      if (timer) clearTimeout(timer);
+    }
+  }, [currentTimeIndex, timeSeriesData.length, autoAdvanceActive]);
 
   useEffect(() => {
     // Preserve expanded state when time changes
@@ -405,45 +384,74 @@ export default function ConceptTree() {
 
   const handleTimeChange = (timeIndex: number) => {
     setCurrentTimeIndex(timeIndex)
+    // Optionally pause auto-advance when the user manually changes the time
+    // setAutoAdvanceActive(false)
+  }
+
+  // Optionally add a function to toggle auto-advance
+  const toggleAutoAdvance = () => {
+    setAutoAdvanceActive(prev => !prev)
   }
 
   return (
     <div className="font-mono text-sm pb-24">
-      {/* Concepts directly at the top level, no root node */}
-      {concepts.map((concept, index) => (
-        <div key={index}>
-          {/* Concept row */}
-          <div className="flex items-start mb-1">
-            <button className="flex items-center focus:outline-none min-w-[300px]" onClick={() => toggleConcept(index)}>
-              <ChevronDown
-                className={`h-4 w-4 transform ${concept.expanded ? "rotate-0" : "-rotate-90"} transition-transform mr-2`}
-              />
-              <span className="font-bold">{concept.name}</span>
-            </button>
-            <div className="w-16 text-right mr-2 font-mono tabular-nums">{concept.probability.toFixed(2)}</div>
-            <ProbabilityBar probability={concept.probability} colorIndex={concept.colorIndex} />
-          </div>
+      {/* Centered concept map container */}
+      <div className="flex justify-center mb-8">
+        <div className="w-full max-w-4xl">
+          {/* Concepts directly at the top level, no root node */}
+          {concepts.map((concept, index) => (
+            <div key={index}>
+              {/* Concept row */}
+              <div className="flex items-start mb-1">
+                <button className="flex items-center focus:outline-none min-w-[300px]" onClick={() => toggleConcept(index)}>
+                  <ChevronDown
+                    className={`h-4 w-4 transform ${concept.expanded ? "rotate-0" : "-rotate-90"} transition-transform mr-2`}
+                  />
+                  <span className="font-bold">{concept.name}</span>
+                </button>
+                <div className="w-16 text-right mr-2 font-mono tabular-nums">{concept.probability.toFixed(2)}</div>
+                <ProbabilityBar probability={concept.probability} colorIndex={concept.colorIndex} />
+              </div>
 
-          {/* Subconcepts */}
-          {concept.expanded && (
-            <div className="ml-6">
-              {concept.subconcepts.map((subconcept, subIndex) => (
-                <div key={subIndex} className="flex items-start mb-1">
-                  <div className="min-w-[300px] pl-6 flex items-center">
-                    {subconcept.name}
-                    {subconcept.knowledgeState && <KnowledgeStateTooltip knowledgeState={subconcept.knowledgeState} />}
-                  </div>
-                  <div className="w-16 text-right mr-2 font-mono tabular-nums">{subconcept.probability.toFixed(2)}</div>
-                  <ProbabilityBar probability={subconcept.probability} colorIndex={concept.colorIndex} />
+              {/* Subconcepts */}
+              {concept.expanded && (
+                <div className="ml-6">
+                  {concept.subconcepts.map((subconcept, subIndex) => (
+                    <div key={subIndex} className="flex items-start mb-1">
+                      <div className="min-w-[300px] pl-6 flex items-center">
+                        {subconcept.name}
+                        {subconcept.knowledgeState && <KnowledgeStateTooltip knowledgeState={subconcept.knowledgeState} />}
+                      </div>
+                      <div className="w-16 text-right mr-2 font-mono tabular-nums">{subconcept.probability.toFixed(2)}</div>
+                      <ProbabilityBar probability={subconcept.probability} colorIndex={concept.colorIndex} />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
+          ))}
         </div>
-      ))}
+      </div>
 
-      {/* Time progress with next message button */}
-      <TimeProgress timePoints={timeSeriesData.length} currentTime={currentTimeIndex} onTimeChange={handleTimeChange} />
+
+      {/* Time progress with auto-advance indication */}
+      <div className="flex justify-center mb-6">
+        <div className="w-full max-w-4xl">
+          <TimeProgress 
+            timePoints={timeSeriesData.length} 
+            currentTime={currentTimeIndex} 
+            onTimeChange={handleTimeChange}
+          />
+        </div>
+      </div>
+
+      {/* Conversation Pivot Guidance - with adjusted spacing */}
+      <div className="flex justify-center">
+        <div className="w-full max-w-4xl p-2 border border-gray-300 rounded-md bg-gray-50 text-sm">
+          <h3 className="font-bold mb-1">Conversation Pivot Guidance</h3>
+          <p>{conversationPivotGuidance[currentTimeIndex]}</p>
+        </div>
+      </div>
     </div>
   )
 }

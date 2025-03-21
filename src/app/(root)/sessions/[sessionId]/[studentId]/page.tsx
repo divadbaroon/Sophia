@@ -648,9 +648,7 @@ export default function StudentSessionDashboard() {
                 </div>
               </div>
             </div>
-            <button className="bg-blue-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-              End Session
-            </button>
+  
           </div>
         </div>
       </header>
