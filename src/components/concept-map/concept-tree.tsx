@@ -6,45 +6,9 @@ import ProbabilityBar from "./probability-bar"
 import TimeProgress from "./time-progress"
 import KnowledgeStateTooltip from "./knowledge-state-tooltip"
 
-// Define the data structure for knowledge state
-interface KnowledgeState {
-  understandingLevel: number
-  confidenceInAssessment: number
-  reasoning: string
-  lastUpdated: string
-}
+import { Concept, KnowledgeStatesMap, CustomReasoningMap } from "@/types"
 
-// Define the data structure for concepts
-interface Subconcept {
-  name: string
-  probability: number
-  colorIndex: number
-  knowledgeState?: KnowledgeState
-}
-
-interface Concept {
-  name: string
-  probability: number
-  colorIndex: number
-  subconcepts: Subconcept[]
-  expanded?: boolean
-}
-
-// Define a type for the knowledge states mapping
-interface KnowledgeStatesMap {
-  [key: string]: KnowledgeState;
-}
-
-// Define custom reasoning interface
-interface ReasoningByKey {
-  [key: string]: string;
-}
-
-interface CustomReasoningMap {
-  [timeIndex: number]: ReasoningByKey;
-}
-
-// Define the instructor questions and student responses for each time period
+// Example Conversation to generate this 
 const questions = [
   "I noticed you're starting your loop at index 1 with for i in range(1, len(nums)). Could you explain why you chose to start at index 1 rather than index 0, and have you considered how this might affect your solution's correctness?",
   "Thanks for explaining. I notice you're using nested loops here. Can you tell me the time complexity of this solution for an array of length n?",
@@ -59,9 +23,8 @@ const responses = [
   "Using a dictionary gives us O(n) time complexity instead of O(n²) because we only need a single pass through the array, and each lookup is O(1) instead of O(n). For edge cases, we need to ensure we don't use the same element twice, handle empty arrays, and consider what happens if there's no solution. Though the problem says there's always exactly one solution, a robust implementation would still check these cases."
 ];
 
-// Sample knowledge states for subconcepts
+// Generates Sample knowledge states for subconcepts
 const generateKnowledgeStates = (timeIndex: number): KnowledgeStatesMap => {
-  // Base knowledge states that will be modified based on time
   const baseKnowledgeStates: KnowledgeStatesMap = {
     // Array Manipulation subconcepts
     "Two-pointer Technique": {
@@ -433,6 +396,13 @@ export default function ConceptTree() {
         </div>
       </div>
 
+      <div className="flex justify-center mb-2">
+        <div className="w-full max-w-4xl">
+          <p className="text-sm text-gray-600 text-center">
+            Visualization displays probability estimates of student misconceptions across related programming concepts.
+          </p>
+        </div>
+      </div>
 
       {/* Time progress with auto-advance indication */}
       <div className="flex justify-center mb-6">
