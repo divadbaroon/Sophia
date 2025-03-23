@@ -31,7 +31,7 @@ export default function TimeProgress({ timePoints, currentTime, onTimeChange }: 
         </Button>
 
         <div className="font-mono text-sm">
-          Student Message: <span className="font-bold">{currentTime + 1}</span> of {timePoints}
+          Student Message: <span className="font-bold">{currentTime + 1}</span>
         </div>
 
         <Button variant="outline" size="sm" onClick={handleNextMessage} className="flex items-center gap-1">
