@@ -13,7 +13,6 @@ interface User {
   email?: string
   id: string
   name?: string
-  // Add other user properties as needed
 }
 
 type NavItem = {
@@ -29,30 +28,25 @@ export default function Navigation({ user }: NavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const pathname = usePathname()
 
-  // Check if the current path matches the sessions join pattern
-  const isSessionJoinPage = /^\/sessions\/\d+\/join$/.test(pathname)
+  // Check if the current path matches the session join pattern
+  const isSessionJoinPage = pathname.includes("/join");
 
-  const navigationItems: (string | NavItem)[] = user
-    ? [
-        {
-          name: "Dashboard",
-          href: "/dashboard",
-        },
-        {
-          name: "Calendar",
-          href: "/calendar",
-        },
-      ]
-    : isSessionJoinPage 
-      ? [] // Empty array for session join pages
-      : ["About", "Features", "Documentation"]
+  const navigationItems: (string | NavItem)[] =
+    isSessionJoinPage
+      ? [] 
+      : user
+        ? [
+            { name: "Dashboard", href: "/dashboard" },
+            { name: "Calendar", href: "/calendar" },
+          ]
+        : ["About", "Features", "Documentation"];
 
   return (
     <nav className="fixed w-full bg-white/80 shadow-lg z-50">
       <div className="px-6 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <Link href="/home" className="text-3xl font-bold mr-8 text-black">
+            <Link href="/home" className="text-3xl font-bold mr-8 text-black ml-1">
               ATLAS<span className="text-blue-600">.</span>
             </Link>
             <div className="hidden md:flex space-x-6 mt-2">
