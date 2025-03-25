@@ -320,6 +320,12 @@ export interface ConversationManagerOptions {
   fileContext?: FileContextType | null;
 }
 
+export interface ConversationManagerOptions {
+  silenceThreshold: number;
+  deepgramApiKey: string;
+  fileContext?: any;
+}
+
 export interface LiveTranscriptionResponse {
   channel: {
     alternatives: {
@@ -365,6 +371,17 @@ export interface ConversationMessage {
   role: 'user' | 'assistant' | 'system';  
   content: string;
   timestamp?: number;  
+}
+
+export interface RecognitionDisplayProps {
+  transcript: string | null
+  status: ConversationStatus 
+  isUserSpeaking: boolean
+  bargeInDetected: boolean
+  conversationHistory: ConversationMessage[] | null
+  showInitialGreeting: boolean
+  getLatestAssistantMessage: () => string | null
+  voiceState: VoiceCircleState
 }
 
 export interface TranscriptHistoryProps {
