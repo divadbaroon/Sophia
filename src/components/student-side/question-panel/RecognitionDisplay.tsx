@@ -15,22 +15,36 @@ const RecognitionDisplay: React.FC<RecognitionDisplayProps> = ({
   conversationHistory,
   showInitialGreeting,
   getLatestAssistantMessage,
-  voiceState,
-  currentStreamingMessage
+  voiceState
 }) => {
-  const lastMessage = getLatestAssistantMessage();
-  const [previousMessage, setPreviousMessage] = useState<string | null>(null);
+  // State to track whether we're in the transition period before speech begins
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [displayedMessage, setDisplayedMessage] = useState<string | null>(null);
   
-  // Track when a new message starts
+  // Detect changes in status to handle the transition delay
   useEffect(() => {
-    if (status === ConversationStatus.SPEAKING && lastMessage !== previousMessage) {
-      setPreviousMessage(lastMessage);
+    // When status changes to SPEAKING
+    if (status === ConversationStatus.SPEAKING) {
+      // Set transition state to true
+      setIsTransitioning(true);
+      
+      // After a delay, set transition to false to show the message
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+        setDisplayedMessage(getLatestAssistantMessage());
+      }, 2000); // 1.5 second delay
+      
+      return () => clearTimeout(timer);
+    } else if (status !== ConversationStatus.SPEAKING) {
+      // Reset transition state when not speaking
+      setIsTransitioning(false);
+      setDisplayedMessage(null);
     }
-  }, [status, lastMessage, previousMessage]);
-
+  }, [status, getLatestAssistantMessage]);
+  
   return (
     <div 
-      className="rounded-md border p-4 relative bg-gray-50"
+      className="rounded-md border p-4 relative"
       style={{ 
         height: 'auto',
         minHeight: '200px',
@@ -44,72 +58,54 @@ const RecognitionDisplay: React.FC<RecognitionDisplayProps> = ({
         </div>
       )}
       
-      {/* Only show Voice Circle when not speaking, not showing a message, and not recognizing speech */}
-      {status !== ConversationStatus.SPEAKING && 
-        !(status === ConversationStatus.IDLE && getLatestAssistantMessage()) && 
-        !(status === ConversationStatus.IDLE && isUserSpeaking) && (
-        <div className={`flex justify-center items-center mb-6 ${status === ConversationStatus.PROCESSING ? 'mt-6' : ''}`}>
-          <div className={`${status === ConversationStatus.PROCESSING ? 'h-28 w-28' : 'h-24 w-24'}`}>
-            <VoiceCircle state={voiceState} />
+      {/* Voice Circle Animation Container - Show when not speaking or during transition */}
+      {(status === ConversationStatus.PROCESSING || isTransitioning) && (
+        <div className={`flex justify-center items-center mb-6 mt-6`}>
+          <div className="h-28 w-28">
+            <VoiceCircle state={isTransitioning ? "processing" : voiceState} />
           </div>
         </div>
       )}
       
       {/* Content display based on state */}
       {status === ConversationStatus.IDLE && isUserSpeaking ? (
-        <div className="flex flex-col items-center justify-center h-full" style={{ minHeight: '180px' }}>
-          <div className="text-center py-3 px-4 bg-gray-100 rounded-2xl text-gray-700 shadow-sm">
-            <strong className="text-gray-800">Recognizing:</strong> {transcript}
-          </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="text-lg text-center">
+          Recognizing: {transcript}
         </div>
+      </div>
       ) : status === ConversationStatus.IDLE && !isUserSpeaking ? (
         getLatestAssistantMessage() ? (
-          // Show the last assistant message if available - without circle
-          <div className="flex flex-col items-start">
-            <div className="py-4 px-5 bg-white rounded-2xl text-gray-700 shadow-sm w-full font-medium"
-              style={{ 
-                minHeight: '180px',
-                height: 'auto',
-                whiteSpace: 'pre-wrap'
-              }}>
-              {lastMessage}
+          // Show the last assistant message if available
+          <div className="flex flex-col items-start p-2">
+            <div className="prose prose-sm w-full">
+              <p>{getLatestAssistantMessage()}</p>
             </div>
           </div>
         ) : showInitialGreeting ? (
           // Show initial greeting if no previous message
-          <div className="flex flex-col items-center justify-center mt-6">
-            <p className="text-muted-foreground text-center">
-              I'm listening. How can I help?
-            </p>
+          <div className="flex flex-col items-center justify-center">
+            <div className="text-lg text-muted-foreground">
+              Listening...
+            </div>
           </div>
         ) : (
           // Only show "Listening..." if there's no previous message and no greeting
-          <div className="flex flex-col items-center justify-center mt-6">
-            <p className="text-muted-foreground text-center">
+          <div className="flex flex-col items-center justify-center">
+            <div className="text-lg text-muted-foreground">
               Listening...
-            </p>
+            </div>
           </div>
         )
-      ) : status === ConversationStatus.SPEAKING ? (
-        // Simply show the text while speaking - removed the blue border
-        <div className="flex flex-col items-start">
-          <div className="py-4 px-5 bg-white rounded-2xl text-gray-700 shadow-sm w-full font-medium"
-            style={{ 
-              minHeight: '180px',
-              height: 'auto',
-              whiteSpace: 'pre-wrap'
-            }}>
-            {/* Show the current message text directly, no streaming, no border */}
-            {currentStreamingMessage?.text || lastMessage}
+      ) : status === ConversationStatus.SPEAKING && !isTransitioning ? (
+        <div className="flex flex-col items-start p-2">
+          <div className="prose prose-sm w-full">
+            <p style={{ whiteSpace: 'pre-wrap' }}>{displayedMessage}</p>
           </div>
-        </div>
-      ) : status === ConversationStatus.PROCESSING ? (
-        <div className="flex flex-col items-center justify-center mt-8">
- 
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}
 
-export default RecognitionDisplay;
+export default RecognitionDisplay
