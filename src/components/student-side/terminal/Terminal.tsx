@@ -1,18 +1,14 @@
-'use client'
+"use client"
 
-import React, { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
-import usePythonRunner from '@/utils/PythonExecuter'
-import { useFile } from '@/lib/context/FileContext'
-import { useToast } from '@/hooks/use-toast'
+import type React from "react"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import usePythonRunner from "@/utils/PythonExecuter"
+import { useFile } from "@/lib/context/FileContext"
+import { useToast } from "@/hooks/use-toast"
+import { Play } from "lucide-react"
 
 interface TestCase {
   nums: number[]
@@ -24,23 +20,23 @@ const testCases: TestCase[] = [
   {
     nums: [2, 7, 11, 15],
     target: 9,
-    expected: [0, 1]
+    expected: [0, 1],
   },
   {
     nums: [3, 2, 4],
     target: 6,
-    expected: [1, 2]
+    expected: [1, 2],
   },
   {
     nums: [3, 3],
     target: 6,
-    expected: [0, 1]
-  }
-];
+    expected: [0, 1],
+  },
+]
 
 const Terminal: React.FC = () => {
-  const [output, setOutput] = useState('')
-  const [compiler, setCompiler] = useState('python')
+  const [output, setOutput] = useState("")
+  const [compiler, setCompiler] = useState("python")
   const { pyodide } = usePythonRunner()
   const { fileContent, isSaved, setErrorContent } = useFile()
   const { toast } = useToast()
@@ -48,16 +44,16 @@ const Terminal: React.FC = () => {
   const handleRun = async (): Promise<void> => {
     if (!isSaved()) {
       toast({
-        title: 'Please save the file before running',
-        variant: 'destructive',
+        title: "Please save the file before running",
+        variant: "destructive",
       })
       return
     }
-    
-    if (compiler === 'python') {
+
+    if (compiler === "python") {
       try {
-        setOutput('')
-        
+        setOutput("")
+
         // First, execute the code to validate syntax
         const checkSyntaxCode = `
 from typing import List
@@ -71,25 +67,25 @@ def check_code_syntax():
         return False, str(e)
 
 syntax_valid, error_message = check_code_syntax()
-`.trim();
+`.trim()
 
-        console.log('Checking code syntax...');
-        await pyodide?.runPython(checkSyntaxCode);
-        
-        const syntaxValid = await pyodide?.globals.get('syntax_valid');
-        const errorMessage = await pyodide?.globals.get('error_message');
-        
+        console.log("Checking code syntax...")
+        await pyodide?.runPython(checkSyntaxCode)
+
+        const syntaxValid = await pyodide?.globals.get("syntax_valid")
+        const errorMessage = await pyodide?.globals.get("error_message")
+
         if (!syntaxValid) {
-          setOutput(`Error: ${errorMessage}`);
-          setErrorContent(`Error: ${errorMessage}`);
+          setOutput(`Error: ${errorMessage}`)
+          setErrorContent(`Error: ${errorMessage}`)
           toast({
-            title: 'Syntax Error',
-            description: 'Please fix the syntax errors in your code',
-            variant: 'destructive',
-          });
-          return;
+            title: "Syntax Error",
+            description: "Please fix the syntax errors in your code",
+            variant: "destructive",
+          })
+          return
         }
-        
+
         // If syntax is valid, run test cases
         const testRunnerCode = `
 from typing import List
@@ -149,87 +145,88 @@ else:
 # Restore stdout and get output
 sys.stdout = sys.__stdout__
 test_output = output_buffer.getvalue()
-`.trim();
+`.trim()
 
-        console.log('Running test cases...');
-        await pyodide?.runPython(testRunnerCode);
-        
-        const testOutput = await pyodide?.globals.get('test_output');
-        setOutput(testOutput || 'No output');
-        setErrorContent('');
-        
+        console.log("Running test cases...")
+        await pyodide?.runPython(testRunnerCode)
+
+        const testOutput = await pyodide?.globals.get("test_output")
+        setOutput(testOutput || "No output")
+        setErrorContent("")
+
         // Check if all tests passed
-        if (testOutput && testOutput.includes('All tests passed')) {
+        if (testOutput && testOutput.includes("All tests passed")) {
           toast({
-            title: 'Success',
-            description: 'All test cases passed! 🎉',
-            variant: 'default',
-          });
+            title: "Success",
+            description: "All test cases passed! 🎉",
+            variant: "default",
+          })
         } else if (testOutput) {
           toast({
-            title: 'Some tests failed',
-            description: 'Your solution works partially. Check the output for details.',
-            variant: 'default',
-          });
+            title: "Some tests failed",
+            description: "Your solution works partially. Check the output for details.",
+            variant: "default",
+          })
         }
       } catch (error: unknown) {
-        console.log('Detailed error:', error);
-        let errorMessage: string;
-        
+        console.log("Detailed error:", error)
+        let errorMessage: string
+
         if (error instanceof Error) {
-          errorMessage = error.message;
-        } else if (typeof error === 'string') {
-          errorMessage = error;
+          errorMessage = error.message
+        } else if (typeof error === "string") {
+          errorMessage = error
         } else {
-          errorMessage = 'An unknown error occurred';
+          errorMessage = "An unknown error occurred"
         }
-        
-        setOutput(errorMessage);
-        setErrorContent(errorMessage);
+
+        setOutput(errorMessage)
+        setErrorContent(errorMessage)
         toast({
-          title: 'Error',
-          description: 'Failed to execute code',
-          variant: 'destructive',
-        });
+          title: "Error",
+          description: "Failed to execute code",
+          variant: "destructive",
+        })
       }
     } else {
       toast({
-        title: 'Please select a valid compiler',
-        variant: 'destructive',
-      });
+        title: "Please select a valid compiler",
+        variant: "destructive",
+      })
     }
-  };
+  }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center">
-        <Button onClick={handleRun} className="m-2">
-          Run Tests
-        </Button>
-        <div className="m-2">
-          <Select 
-            defaultValue="python"
-            onValueChange={setCompiler}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select Compiler" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="python">Python</SelectItem>
-            </SelectContent>
-          </Select>
+    <div className="flex flex-col h-full bg-background">
+      <div className="flex items-center justify-between p-3 border-b">
+        <div className="flex items-center gap-2">
+          <Button onClick={handleRun} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Play className="h-3.5 w-3.5 mr-1.5" />
+            Run Tests
+          </Button>
+          <div>
+            <Select defaultValue="python" onValueChange={setCompiler}>
+              <SelectTrigger className="h-8 w-28 text-xs">
+                <SelectValue placeholder="Select Compiler" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="python">Python</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
-      <div className="h-full ml-2 mr-2 mb-2">
+      <div className="flex-1 p-3 bg-muted/30">
         <Textarea
           value={output}
           readOnly
-          className="h-full w-full resize-none font-mono"
+          className="h-full w-full resize-none font-mono text-sm bg-background border-muted"
           placeholder="Output will be displayed here..."
         />
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Terminal;
+export default Terminal
+
