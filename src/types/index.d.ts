@@ -320,12 +320,6 @@ export interface ConversationManagerOptions {
   fileContext?: FileContextType | null;
 }
 
-export interface ConversationManagerOptions {
-  silenceThreshold: number;
-  deepgramApiKey: string;
-  fileContext?: any;
-}
-
 export interface LiveTranscriptionResponse {
   channel: {
     alternatives: {
