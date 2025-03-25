@@ -12,7 +12,6 @@ const RecognitionDisplay: React.FC<RecognitionDisplayProps> = ({
   status,
   isUserSpeaking,
   bargeInDetected,
-  conversationHistory,
   showInitialGreeting,
   getLatestAssistantMessage,
   voiceState
