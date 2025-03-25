@@ -2,11 +2,10 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { Hash, Database } from "lucide-react"
-
+import { Database, Hash, LucideIcon } from 'lucide-react';
 import type { TaskSidebarProps } from "@/types"
 
-const conceptIcons: Record<string, { icon: any; className: string }> = {
+const conceptIcons: Record<string, { icon: LucideIcon; className: string }> = {
   Array: {
     icon: Database,
     className: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
@@ -18,7 +17,7 @@ const conceptIcons: Record<string, { icon: any; className: string }> = {
   },
 }
 
-export default function TaskSidebar({title, difficulty, description, examples, constraints }: TaskSidebarProps) {
+export default function TaskSidebar({title, description, examples, constraints }: TaskSidebarProps) {
   const concepts = ["Array", "Hash Table"]
   return (
     <div className="h-full flex flex-col bg-background -mt-7">
