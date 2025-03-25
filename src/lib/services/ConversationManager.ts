@@ -1,24 +1,27 @@
 import { createClient } from '@deepgram/sdk';
 import { LiveTranscriptionEvents, LiveClient } from '@deepgram/sdk';
-import { ClaudeMessage, LiveTranscriptionResponse } from "@/types";
-import { FileContextType, StreamingSentence, StreamingMessage, ConversationManagerOptions, ConversationState  } from '@/types';
-import { ElevenLabsService } from '@/lib/services/ElevenLabsService';
-import { prepareClaudePrompt } from "@/utils/claude/claudePromptCreation";
+import { LiveTranscriptionResponse } from "@/types";
+import { ConversationManagerOptions, ConversationState } from '@/types';
 import { EventEmitter } from 'events';
 
 // State listener type
 export type ConversationStateListener = (state: ConversationState) => void;
 
+// Enum for conversation flow states
+export enum ConversationStatus {
+  IDLE = 'idle',           // No active processing or speaking
+  PROCESSING = 'processing', // System is processing/generating a response
+  SPEAKING = 'speaking'    // System is speaking the response
+}
+
 export class ConversationManager extends EventEmitter {
   private state: ConversationState = {
-    isRecording: false,
-    isSpeaking: false,
-    isProcessing: false,
     transcript: "",
     conversationHistory: [],
     currentStreamingMessage: null,
     error: null,
-    autoTTS: true
+    autoTTS: true,
+    status: ConversationStatus.IDLE
   };
   
   private mediaRecorder: MediaRecorder | null = null;
@@ -26,29 +29,31 @@ export class ConversationManager extends EventEmitter {
   private accumulatedTranscript: string = "";
   private silenceTimeout: NodeJS.Timeout | null = null;
   private stateListeners: ConversationStateListener[] = [];
-  private elevenLabsService: ElevenLabsService;
   private options: ConversationManagerOptions;
-  private audioElement: HTMLAudioElement | null = null;
   
-  constructor(options: ConversationManagerOptions, elevenLabsService: ElevenLabsService) {
+  constructor(options: ConversationManagerOptions) {
     super();
+    console.log('📢 Initializing speech recognition');
     this.options = options;
-    this.elevenLabsService = elevenLabsService;
-    
-    // Create audio element for TTS
-    if (typeof window !== 'undefined') {
-      this.audioElement = new Audio();
-      this.audioElement.onplay = () => this.updateState({ isSpeaking: true });
-      this.audioElement.onended = () => this.updateState({ isSpeaking: false });
-      this.audioElement.onpause = () => this.updateState({ isSpeaking: false });
-    }
     
     // Bind methods
     this.startRecording = this.startRecording.bind(this);
     this.stopRecording = this.stopRecording.bind(this);
     this.resetSilenceTimeout = this.resetSilenceTimeout.bind(this);
     this.finalizeTranscript = this.finalizeTranscript.bind(this);
-    this.queryClaudeWithText = this.queryClaudeWithText.bind(this);
+    this.setConversationStatus = this.setConversationStatus.bind(this);
+  }
+  
+  // Set conversation status and update related state
+  public setConversationStatus(status: ConversationStatus): void {
+    console.log(`🔄 Conversation status changing: ${this.state.status} -> ${status}`);
+    
+    // Update the appropriate flags based on status
+    let newState: Partial<ConversationState> = {
+      status: status
+    };
+    
+    this.updateState(newState);
   }
   
   // Subscribe to state changes
@@ -63,7 +68,21 @@ export class ConversationManager extends EventEmitter {
   }
   
   // Update state and notify subscribers
-  private updateState(newState: Partial<ConversationState>): void {
+  public updateState(newState: Partial<ConversationState>): void {
+    // Only log transcript changes when they're substantial
+    if (newState.transcript !== undefined && 
+        newState.transcript !== this.state.transcript && 
+        newState.transcript.trim() !== '') {
+      console.log(`🎙️ Transcript: "${newState.transcript}"`);
+    }
+    
+    // Log status changes
+    if (newState.status !== undefined && 
+        newState.status !== this.state.status) {
+      console.log(`🔄 Status: ${newState.status}`);
+    }
+    
+    // Update the state and notify listeners
     this.state = { ...this.state, ...newState };
     this.stateListeners.forEach(listener => listener(this.state));
   }
@@ -76,303 +95,38 @@ export class ConversationManager extends EventEmitter {
   // Initialize the session
   public initialize(): void {
     this.updateState({
-      isRecording: false,
-      isSpeaking: false,
-      isProcessing: false,
       transcript: "",
-      error: null
+      error: null,
+      status: ConversationStatus.IDLE
     });
     this.accumulatedTranscript = "";
-    
-    // Initialize conversation with prompt if not already initialized
-    if (this.state.conversationHistory.length === 0) {
-      this.initializeConversation(this.options.fileContext);
-    }
   }
-  
-  /**
-   * Initialize a new conversation with teaching assistant prompt
-   */
-  public initializeConversation(fileContext?: FileContextType | null): void {
-    const initialMessages = prepareClaudePrompt(fileContext);
-    this.updateState({ conversationHistory: initialMessages });
-  }
-  
-  /**
-   * Add a user message to the conversation
-   */
-  public addUserMessage(message: string): void {
-    // Check if the message already exists
-    const messageExists = this.state.conversationHistory.some(
-      msg => msg.role === 'user' && msg.content === message
-    );
-    
-    if (!messageExists) {
-      const userMessage: ClaudeMessage = {
-        role: 'user',
-        content: message
-      };
-      
-      const updatedHistory = [...this.state.conversationHistory, userMessage];
-      this.updateState({ conversationHistory: updatedHistory });
-    }
-  }
-  
-  /**
-   * Begin a new streaming assistant message
-   */
-  public beginStreamingMessage(): string {
-    const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Create streaming message
-    const streamingMessage: StreamingMessage = {
-      id: messageId,
-      role: 'assistant',
-      sentences: [],
-      content: '',
-      isComplete: false,
-      startTimestamp: Date.now(),
-      endTimestamp: null
-    };
-    
-    // Add an initial empty message to the conversation
-    const initialMessage: ClaudeMessage = {
-      role: 'assistant',
-      content: ''
-    };
-    
-    // Update state
-    const updatedHistory = [...this.state.conversationHistory, initialMessage];
-    this.updateState({ 
-      conversationHistory: updatedHistory,
-      currentStreamingMessage: streamingMessage
-    });
-    
-    return messageId;
-  }
-  
-  /**
-   * Add a sentence to the current streaming message
-   */
-  public addSentence(text: string, isComplete: boolean = true): void {
-    if (!this.state.currentStreamingMessage) {
-      console.error('No streaming message in progress');
-      return;
-    }
-    
-    const sentence: StreamingSentence = {
-      text,
-      complete: isComplete,
-      timestamp: Date.now()
-    };
-    
-    // Create updated streaming message
-    const updatedStreamingMessage = { ...this.state.currentStreamingMessage };
-    updatedStreamingMessage.sentences.push(sentence);
-    
-    // Update the complete content
-    updatedStreamingMessage.content = 
-      updatedStreamingMessage.sentences
-        .map(s => s.text)
-        .join(' ')
-        .replace(/\s+/g, ' '); // Clean up extra spaces
-    
-    console.log("UPDATED STREAMING MESSAGE: ", updatedStreamingMessage)
 
-    // Update the message in the conversation history
-    const updatedHistory = [...this.state.conversationHistory];
-    const lastIndex = updatedHistory.length - 1;
-    
-    if (lastIndex >= 0 && updatedHistory[lastIndex].role === 'assistant') {
-      updatedHistory[lastIndex] = {
-        role: 'assistant',
-        content: updatedStreamingMessage.content
-      };
-    }
-    
-    // Update state
-    this.updateState({
-      conversationHistory: updatedHistory,
-      currentStreamingMessage: updatedStreamingMessage
-    });
-    
-    // Emit an event about the sentence
-    this.emit('sentenceAdded', {
-      messageId: updatedStreamingMessage.id,
-      sentence
-    });
-  }
-  
-  /**
-   * Complete the current streaming message
-   */
-  public completeStreamingMessage(): void {
-    if (!this.state.currentStreamingMessage) {
-      console.error('No streaming message in progress');
-      return;
-    }
-    
-    const completedMessage = { ...this.state.currentStreamingMessage };
-    completedMessage.isComplete = true;
-    completedMessage.endTimestamp = Date.now();
-    
-    // Play TTS if enabled
-    if (this.state.autoTTS) {
-      this.speakLastClaudeResponse();
-    }
-    
-    // Emit completed event
-    this.emit('messageCompleted', {
-      messageId: completedMessage.id,
-      content: completedMessage.content,
-      sentences: completedMessage.sentences,
-      duration: completedMessage.endTimestamp - completedMessage.startTimestamp
-    });
-    
-    // Clear the current streaming message
-    this.updateState({ currentStreamingMessage: null });
-  }
-  
-  /**
-   * Handle an error during streaming
-   */
-  public handleStreamingError(error: Error): void {
-    console.error('Streaming error:', error);
-    
-    // If there's a streaming message in progress, remove it
-    if (this.state.currentStreamingMessage) {
-      // Get an updated copy of the conversation history
-      const updatedHistory = [...this.state.conversationHistory];
-      const lastIndex = updatedHistory.length - 1;
-      
-      // Remove the last message if it's empty or incomplete
-      if (lastIndex >= 0 && 
-          updatedHistory[lastIndex].role === 'assistant' && 
-          (!updatedHistory[lastIndex].content || 
-           updatedHistory[lastIndex].content.trim() === '')) {
-        updatedHistory.pop();
-      }
-      
-      // Update state
-      this.updateState({
-        conversationHistory: updatedHistory,
-        currentStreamingMessage: null,
-        error: error.message || 'Failed to get response from Claude'
-      });
-    } else {
-      this.updateState({ error: error.message || 'Failed to get response from Claude' });
-    }
-    
-    // Emit error event
-    this.emit('streamingError', { error });
-  }
-  
-  // Clear error state
-  public clearError(): void {
-    console.log('Clearing error state');
-    this.updateState({ error: null });
-  }
-  
-  // Toggle auto TTS
-  public toggleAutoTTS(): void {
-    this.updateState({ autoTTS: !this.state.autoTTS });
-  }
-  
-  // Speak last Claude response
-  public speakLastClaudeResponse(): void {
-    const lastAssistantMessage = this.findLastAssistantMessage();
-    if (lastAssistantMessage && lastAssistantMessage.content.trim()) {
-      this.elevenLabsService.speak(lastAssistantMessage.content)
-        .then(audioBlob => {
-          if (this.audioElement && audioBlob) {
-            const audioUrl = URL.createObjectURL(audioBlob);
-            this.audioElement.src = audioUrl;
-            
-            // Set up event handlers
-            this.audioElement.onplay = () => {
-              console.log('Audio playback started');
-              this.updateState({ isSpeaking: true });
-            };
-            
-            this.audioElement.onended = () => {
-              console.log('Audio playback ended');
-              this.updateState({ isSpeaking: false });
-              URL.revokeObjectURL(audioUrl);
-            };
-            
-            this.updateState({ isSpeaking: true });
-            
-            this.audioElement.play().catch(error => {
-              console.error('Error playing audio:', error);
-              this.updateState({ 
-                error: 'Failed to play audio response',
-                isSpeaking: false
-              });
-            });
-            
-            // Add a safety check - if 500ms after play() and still not playing, set isSpeaking manually
-            setTimeout(() => {
-              if (!this.audioElement?.paused && this.audioElement?.currentTime === 0) {
-                console.log('Audio not playing after 500ms - manually setting isSpeaking');
-                this.updateState({ isSpeaking: true });
-              }
-            }, 500);
-          } else {
-            console.log('No audioBlob returned from speak method');
-          }
-        })
-        .catch(error => {
-          console.error('TTS error:', error);
-          this.updateState({ 
-            error: 'Text-to-speech error: ' + (error instanceof Error ? error.message : String(error)),
-            isSpeaking: false
-          });
-        });
-    }
-  }
-  
-  // Find the most recent assistant message
-  private findLastAssistantMessage(): ClaudeMessage | null {
-    const assistantMessages = this.state.conversationHistory.filter(
-      message => message.role === 'assistant' && message.content.trim() !== ''
-    );
-    
-    if (assistantMessages.length === 0) return null;
-    return assistantMessages[assistantMessages.length - 1];
-  }
-  
-  // Stop speech playback
-  public stopSpeaking(): void {
-    if (this.audioElement && this.state.isSpeaking) {
-      this.audioElement.pause();
-      this.audioElement.currentTime = 0;
-      this.updateState({ isSpeaking: false });
-    }
-  }
-  
   // Start recording user audio
   public async startRecording(): Promise<void> {
-    console.log('Starting recording session');
+    console.log('🎤 Starting recording session');
+    
     if (!this.options.deepgramApiKey) {
-      console.error('No Deepgram API key found');
+      console.error('❌ No Deepgram API key found');
       this.updateState({ error: "Deepgram API key is not configured" });
       return;
     }
 
     try {
-      // Stop any ongoing TTS before starting to record
-      this.stopSpeaking();
       
       this.updateState({
         error: null,
-        isRecording: true,
         transcript: "",
-        isSpeaking: false
       });
+      
+      // Ensure we're in IDLE status when starting to record
+      if (this.state.status !== ConversationStatus.IDLE) {
+        this.setConversationStatus(ConversationStatus.IDLE);
+      }
       
       this.accumulatedTranscript = "";
 
-      console.log('Requesting microphone access');
+      console.log('🎤 Requesting microphone access');
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { 
           noiseSuppression: true, 
@@ -381,7 +135,6 @@ export class ConversationManager extends EventEmitter {
       });
 
       const deepgram = createClient(this.options.deepgramApiKey);
-      console.log('Creating Deepgram connection');
       const dgConnection = await deepgram.listen.live({
         model: 'nova-3',
         language: 'en-US',
@@ -393,7 +146,7 @@ export class ConversationManager extends EventEmitter {
       this.deepgramConnection = dgConnection;
 
       dgConnection.addListener(LiveTranscriptionEvents.Open, () => {
-        console.log('Deepgram connection opened');
+        console.log('🎤 Ready to record');
         const recorder = new MediaRecorder(stream, {
           mimeType: 'audio/webm;codecs=opus'
         });
@@ -412,15 +165,9 @@ export class ConversationManager extends EventEmitter {
         const transcriptText = data.channel.alternatives[0].transcript.trim();
         
         if (transcriptText) {
-          console.log('Received transcript:', {
-            text: transcriptText,
-            is_final: data.is_final,
-            is_speaking: true
-          });
-          
-          // Stop any ongoing TTS when user speaks
-          if (this.state.isSpeaking) {
-            this.stopSpeaking();
+          // Log with interim/final status
+          if (data.is_final) {
+            console.log(`🎙️ Final: "${transcriptText}"`);
           }
           
           // Update with user's transcript
@@ -428,54 +175,45 @@ export class ConversationManager extends EventEmitter {
             transcript: transcriptText
           });
           
-          // Accumulate transcript
+          // Don't accumulate, just use the latest final transcript
           if (data.is_final) {
-            console.log('Adding to accumulated transcript:', transcriptText);
-            // Add space between segments if needed
-            if (this.accumulatedTranscript && !this.accumulatedTranscript.endsWith(" ")) {
-              this.accumulatedTranscript += " ";
-            }
-            this.accumulatedTranscript += transcriptText;
-            console.log('Current accumulated:', this.accumulatedTranscript);
+            // Replace the accumulated transcript instead of appending
+            this.accumulatedTranscript = transcriptText;
+            
+            // Print the accumulated transcript so far
+            console.log(`📝 New final transcript: "${this.accumulatedTranscript}"`);
           }
           
           // Reset silence timer
           this.resetSilenceTimeout();
-        } else {
-          if (!data.is_final) {
-            this.updateState({ transcript: "" });
-          }
         }
       });
 
       dgConnection.addListener(LiveTranscriptionEvents.Error, (error: Error) => {
-        console.error('Deepgram error:', error);
+        console.error('❌ Deepgram error:', error);
         this.updateState({ error: 'Error during transcription. Please try again.' });
         this.stopRecording();
       });
 
       dgConnection.addListener(LiveTranscriptionEvents.Close, () => {
-        console.log('Deepgram connection closed');
+        console.log('🎤 Recording connection closed');
         if (this.accumulatedTranscript.trim()) {
           this.finalizeTranscript();
         }
       });
 
     } catch (error) {
-      console.error('Error starting recording:', error);
+      console.error('❌ Error starting recording:', error);
       this.updateState({
         error: 'Failed to start recording. Please check your microphone permissions.',
-        isRecording: false
       });
     }
   }
   
   // Stop recording user audio
   public stopRecording(): void {
-    console.log('Stopping recording');
+    console.log('🛑 Stopping recording');
     this.updateState({
-      isRecording: false,
-      isSpeaking: false,
       transcript: ""
     });
     
@@ -505,213 +243,73 @@ export class ConversationManager extends EventEmitter {
   
   // Reset silence timeout for detecting end of speech
   private resetSilenceTimeout(): void {
-    console.log('Resetting silence timeout');
     if (this.silenceTimeout) {
       clearTimeout(this.silenceTimeout);
     }
     
     this.silenceTimeout = setTimeout(() => {
-      console.log(`Silence timeout triggered (${this.options.silenceThreshold}ms elapsed)`);
+      console.log(`⏱️ Silence detected (${this.options.silenceThreshold}ms)`);
       this.finalizeTranscript();
     }, this.options.silenceThreshold);
   }
   
-  // Finalize transcript and query Claude
+  // Start processing the response
+  public startProcessing(): void {
+    this.setConversationStatus(ConversationStatus.PROCESSING);
+  }
+
+  // Start speaking the response
+  public startSpeaking(): void {
+    this.setConversationStatus(ConversationStatus.SPEAKING);
+  }
+
+  // Return to idle state
+  public returnToIdle(): void {
+    this.setConversationStatus(ConversationStatus.IDLE);
+  }
+  
+  // Finalize transcript
   private finalizeTranscript(): void {
-    console.log('Finalizing transcript after silence');
-    console.log('Current accumulated transcript:', this.accumulatedTranscript);
-    
     const finalTranscript = this.accumulatedTranscript.trim();
+    
     if (finalTranscript) {
-      console.log('Finalizing transcript:', finalTranscript);
+      console.log(`✅ TRANSCRIPT FINALIZED: "${finalTranscript}"`);
       
-      // Clear current transcript state
+      // Update conversation history with the new transcript
+      const updatedHistory = [
+        ...this.state.conversationHistory,
+        {
+          role: 'user' as const, // Use const assertion to make TypeScript treat this as a literal
+          content: finalTranscript,
+          timestamp: Date.now()
+        }
+      ];
+      
+      // Set status to PROCESSING when a transcript is finalized
+      this.startProcessing();
+      
+      // Update state with new conversation history
       this.updateState({
         transcript: "",
-        isSpeaking: false
+        conversationHistory: updatedHistory
       });
       
       this.accumulatedTranscript = "";
       
-      // Set a small timeout to ensure state has updated before querying Claude
-      setTimeout(() => {
-        console.log('Automatically querying Claude with finalized transcript');
-        this.queryClaudeWithText(finalTranscript);
-      }, 100);
-    } else {
-      console.log('No transcript to finalize');
-    }
-  }
-  
-  /**
-   * Query Claude with text and handle streaming response
-   */
-  public async queryClaudeWithText(text: string): Promise<void> {
-    if (!text.trim() || this.state.currentStreamingMessage !== null) {
-      return;
-    }
-    
-    try {
-      this.updateState({ isProcessing: true });
-      
-      // Add user message to conversation
-      this.addUserMessage(text);
-      
-      // Start a new streaming message
-      const messageId = this.beginStreamingMessage();
-      
-      // Extract system messages for the API call
-      const systemMessages = this.state.conversationHistory.filter(msg => msg.role === 'system');
-      const nonSystemMessages = this.state.conversationHistory.filter(msg => 
-        msg.role !== 'system' && (msg.role !== 'assistant' || msg.content.trim() !== '')
-      );
-      
-      // Combine system messages if there are any
-      const systemContent = systemMessages.length > 0 
-        ? systemMessages.map(msg => msg.content).join('\n\n')
-        : undefined;
-      
-      console.log('Querying Claude API with:', { 
-        systemContent: systemContent ? 'Yes' : 'No', 
-        messageCount: nonSystemMessages.length 
+      // Emit an event with the final transcript
+      this.emit('transcriptFinalized', {
+        text: finalTranscript,
+        timestamp: Date.now()
       });
-      
-      // Call streaming API
-      const response = await fetch('/api/claude', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: nonSystemMessages.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          })),
-          system: systemContent
-        }),
-      });
-      
-      if (!response.ok || !response.body) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
-      }
-      
-      // Setup stream processing
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      
-      let currentSentence = '';
-      
-      // Process the stream
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value, { stream: true });
-        console.log(`[STREAM] Received chunk: "${chunk}"`);
-        
-        currentSentence += chunk;
-        
-        // Check for complete sentences
-        const sentenceRegex = /[.!?]\s+|[.!?]$/g;
-        let match;
-        let lastIndex = 0;
-        
-        // Find all completed sentences in the current text
-        while ((match = sentenceRegex.exec(currentSentence)) !== null) {
-          const completedSentence = currentSentence.substring(lastIndex, match.index + 1);
-          lastIndex = match.index + match[0].length;
-          
-          console.log(`[SENTENCE] Formed complete sentence: "${completedSentence}"`);
-          
-          // Add the completed sentence to the conversation
-          this.addSentence(completedSentence);
-        }
-        
-        // Keep the remaining partial sentence
-        if (lastIndex > 0) {
-          currentSentence = currentSentence.substring(lastIndex);
-        }
-      }
-      
-      // Handle any remaining text that might not end with a sentence marker
-      if (currentSentence.trim()) {
-        console.log(`[SENTENCE] Adding remaining partial sentence: "${currentSentence.trim()}"`);
-        this.addSentence(currentSentence.trim(), true);
-      }
-      
-      // Mark the streaming as complete
-      this.completeStreamingMessage();
-      
-      console.log(`[COMPLETE] Final streamed response completed`);
-      
-    } catch (error) {
-      console.error('Error in queryClaudeWithText:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.handleStreamingError(new Error(errorMessage));
-    } finally {
-      this.updateState({ isProcessing: false });
     }
-  }
-
-  /**
-   * Perform conceptual analysis of code
-   */
-  public async analyzeCode(code: string): Promise<void> {
-    const prompt = `Please analyze the following code and explain its purpose, structure, and any potential issues:\n\n${code}`;
-    await this.queryClaudeWithText(prompt);
-  }
-  
-  /**
-   * Get the current conversation history
-   */
-  public getConversationHistory(): ClaudeMessage[] {
-    return [...this.state.conversationHistory];
-  }
-  
-  /**
-   * Check if a streaming message is in progress
-   */
-  public isStreaming(): boolean {
-    return this.state.currentStreamingMessage !== null;
-  }
-  
-  /**
-   * Get information about the current streaming message
-   */
-  public getCurrentStreamingInfo(): {
-    messageId: string;
-    sentenceCount: number;
-    content: string;
-    duration: number;
-  } | null {
-    if (!this.state.currentStreamingMessage) {
-      return null;
-    }
-    
-    return {
-      messageId: this.state.currentStreamingMessage.id,
-      sentenceCount: this.state.currentStreamingMessage.sentences.length,
-      content: this.state.currentStreamingMessage.content,
-      duration: Date.now() - this.state.currentStreamingMessage.startTimestamp
-    };
-  }
-  
-  /**
-   * Clear the conversation history
-   */
-  public clearConversation(): void {
-    this.updateState({
-      conversationHistory: [],
-      currentStreamingMessage: null
-    });
   }
   
   /**
    * Clean up resources
    */
   public dispose(): void {
+    console.log('🧹 Cleaning up resources');
     this.stopRecording();
-    this.stopSpeaking();
     this.stateListeners = [];
     this.removeAllListeners();
   }
