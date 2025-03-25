@@ -25,7 +25,9 @@ export class ElevenLabsService {
     // Initialize audio context on user interaction
     const initAudioContext = () => {
       if (!this.audioContext) {
-        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        // Use proper type definition for AudioContext
+        this.audioContext = new (window.AudioContext || 
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       }
       document.removeEventListener('click', initAudioContext);
       document.removeEventListener('touchstart', initAudioContext);
@@ -102,6 +104,7 @@ export class ElevenLabsService {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
         } catch (e) {
+          console.log(e)
           errorMessage = `Text-to-speech error: ${response.status} ${response.statusText}`;
         }
         throw new Error(errorMessage);
