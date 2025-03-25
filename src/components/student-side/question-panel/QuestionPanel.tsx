@@ -166,7 +166,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
                     <VoiceCircle state="idle" />
                   </div>
                   <p className="text-muted-foreground mb-2 text-center">
-                    Explain the problem you`&apos;`re running into
+                    Explain the problem you&apos;re running into
                   </p>
                 </div>
               </div>
