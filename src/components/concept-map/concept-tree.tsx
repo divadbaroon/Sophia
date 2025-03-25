@@ -8,21 +8,6 @@ import KnowledgeStateTooltip from "./knowledge-state-tooltip"
 
 import { Concept, KnowledgeStatesMap, CustomReasoningMap } from "@/types"
 
-// Example Conversation to generate this 
-const questions = [
-  "I noticed you're starting your loop at index 1 with for i in range(1, len(nums)). Could you explain why you chose to start at index 1 rather than index 0, and have you considered how this might affect your solution's correctness?",
-  "Thanks for explaining. I notice you're using nested loops here. Can you tell me the time complexity of this solution for an array of length n?",
-  "Have you considered using a hash map (or dictionary in Python) to solve this problem? Do you think it would be more efficient than your current solution, and if so, why?",
-  "That's a good insight about hash maps. Could you explain why your new approach is more efficient in terms of time complexity, and are there any edge cases we need to consider?"
-];
-
-const responses = [
-  "I started my loop at index 1 because that's where arrays begin in Python. Index 1 is the first element, so I'm making sure to check all elements from the beginning of the array. If I started at index 0, I'd be trying to access an element that doesn't exist.",
-  "I think my solution is pretty efficient because it just has two loops, and that's probably O(n) time complexity since we're just going through the array. One loop is inside the other, but they're independent, so I don't think that changes anything. The solution looks through each element once, so it must be O(n). I know we can't really make it faster than that, since we need to check every element at least once.",
-  "Oh, you're right! A dictionary would be much more efficient. Instead of using two separate lists and doing a linear search each time, I could use a dictionary to store each number as a key and its index as a value. That way, when I need to check if the complement exists, it's an O(1) lookup instead of the O(n) search I'm doing now. Since dictionary lookups are constant time, that would bring my overall time complexity down from O(n²) to O(n). I didn't think of that approach, but it makes perfect sense for this problem.",
-  "Using a dictionary gives us O(n) time complexity instead of O(n²) because we only need a single pass through the array, and each lookup is O(1) instead of O(n). For edge cases, we need to ensure we don't use the same element twice, handle empty arrays, and consider what happens if there's no solution. Though the problem says there's always exactly one solution, a robust implementation would still check these cases."
-];
-
 // Generates Sample knowledge states for subconcepts
 const generateKnowledgeStates = (timeIndex: number): KnowledgeStatesMap => {
   const baseKnowledgeStates: KnowledgeStatesMap = {
@@ -349,11 +334,6 @@ export default function ConceptTree() {
     setCurrentTimeIndex(timeIndex)
     // Optionally pause auto-advance when the user manually changes the time
     // setAutoAdvanceActive(false)
-  }
-
-  // Optionally add a function to toggle auto-advance
-  const toggleAutoAdvance = () => {
-    setAutoAdvanceActive(prev => !prev)
   }
 
   return (
