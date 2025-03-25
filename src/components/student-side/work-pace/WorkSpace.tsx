@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
-import { HelpCircle } from "lucide-react"
+import { HelpCircle, MessageCircle } from "lucide-react"
 
 import { useFile } from '@/lib/context/FileContext'
 
@@ -29,18 +29,32 @@ export const WorkspaceLayout = () => {
   return (
     <main className="flex flex-col h-screen">
       <div className="flex-1 flex relative">
+        {/* Get Help Button */}
         <Button
           variant="outline"
           size="lg"
-          className={`absolute top-3.5 right-16 mr-3 z-50 gap-2 font-medium ${
+          className={`absolute top-3.5 right-52 mr-6 z-50 gap-2 font-medium ${
             isQuestionPanelVisible ? 'bg-secondary' : 
             'bg-background hover:bg-secondary/80' 
           }`}
           onClick={() => setIsQuestionPanelVisible(!isQuestionPanelVisible)}
         >
-         <>
+          <>
             <HelpCircle className="h-5 w-5" />
             {isQuestionPanelVisible ? 'Hide Help' : 'Get Help'}
+          </>
+        </Button>
+
+        {/* Speak to TA Button */}
+        <Button
+          variant="outline"
+          size="lg"
+          className="absolute top-3.5 right-16 mr-3 z-50 gap-2 font-medium bg-amber-100 text-amber-800 hover:bg-amber-200 cursor-not-allowed opacity-70"
+          disabled={true}
+        >
+         <>
+            <MessageCircle className="h-5 w-5" />
+            Call TA
           </>
         </Button>
 
