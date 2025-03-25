@@ -291,27 +291,6 @@ export default function ConceptTree() {
   const [concepts, setConcepts] = useState<Concept[]>(
     timeSeriesData[currentTimeIndex].map((concept) => ({ ...concept, expanded: true })),
   )
-  const [autoAdvanceActive, setAutoAdvanceActive] = useState(true) // Add state for tracking auto-advance
-
-  // Add auto-advance functionality
-  useEffect(() => {
-    // Set up a timer to advance to the next time index every 33 seconds
-    let timer: NodeJS.Timeout
-    
-    if (autoAdvanceActive) {
-      timer = setTimeout(() => {
-        // Advance to the next time index or wrap around to the beginning
-        setCurrentTimeIndex((prevIndex) => 
-          prevIndex < timeSeriesData.length - 1 ? prevIndex + 1 : 0
-        );
-      }, 33000); // 33 seconds
-    }
-
-    // Clear the timer when component unmounts or when timeIndex changes
-    return () => {
-      if (timer) clearTimeout(timer);
-    }
-  }, [currentTimeIndex, timeSeriesData.length, autoAdvanceActive]);
 
   useEffect(() => {
     // Preserve expanded state when time changes
