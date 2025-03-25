@@ -8,9 +8,9 @@ import { vscodeLight } from '@uiw/codemirror-theme-vscode';
 import { useFile } from '@/lib/context/FileContext';
 import { EditorView } from '@codemirror/view';
 import { ViewUpdate } from '@uiw/react-codemirror';
-import { SelectionRange, EditorState, Extension } from '@codemirror/state';
+import { SelectionRange, Extension } from '@codemirror/state';
 import { highlightActiveLine } from '@codemirror/view';
-import { Decoration, DecorationSet } from '@codemirror/view';
+import { Decoration } from '@codemirror/view';
 
 export interface CodeEditorRef {
   highlightLine: (lineNumber: number) => void;
