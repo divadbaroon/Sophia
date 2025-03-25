@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useImperativeHandle, forwardRef, Ref } from 'react'
+import React, { useImperativeHandle, forwardRef, Ref } from 'react'
 import { Button } from '@/components/ui/button'
 import { HelpCircle } from 'lucide-react'
 import QuestionPanel from '@/components/student-side/question-panel/QuestionPanel'
@@ -92,6 +92,7 @@ const QuestionPanelContent: React.FC<QuestionPanelContentProps> = ({ editorRef, 
 
   // Check if we need to show initialization status
   if (!isInitialized || error) {
+    console.log(retryCount)
     return <InitializationStatus onRetry={() => setRetryCount(prev => prev + 1)} />;
   }
 
