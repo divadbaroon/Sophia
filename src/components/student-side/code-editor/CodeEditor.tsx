@@ -33,6 +33,9 @@ if __name__ == "__main__":
     print(f"Result: {result}")`;
 };
 
+// Local storage key for saving code
+const LOCAL_STORAGE_CODE_KEY = 'saved_editor_code';
+
 // Create a custom extension for line highlighting
 const createLineHighlightExtension = (lineNumber: number) => {
   const highlightLine = Decoration.line({
@@ -131,13 +134,30 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     });
   }, [userCode, fileContent, cachedFileContent, highlightedText, localHighlightedText, highlightedLineNumber]);
 
+  // Load saved code from localStorage on initial render
   useEffect(() => {
     if (isInitialized) return;
     
     console.log("CodeEditor initializing...");
     
+    // Try to load from localStorage first
+    let initialCode = functionTemplate;
+    
+    if (typeof window !== 'undefined') {
+      try {
+        const savedCode = localStorage.getItem(LOCAL_STORAGE_CODE_KEY);
+        if (savedCode) {
+          console.log("Found saved code in localStorage");
+          initialCode = savedCode;
+        }
+      } catch (err) {
+        console.error("Error accessing localStorage:", err);
+      }
+    }
+    
     // Generate and set initial content with proper indentation
-    const initialFullCode = generateFullTemplate(functionTemplate);
+    const initialFullCode = generateFullTemplate(initialCode);
+    setUserCode(initialCode);
     setFileContent(initialFullCode);
     updateCachedFileContent(initialFullCode);
     
@@ -145,7 +165,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     updateExecutionOutput('');
     setErrorContent('');
     
-    console.log("CodeEditor initialized with template");
+    console.log("CodeEditor initialized with code from storage or template");
     setIsInitialized(true);
   }, [isInitialized, updateCachedFileContent, setFileContent, updateExecutionOutput, setErrorContent]);
 
@@ -201,6 +221,18 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     
     return () => clearTimeout(autoSaveTimer);
   }, [isInitialized, fileContent, cachedFileContent, updateCachedFileContent]);
+
+  // Save user code to localStorage whenever it changes
+  useEffect(() => {
+    if (!isInitialized || !userCode) return;
+    
+    try {
+      localStorage.setItem(LOCAL_STORAGE_CODE_KEY, userCode);
+      console.log("Saved code to localStorage");
+    } catch (err) {
+      console.error("Error saving to localStorage:", err);
+    }
+  }, [isInitialized, userCode]);
 
   const handleCodeChange = (value: string): void => {
     setUserCode(value);
