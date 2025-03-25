@@ -36,7 +36,7 @@ export function addLineNumbers(code: string): string {
     // Fallback: try to extract based on indentation
     const lines = fullCode.split('\n');
     let inFunction = false;
-    let functionLines = [];
+    const functionLines = [];
     let indentLevel = 0;
     
     for (let i = 0; i < lines.length; i++) {
