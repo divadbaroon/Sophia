@@ -349,9 +349,6 @@ export const useConversationManager = () => {
         return;
       }
       
-      // Get latest transcript from conversation history
-      const latestMessage = state.conversationHistory[state.conversationHistory.length - 1];
-      
       // Stream response from Claude
       const streamResponse = async () => {
         try {
