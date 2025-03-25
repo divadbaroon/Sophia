@@ -30,7 +30,6 @@ export const AuthDialog = ({
 }: AuthDialogProps) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [pid, setPid] = useState('');
 
   if (existingUser) {
     return (
@@ -79,16 +78,6 @@ export const AuthDialog = ({
               id="lastName"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="pid" className="block text-sm font-medium text-gray-700">
-              PID
-            </label>
-            <Input
-              id="pid"
-              value={pid}
-              onChange={(e) => setPid(e.target.value)}
             />
           </div>
         </div>
