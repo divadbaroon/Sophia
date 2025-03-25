@@ -8,8 +8,7 @@ import { vscodeLight } from '@uiw/codemirror-theme-vscode';
 import { useFile } from '@/lib/context/FileContext';
 import { EditorView } from '@codemirror/view';
 import { ViewUpdate } from '@uiw/react-codemirror';
-import { SelectionRange, Extension } from '@codemirror/state';
-import { highlightActiveLine } from '@codemirror/view';
+import { SelectionRange, Extension, Range } from '@codemirror/state';
 import { Decoration } from '@codemirror/view';
 
 export interface CodeEditorRef {
@@ -41,7 +40,7 @@ const createLineHighlightExtension = (lineNumber: number) => {
   });
 
   return EditorView.decorations.of((view) => {
-    const decorations: any[] = []; // Use any[] instead of Range<Decoration>[]
+    const decorations: Range<Decoration>[] = []; 
     
     // Ensure lineNumber is valid
     if (lineNumber > 0 && lineNumber <= view.state.doc.lines) {
