@@ -136,4 +136,6 @@ const QuestionPanelWrapper = forwardRef<QuestionPanelWrapperRef, QuestionPanelWr
   }
 );
 
+QuestionPanelWrapper.displayName = 'QuestionPanelWrapper';
+
 export default QuestionPanelWrapper;
