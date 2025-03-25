@@ -5,6 +5,7 @@ import { useFile } from '@/lib/context/FileContext';
 import Anthropic from '@anthropic-ai/sdk';
 import { ElevenLabsClient } from 'elevenlabs';
 import { prepareClaudePrompt } from '@/utils/claude/claudePromptCreation';
+import { ConceptMapService, ConceptMap } from '@/lib/services/ConceptMap';
 
 // Get environment variables
 const DEEPGRAM_API_KEY = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY || '';
@@ -29,6 +30,15 @@ export const useConversationManager = () => {
   // Track initialization status
   const [isInitialized, setIsInitialized] = useState(false);
   
+  // State for concept map
+  const [conceptMap, setConceptMap] = useState<ConceptMap | null>(null);
+  const [conceptMapReady, setConceptMapReady] = useState(false);
+  const [taPivot, setTaPivot] = useState<string | null>(null);
+
+  console.log("CONCEPT MAP", conceptMap)
+  console.log("CONCEPT MAP Ready", conceptMapReady)
+  console.log("CONCEPT MAP Pivot", taPivot)
+  
   // Manager reference
   const managerRef = useRef<ConversationManager | null>(null);
   
@@ -37,6 +47,9 @@ export const useConversationManager = () => {
   
   // ElevenLabs client reference
   const elevenLabsClientRef = useRef<ElevenLabsClient | null>(null);
+  
+  // Concept map service reference
+  const conceptMapServiceRef = useRef<ConceptMapService | null>(null);
   
   // Buffer to hold sentences for TTS
   const ttsQueueRef = useRef<string[]>([]);
@@ -82,6 +95,16 @@ export const useConversationManager = () => {
         }
       });
       
+      // Initialize the concept map service
+      const conceptService = new ConceptMapService(() => {
+        // Callback when confidence threshold is reached
+        setConceptMapReady(true);
+        if (conceptMapServiceRef.current) {
+          setTaPivot(conceptMapServiceRef.current.getTAPivot());
+          setConceptMap(conceptMapServiceRef.current.getConceptMap());
+        }
+      });
+      
       // Initialize
       manager.initialize();
       
@@ -90,8 +113,9 @@ export const useConversationManager = () => {
         console.log(`[EVENT] Transcript finalized at ${new Date(timestamp).toISOString()}:`, text);
       });
       
-      // Store reference
+      // Store references
       managerRef.current = manager;
+      conceptMapServiceRef.current = conceptService;
       setIsInitialized(true);
       
       // Initialize Anthropic client
@@ -119,6 +143,8 @@ export const useConversationManager = () => {
         }
         // Cancel any playing audio
         cancelAllAudioPlayback();
+        // Clean up concept map service
+        conceptMapServiceRef.current = null;
       };
     } catch (error) {
       console.error('Failed to initialize conversation manager:', error);
@@ -332,6 +358,42 @@ export const useConversationManager = () => {
       speakText(text, isFirstSentence);
     }
   }, [speakText]);
+  
+  // Update concept map when assistant responds
+  useEffect(() => {
+    // Listen for changes in conversation history
+    if (!isInitialized || !conceptMapServiceRef.current) return;
+    
+    const history = state.conversationHistory;
+    
+    // If the history was updated with a new assistant message
+    if (history.length >= 2 && history[history.length - 1].role === 'assistant') {
+      const lastAssistantMessage = history[history.length - 1];
+      
+      // Check if it's a meaningful message to process
+      if (lastAssistantMessage.content && lastAssistantMessage.content.trim() !== '') {
+        console.log('🧩 Updating concept map with new assistant message');
+        
+        conceptMapServiceRef.current.processNewMessage(
+          lastAssistantMessage.content,
+          history,
+          fileContext?.studentTask || '',
+          fileContext?.fileContent || '',
+          '' // Error message if available
+        ).then(() => {
+          if (conceptMapServiceRef.current) {
+            setConceptMap(conceptMapServiceRef.current.getConceptMap());
+            setConceptMapReady(conceptMapServiceRef.current.hasReachedConfidence());
+            if (conceptMapServiceRef.current.hasReachedConfidence()) {
+              setTaPivot(conceptMapServiceRef.current.getTAPivot());
+            }
+          }
+        }).catch((error: any) => {
+          console.error('Error updating concept map:', error);
+        });
+      }
+    }
+  }, [isInitialized, state.conversationHistory, fileContext]);
   
   // Track status changes to query Claude when status changes to PROCESSING
   useEffect(() => {
