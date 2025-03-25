@@ -31,10 +31,11 @@ const RecognitionDisplay: React.FC<RecognitionDisplayProps> = ({
       const timer = setTimeout(() => {
         setIsTransitioning(false);
         setDisplayedMessage(getLatestAssistantMessage());
-      }, 2000); // 1.5 second delay
+      }, 2000);
       
       return () => clearTimeout(timer);
-    } else if (status !== ConversationStatus.SPEAKING) {
+    } else {
+      // For all other statuses (IDLE, PROCESSING)
       // Reset transition state when not speaking
       setIsTransitioning(false);
       setDisplayedMessage(null);
