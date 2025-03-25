@@ -70,10 +70,6 @@ export async function queryClaudeAPI(
     // Initialize variables for streaming
     let accumulatedText = '';
     let currentSentence = '';
-    let fullResponse = '';
-    
-    // Create a temporary placeholder in the conversation history for the streaming response
-    let tempMessageId: string | null = null;
     
     // If this is a new conversation, add the initial history + user message first
     if (conversationHistory.length === 0) {
@@ -95,7 +91,6 @@ export async function queryClaudeAPI(
       initialHistory.push(assistantMessage);
       
       setConversationHistory(initialHistory);
-      tempMessageId = 'temp-response';
     } else {
       // For ongoing conversations, just add the user message if needed
       setConversationHistory(prev => {
@@ -153,8 +148,6 @@ export async function queryClaudeAPI(
       // Log the received chunk
       console.log(`[STREAM] Received chunk: "${chunk}"`);
       
-      // Add to both the full response and the current text processing
-      fullResponse += chunk;
       currentSentence += chunk;
       
       // Check if we've completed a sentence
