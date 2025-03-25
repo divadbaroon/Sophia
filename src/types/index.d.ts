@@ -320,12 +320,6 @@ export interface ConversationManagerOptions {
   fileContext?: FileContextType | null;
 }
 
-export interface ConversationManagerOptions {
-  silenceThreshold: number;
-  deepgramApiKey: string;
-  fileContext?: any;
-}
-
 export interface LiveTranscriptionResponse {
   channel: {
     alternatives: {
@@ -371,17 +365,6 @@ export interface ConversationMessage {
   role: 'user' | 'assistant' | 'system';  
   content: string;
   timestamp?: number;  
-}
-
-export interface RecognitionDisplayProps {
-  transcript: string | null
-  status: any 
-  isUserSpeaking: boolean
-  bargeInDetected: boolean
-  conversationHistory: ConversationMessage[] | null
-  showInitialGreeting: boolean
-  getLatestAssistantMessage: () => string | null
-  voiceState: VoiceCircleState
 }
 
 export interface TranscriptHistoryProps {
@@ -442,7 +425,7 @@ export interface ElevenLabsWordInfo {
   end: number;   // Time in seconds when word ends
 }
 
-const wordTimings = responseData.alignment.words.map((wordInfo: ElevenLabsWordInfo) => ({
+export const wordTimings = responseData.alignment.words.map((wordInfo: ElevenLabsWordInfo) => ({
   word: wordInfo.word,
   start: wordInfo.start * 1000, // Convert to milliseconds
   end: wordInfo.end * 1000     // Convert to milliseconds
