@@ -191,8 +191,12 @@ function createContextMessage(
     ? "\n\nUse this information to ask relevant questions that help assess their understanding.VERY IMPORTANT: When discussing code, ONLY reference line numbers (e.g., 'Check line 5') and NEVER quote the actual code content from those lines. The system will automatically highlight the line for the student."
     : "\n\nTry to help guide David toward finding the issue, drawing on your own understanding as a fellow student. VERY IMPORTANT: When discussing code, ONLY reference line numbers (e.g., 'Check line 5') and NEVER quote the actual code content from those lines. The system will automatically highlight the line for the student.";
   
+  const initialPrompt = !highlightedText 
+  ? "\n\nStart by asking David to highlight the specific part of the code he thinks is causing the issue."
+  : "";
+
   return {
-    role: 'system',
-    content: `${contextIntro}\n\n${contextParts.join('\n\n')}${roleGuidance}`
+  role: 'system',
+  content: `${contextIntro}\n\n${contextParts.join('\n\n')}${roleGuidance}${initialPrompt}`
   };
 }
