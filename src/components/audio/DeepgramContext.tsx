@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useRef, useCallback } from 'react';
 import { createClient } from '@deepgram/sdk';
 import { LiveTranscriptionEvents, LiveClient } from '@deepgram/sdk';
 import { ClaudeMessage, DeepgramContextType, LiveTranscriptionResponse } from "@/types";
