@@ -314,31 +314,170 @@ export interface StreamingSentence {
   timestamp: number;
 }
 
-export interface StreamingMessage {
-  id: string;
-  role: 'assistant';
-  sentences: StreamingSentence[];
-  content: string; // The complete message content, updated as sentences come in
-  isComplete: boolean;
-  startTimestamp: number;
-  endTimestamp: number | null;
-}
-
-// Conversation options
 export interface ConversationManagerOptions {
   silenceThreshold: number; // ms before considering speech complete
   deepgramApiKey: string;
   fileContext?: FileContextType | null;
 }
 
-// Conversation state
+export interface ConversationManagerOptions {
+  silenceThreshold: number;
+  deepgramApiKey: string;
+  fileContext?: any;
+}
+
+export interface LiveTranscriptionResponse {
+  channel: {
+    alternatives: {
+      transcript: string;
+    }[];
+  };
+  is_final: boolean;
+}
+
+export enum ConversationStatus {
+  IDLE = 'idle',           // No active processing or speaking
+  PROCESSING = 'processing', // System is processing/generating a response
+  SPEAKING = 'speaking'    // System is speaking the response
+}
+
+export interface AnthropicMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export type VoiceCircleState = 'idle' | 'listening' | 'processing' | 'speaking'
+
+export interface TranscriptData {
+  text: string
+  timestamp: number
+}
+
+export type TranscriptFinalizedCallback = (data: TranscriptData) => void
+export type TranscriptFinalizedSubscription = (callback: TranscriptFinalizedCallback) => () => void
+
+export interface QuestionPanelProps {
+  onBack?: () => void
+  isVisible?: boolean
+  onLineDetected?: (lineNumber: number) => void
+  onClearHighlight?: () => void
+}
+
+// Settings related types
+export type SpeakToOption = 'student' | 'ta'
+export type ScenarioOption = 'one-on-one' | 'group'
+
+export interface ConversationMessage {
+  role: 'user' | 'assistant' | 'system';  
+  content: string;
+  timestamp?: number;  
+}
+
+export interface RecognitionDisplayProps {
+  transcript: string | null
+  status: any 
+  isUserSpeaking: boolean
+  bargeInDetected: boolean
+  conversationHistory: ConversationMessage[] | null
+  showInitialGreeting: boolean
+  getLatestAssistantMessage: () => string | null
+  voiceState: VoiceCircleState
+}
+
+export interface TranscriptHistoryProps {
+  conversationHistory: ConversationMessage[] | null
+}
+
+export interface RecognitionSettingsProps {
+  isOpen: boolean
+  onOpenChange: (open: boolean) => void
+  speakTo: SpeakToOption
+  scenario: ScenarioOption
+  onSave: (speakTo: SpeakToOption, scenario: ScenarioOption) => void
+}
+
+export interface WordTiming {
+  word: string;
+  start: number; // milliseconds from start
+  end: number;   // milliseconds from start
+}
+
+export interface StreamingMessage {
+  text: string;
+  wordTimings?: WordTiming[];
+}
+
 export interface ConversationState {
-  isRecording: boolean;
-  isSpeaking: boolean;
-  isProcessing: boolean;
   transcript: string;
-  conversationHistory: ClaudeMessage[];
-  currentStreamingMessage: StreamingMessage | null;
+  conversationHistory: Array<{
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    timestamp: number;
+  }>;
+  currentStreamingMessage: StreamingMessage | null; 
   error: string | null;
   autoTTS: boolean;
+  status: ConversationStatus;
+}
+
+export interface RecognitionDisplayProps {
+  transcript: string;
+  status: ConversationStatus;
+  isUserSpeaking: boolean;
+  bargeInDetected: boolean;
+  conversationHistory: Array<{
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    timestamp: number;
+  }>;
+  showInitialGreeting: boolean;
+  getLatestAssistantMessage: () => string | null;
+  voiceState: VoiceCircleState;
+  currentStreamingMessage?: StreamingMessage | null;
+}
+
+export interface ElevenLabsWordInfo {
+  word: string;
+  start: number; // Time in seconds when word starts
+  end: number;   // Time in seconds when word ends
+}
+
+const wordTimings = responseData.alignment.words.map((wordInfo: ElevenLabsWordInfo) => ({
+  word: wordInfo.word,
+  start: wordInfo.start * 1000, // Convert to milliseconds
+  end: wordInfo.end * 1000     // Convert to milliseconds
+}));
+
+export interface KnowledgeState {
+  understandingLevel: number
+  confidenceInAssessment: number
+  reasoning: string
+  lastUpdated: string
+}
+
+export interface Subconcept {
+  name: string
+  probability: number
+  colorIndex: number
+  knowledgeState?: KnowledgeState
+}
+
+export interface Concept {
+  name: string
+  probability: number
+  colorIndex: number
+  subconcepts: Subconcept[]
+  expanded?: boolean
+}
+
+export interface KnowledgeStatesMap {
+  [key: string]: KnowledgeState;
+}
+
+export interface ReasoningByKey {
+  [key: string]: string;
+}
+
+export interface CustomReasoningMap {
+  [timeIndex: number]: ReasoningByKey;
 }
