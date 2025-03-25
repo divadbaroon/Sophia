@@ -38,9 +38,6 @@ const mapStatusToVoiceState = (
  * QuestionPanel - Main component for speech recognition and conversation
  */
 const QuestionPanel: React.FC<QuestionPanelProps> = ({ 
-  onBack,
-  isVisible,
-  onLineDetected,
   onClearHighlight
 }) => {
   const {
@@ -48,15 +45,12 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
     error,
     status,
     startRecording,
-    stopRecording,
     conversationHistory,
     onTranscriptFinalized,
-    cancelAllAudioPlayback,
     currentStreamingMessage 
   } = useConversationManagerContext()
 
   const [isUserSpeaking, setIsUserSpeaking] = useState<boolean>(false)
-  const [recognizedTranscripts, setRecognizedTranscripts] = useState<string[]>([])
   const [showInitialGreeting, setShowInitialGreeting] = useState<boolean>(true)
   const [bargeInDetected, setBargeInDetected] = useState<boolean>(false)
 
@@ -91,7 +85,6 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
     updateScenario: (value: ScenarioOption) => void
   }
 
-  const [contentHeight, setContentHeight] = useState<number>(120)
   const contentRef = useRef<HTMLDivElement>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false)
 
@@ -100,22 +93,11 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
     if (typeof onTranscriptFinalized === 'function') {
       const unsubscribe = onTranscriptFinalized(({ text, timestamp }: TranscriptData) => {
         console.log(`Transcript finalized at ${new Date(timestamp).toISOString()}:`, text)
-        setRecognizedTranscripts(prev => [...prev, text])
-        
-        if (contentRef.current) {
-          setTimeout(() => {
-            const newHeight = contentRef.current?.scrollHeight || 120
-            setContentHeight(Math.max(120, Math.min(newHeight + 24, 400)))
-          }, 0)
-        }
       })
       
       return unsubscribe
     }
   }, [onTranscriptFinalized])
-
-  // Store the height of the last complete message
-  const [lastMessageHeight, setLastMessageHeight] = useState<number>(250)
   
   // Get the latest assistant message
   const getLatestAssistantMessage = useCallback((): string | null => {
@@ -128,21 +110,6 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
     }
     return null
   }, [conversationHistory]);
-
-  // Update height when content changes
-  useEffect(() => {
-    if (contentRef.current) {
-      setTimeout(() => {
-        const newHeight = contentRef.current?.scrollHeight || 120
-        const calculatedHeight = Math.max(120, Math.min(newHeight + 24, 400))
-        setContentHeight(calculatedHeight)
-        
-        if (status === ConversationStatus.IDLE && getLatestAssistantMessage()) {
-          setLastMessageHeight(calculatedHeight)
-        }
-      }, 0)
-    }
-  }, [transcript, isUserSpeaking, status, bargeInDetected, getLatestAssistantMessage])
 
   // Start recording automatically when component mounts
   useEffect(() => {
@@ -199,7 +166,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
                     <VoiceCircle state="idle" />
                   </div>
                   <p className="text-muted-foreground mb-2 text-center">
-                    Explain the problem you're running into
+                    Explain the problem you`&apos;`re running into
                   </p>
                 </div>
               </div>
