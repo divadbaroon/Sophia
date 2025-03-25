@@ -1,26 +1,18 @@
-'use client'
+'use client';
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useConversationManager } from '@/lib/hooks/useConversationManager';
-import { ConversationState, StreamingSentence } from '@/types';
+import { ConversationState } from '@/types';
 
 // Create a type that extends ConversationState with all the methods
 type ConversationManagerContextType = ConversationState & {
   isInitialized: boolean;
   startRecording: () => void;
   stopRecording: () => void;
-  queryClaudeWithText: (text: string) => void;
-  toggleAutoTTS: () => void;
-  speakLastResponse: () => void;
-  stopSpeaking: () => void;
-  clearError: () => void;
-  analyzeCode: (code: string) => void;
-  onSentenceAdded: (callback: (data: {messageId: string, sentence: StreamingSentence}) => void) => () => void;
-  onMessageCompleted: (callback: (data: {
-    messageId: string, 
-    content: string, 
-    sentences: StreamingSentence[], 
-    duration: number
+  cancelAllAudioPlayback: () => void; // Added function for barge-in support
+  onTranscriptFinalized: (callback: (data: {
+    text: string, 
+    timestamp: number
   }) => void) => () => void;
 };
 
