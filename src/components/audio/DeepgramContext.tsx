@@ -4,7 +4,6 @@ import { LiveTranscriptionEvents, LiveClient } from '@deepgram/sdk';
 import { ClaudeMessage, DeepgramContextType, LiveTranscriptionResponse } from "@/types";
 import { queryClaudeAPI } from "@/lib/services/ClaudeService";
 import { useFile } from '@/lib/context/FileContext';
-import { useElevenLabs } from '@/lib/hooks/useElevenLabs';
 
 const DEEPGRAM_API_KEY = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY;
 
@@ -31,23 +30,8 @@ export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Get fileContext to pass to Claude
   const fileContext = useFile();
   
-  // Initialize ElevenLabs hook
-  const { 
-    speakMessage, 
-    speakLastResponse, 
-    stopSpeaking, 
-    isLoading: ttsLoading, 
-    error: ttsError, 
-    isPlaying 
-  } = useElevenLabs();
-  
-  // Set error if TTS fails
-  useEffect(() => {
-    if (ttsError) {
-      setError(ttsError);
-    }
-  }, [ttsError]);
-  
+
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const dgConnectionRef = useRef<LiveClient | null>(null);
   const accumulatedTranscriptRef = useRef<string>("");
@@ -69,13 +53,9 @@ export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       fileContext  
     );
     
-    // If auto TTS is enabled, speak Claude's response
-    if (autoTTS && response) {
-      await speakMessage(response.content);
-    }
     
     return response;
-  }, [conversationHistory, fileContext, autoTTS, speakMessage]);  
+  }, [conversationHistory, fileContext, autoTTS]);  
 
   const finalizeTranscript = useCallback(() => {
     console.log('Finalizing transcript after silence');
@@ -121,7 +101,7 @@ export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     try {
       // Stop any ongoing TTS before starting to record
-      stopSpeaking();
+
       
       setError(null);
       setIsRecording(true);
@@ -252,11 +232,6 @@ export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setAutoTTS(prev => !prev);
   }, []);
 
-  // Speak last Claude response
-  const speakLastClaudeResponse = useCallback(() => {
-    speakLastResponse(conversationHistory);
-  }, [speakLastResponse, conversationHistory]);
-
   const value = {
     isStarted,
     setIsStarted,
@@ -270,13 +245,9 @@ export const DeepgramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     stopRecording,
     clearError,
     queryClaudeAPI: handleQueryClaudeAPI,
-    // TTS related properties
-    isTTSLoading: ttsLoading,
-    isTTSPlaying: isPlaying,
     autoTTS,
     toggleAutoTTS,
-    speakLastResponse: speakLastClaudeResponse,
-    stopSpeaking
+
   };
 
   return (
