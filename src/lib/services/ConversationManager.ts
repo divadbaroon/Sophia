@@ -49,7 +49,7 @@ export class ConversationManager extends EventEmitter {
     console.log(`🔄 Conversation status changing: ${this.state.status} -> ${status}`);
     
     // Update the appropriate flags based on status
-    let newState: Partial<ConversationState> = {
+    const newState: Partial<ConversationState> = {
       status: status
     };
     
