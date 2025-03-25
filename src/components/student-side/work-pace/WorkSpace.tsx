@@ -18,7 +18,6 @@ import { twoSumTask } from "@/lib/data/student_tasks"
 
 export const WorkspaceLayout = () => {
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
-  const [helpAvailable, setHelpAvailable] = useState(true)
   const { updateStudentTask } = useFile()
   
   const codeEditorRef = useRef<CodeEditorRef>(null)
@@ -35,7 +34,7 @@ export const WorkspaceLayout = () => {
           size="lg"
           className={`absolute top-3.5 right-16 mr-3 z-50 gap-2 font-medium ${
             isQuestionPanelVisible ? 'bg-secondary' : 
-            helpAvailable ? 'bg-background hover:bg-secondary/80' : 'bg-secondary/30 cursor-not-allowed'
+            'bg-background hover:bg-secondary/80' 
           }`}
           onClick={() => setIsQuestionPanelVisible(!isQuestionPanelVisible)}
         >
