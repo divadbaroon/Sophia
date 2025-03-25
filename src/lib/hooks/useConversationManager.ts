@@ -388,9 +388,7 @@ export const useConversationManager = () => {
               setTaPivot(conceptMapServiceRef.current.getTAPivot());
             }
           }
-        }).catch((error: any) => {
-          console.error('Error updating concept map:', error);
-        });
+        })
       }
     }
   }, [isInitialized, state.conversationHistory, fileContext]);
