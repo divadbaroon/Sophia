@@ -53,7 +53,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
   const [isUserSpeaking, setIsUserSpeaking] = useState<boolean>(false)
   const [showInitialGreeting, setShowInitialGreeting] = useState<boolean>(true)
   const [bargeInDetected, setBargeInDetected] = useState<boolean>(false)
-
+  
   // Effect to monitor transcript changes and detect barge-ins
   useEffect(() => {
     if (transcript && transcript.trim() !== '') {
