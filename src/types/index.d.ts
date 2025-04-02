@@ -210,11 +210,34 @@ export interface TestCase {
   methodId?: string
 }
 
+export interface KnowledgeState {
+  understandingLevel: number;
+  confidenceInAssessment: number;
+  reasoning: string;
+  lastUpdated: string;
+}
+
+export interface Subconcept {
+  name: string;
+  value: number;
+  knowledgeState: KnowledgeState;
+}
+
+export interface ConceptMap {
+  categories: {
+    [category: string]: {
+      [subcategory: string]: Subconcept;
+    };
+  };
+}
+
+// Then update the TaskData interface to include the conceptMap
 export interface TaskData {
   tasks: TaskSidebarProps[]
   methodTemplates: Record<string, string>
   testCases: Record<string, TestCase[]>
   conceptMappings: Record<number, string[]>
+  conceptMap?: ConceptMap  // Optional property with the ConceptMap type
   system: string
 }
 
@@ -258,6 +281,18 @@ export interface FileContextType {
   goToPrevMethod: () => void
   getCurrentMethodTemplate: () => string
   getAllMethodTemplates: () => Record<string, string>
+
+  conversationHistory: ConversationMessage[];
+  updateConversationHistory: (newHistory: ConversationMessage[]) => void;
+  conceptMap: any; // Update this with a more specific type if available
+  updateConceptMap: (newConceptMap: any) => void;
+
+  showReport: boolean;
+  setShowReport: React.Dispatch<React.SetStateAction<boolean>>;
+  
+  // System type properties
+  systemType: 'ATLAS' | 'Standalone';
+  updateSystemType: (type: 'ATLAS' | 'Standalone') => void;
 }
 
 export type FolderContextType = {
@@ -462,32 +497,6 @@ export const wordTimings = responseData.alignment.words.map((wordInfo: ElevenLab
   start: wordInfo.start * 1000, // Convert to milliseconds
   end: wordInfo.end * 1000     // Convert to milliseconds
 }));
-
-export interface KnowledgeState {
-  understandingLevel: number
-  confidenceInAssessment: number
-  reasoning: string
-  lastUpdated: string
-}
-
-export interface Subconcept {
-  name: string
-  probability: number
-  colorIndex: number
-  knowledgeState?: KnowledgeState
-}
-
-export interface Concept {
-  name: string
-  probability: number
-  colorIndex: number
-  subconcepts: Subconcept[]
-  expanded?: boolean
-}
-
-export interface KnowledgeStatesMap {
-  [key: string]: KnowledgeState;
-}
 
 export interface ReasoningByKey {
   [key: string]: string;
