@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams } from 'next/navigation';
 import { ConversationManager, ConversationStatus } from '@/lib/services/ConversationManager';
 import { ConversationManagerOptions, ConversationState, ClaudeMessage } from "@/types";
 import { useFile } from '@/lib/context/FileContext';
@@ -6,16 +7,52 @@ import Anthropic from '@anthropic-ai/sdk';
 import { ElevenLabsClient } from 'elevenlabs';
 import { prepareClaudePrompt } from '@/utils/claude/claudePromptCreation';
 import { ConceptMapService, ConceptMap } from '@/lib/services/ConceptMap';
+import { createClient } from '@/utils/supabase/client';
+
+import { updateStudentSessionData } from "@/lib/actions/studentsActions"
 
 // Get environment variables
 const DEEPGRAM_API_KEY = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY || '';
 const ANTHROPIC_API_KEY = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '';
 const ELEVENLABS_API_KEY = process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY || '';
-const ELEVENLABS_VOICE_ID = process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID || 'iDxgwKogoeR1jrVkJKJv'; // Default or custom voice
+const ELEVENLABS_VOICE_ID = process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID || 'iDxgwKogoeR1jrVkJKJv';
 
 export const useConversationManager = () => {
   // Get file context
   const fileContext = useFile();
+  
+  // Get session and student IDs for storage
+  const params = useParams();
+  const sessionId = params?.id ? parseInt(params.id as string) : null;
+  
+  // Track user/student ID for storage
+  const [studentId, setStudentId] = useState<string | null>(null);
+  
+  // Effect to get student ID from Supabase auth
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const supabase = await createClient();
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error) {
+          console.error('Error getting authenticated user:', error);
+          return;
+        }
+        
+        if (user) {
+          console.log('Got authenticated user:', user.id);
+          setStudentId(user.id);
+        } else {
+          console.warn('No authenticated user found');
+        }
+      } catch (error) {
+        console.error('Error in fetchUser:', error);
+      }
+    };
+    
+    fetchUser();
+  }, []);
   
   // State to synchronize with the manager
   const [state, setState] = useState<ConversationState>({
@@ -24,7 +61,7 @@ export const useConversationManager = () => {
     currentStreamingMessage: null,
     error: null,
     autoTTS: true,
-    status: ConversationStatus.IDLE // Default to IDLE
+    status: ConversationStatus.IDLE
   });
 
   // Track initialization status
@@ -34,10 +71,90 @@ export const useConversationManager = () => {
   const [conceptMap, setConceptMap] = useState<ConceptMap | null>(null);
   const [conceptMapReady, setConceptMapReady] = useState(false);
   const [taPivot, setTaPivot] = useState<string | null>(null);
+  const [isConceptMapProcessing, setIsConceptMapProcessing] = useState(false);
+  
+  // Keep track of all pivot messages and concept maps for history
+  const conceptMapHistoryRef = useRef<ConceptMap[]>([]);
+  const pivotMessageHistoryRef = useRef<string[]>([]);
 
-  console.log("CONCEPT MAP", conceptMap)
-  console.log("CONCEPT MAP Ready", conceptMapReady)
-  console.log("CONCEPT MAP Pivot", taPivot)
+  // Track if confidence was previously met (to detect changes)
+  const wasConfidenceMetRef = useRef<boolean>(false);
+
+  const previousLogRef = useRef<{
+    conceptMapString: string;
+    ready: boolean;
+    pivot: string | null;
+  }>({
+    conceptMapString: '',
+    ready: false,
+    pivot: null
+  });
+  
+  // Save concept map and pivot when they change
+  useEffect(() => {
+    // Only update when there's a meaningful change
+    const conceptMapString = JSON.stringify(conceptMap);
+    
+    if (
+      conceptMapString !== previousLogRef.current.conceptMapString ||
+      conceptMapReady !== previousLogRef.current.ready ||
+      taPivot !== previousLogRef.current.pivot
+    ) {
+      // Log the changes (for debugging only)
+      console.log("CONCEPT MAP", conceptMap);
+      console.log("CONCEPT MAP Ready", conceptMapReady);
+      console.log("CONCEPT MAP Pivot", taPivot);
+      
+      // Update the ref
+      previousLogRef.current = {
+        conceptMapString,
+        ready: conceptMapReady,
+        pivot: taPivot
+      };
+
+      console.log("🔵🔵🔵 UPDATING SESSION FOR USER:", studentId);
+      
+      // If we have sessionId and studentId, save the data directly
+      if (studentId && conceptMap) {
+        // Add to history if this is a new pivot message
+        if (taPivot && !pivotMessageHistoryRef.current.includes(taPivot)) {
+          pivotMessageHistoryRef.current.push(taPivot);
+        }
+        
+        // Add to concept map history
+        conceptMapHistoryRef.current.push({...conceptMap});
+        
+        // Prepare data for saving
+        const dataToSave = {
+          conceptMap,
+          pivotMessage: taPivot,
+          conceptMapConfidenceMet: conceptMapReady,
+          pivotMessageHistory: pivotMessageHistoryRef.current,
+          conceptMapHistory: conceptMapHistoryRef.current,
+          lastUpdated: new Date().toISOString()
+        };
+
+        console.log("UPDATING SESSION WITH ", dataToSave)
+        
+        // Save directly to the database
+        updateStudentSessionData(studentId, dataToSave)
+    
+        // If confidence was newly met, save additional data
+        if (conceptMapReady && !wasConfidenceMetRef.current) {
+          wasConfidenceMetRef.current = true;
+          
+          // Save code, task, and error content when confidence is met
+          updateStudentSessionData(studentId, {
+            code: fileContext?.fileContent || '',
+            task: fileContext?.studentTask || '',
+            errorContent: fileContext?.errorContent || '',
+            confidenceMetAt: new Date().toISOString(),
+            lastUpdated: new Date().toISOString()
+          })
+        }
+      }
+    }
+  }, [conceptMap, conceptMapReady, taPivot, sessionId, studentId]);
   
   // Manager reference
   const managerRef = useRef<ConversationManager | null>(null);
@@ -62,7 +179,7 @@ export const useConversationManager = () => {
   
   // Flag to prevent recursive calls
   const isHandlingBargeInRef = useRef<boolean>(false);
-  
+
   // Initialize the manager
   useEffect(() => {
     // Skip if already initialized
@@ -84,7 +201,7 @@ export const useConversationManager = () => {
       const unsubscribe = manager.subscribe((newState) => {
         setState(newState);
         
-        // Add barge-in detection, but only if we're not already handling a barge-in
+        // Add barge-in detection
         if (!isHandlingBargeInRef.current && 
             isSpeakingRef.current && 
             newState.transcript && 
@@ -96,14 +213,16 @@ export const useConversationManager = () => {
       });
       
       // Initialize the concept map service
-      const conceptService = new ConceptMapService(() => {
-        // Callback when confidence threshold is reached
-        setConceptMapReady(true);
-        if (conceptMapServiceRef.current) {
-          setTaPivot(conceptMapServiceRef.current.getTAPivot());
-          setConceptMap(conceptMapServiceRef.current.getConceptMap());
+      const conceptService = new ConceptMapService(
+        ANTHROPIC_API_KEY, 
+        () => {            
+          setConceptMapReady(true);
+          if (conceptMapServiceRef.current) {
+            setTaPivot(conceptMapServiceRef.current.getTAPivot());
+            setConceptMap(conceptMapServiceRef.current.getConceptMap());
+          }
         }
-      });
+      );
       
       // Initialize
       manager.initialize();
@@ -111,6 +230,45 @@ export const useConversationManager = () => {
       // Set up event listeners for transcript events
       manager.on('transcriptFinalized', ({ text, timestamp }) => {
         console.log(`[EVENT] Transcript finalized at ${new Date(timestamp).toISOString()}:`, text);
+        
+        // Process the transcript with concept map immediately after user message is finalized
+        if (conceptMapServiceRef.current && text.trim() !== '') {
+          // Set processing flag to true
+          setIsConceptMapProcessing(true);
+          
+          // Get the current conversation history
+          const currentHistory = manager.getState().conversationHistory;
+          
+          console.log('🧩 Updating concept map with new user message');
+          
+          conceptMapServiceRef.current.processNewMessage(
+            text,
+            currentHistory,
+            fileContext?.studentTask || '',
+            fileContext?.fileContent || '',
+            fileContext?.errorContent || '',
+            fileContext 
+          ).then(() => {
+            if (conceptMapServiceRef.current) {
+              // Update concept map and related state
+              setConceptMap(conceptMapServiceRef.current.getConceptMap());
+              const newConfidenceState = conceptMapServiceRef.current.hasReachedConfidence();
+              setConceptMapReady(newConfidenceState);
+              
+              // Update pivot
+              const newPivot = conceptMapServiceRef.current.getTAPivot();
+              setTaPivot(newPivot);
+              
+              // Update fileContext with the latest pivot and confidence state
+              if (fileContext) {
+                fileContext.updateConceptMapConfidence?.(newConfidenceState);
+                fileContext.updateLatestPivotMessage?.(newPivot);
+              }
+            }
+            // Set processing flag to false when done
+            setIsConceptMapProcessing(false);
+          });
+        }
       });
       
       // Store references
@@ -122,7 +280,7 @@ export const useConversationManager = () => {
       if (ANTHROPIC_API_KEY) {
         anthropicClientRef.current = new Anthropic({
           apiKey: ANTHROPIC_API_KEY,
-          dangerouslyAllowBrowser: true // Enable browser usage with caution
+          dangerouslyAllowBrowser: true 
         });
       }
       
@@ -280,7 +438,7 @@ export const useConversationManager = () => {
       const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}/stream`, {
         method: 'POST',
         headers: {
-          'Accept': 'audio/mpeg',  // Request audio/mpeg directly, not JSON
+          'Accept': 'audio/mpeg',
           'xi-api-key': ELEVENLABS_API_KEY,
           'Content-Type': 'application/json',
         },
@@ -292,7 +450,6 @@ export const useConversationManager = () => {
             stability: 0.5,
             similarity_boost: 0.75
           }
-          // Remove the alignment/word timing request
         }),
       });
       
@@ -359,44 +516,11 @@ export const useConversationManager = () => {
     }
   }, [speakText]);
   
-  // Update concept map when assistant responds
-  useEffect(() => {
-    // Listen for changes in conversation history
-    if (!isInitialized || !conceptMapServiceRef.current) return;
-    
-    const history = state.conversationHistory;
-    
-    // If the history was updated with a new assistant message
-    if (history.length >= 2 && history[history.length - 1].role === 'assistant') {
-      const lastAssistantMessage = history[history.length - 1];
-      
-      // Check if it's a meaningful message to process
-      if (lastAssistantMessage.content && lastAssistantMessage.content.trim() !== '') {
-        console.log('🧩 Updating concept map with new assistant message');
-        
-        conceptMapServiceRef.current.processNewMessage(
-          lastAssistantMessage.content,
-          history,
-          fileContext?.studentTask || '',
-          fileContext?.fileContent || '',
-          '' // Error message if available
-        ).then(() => {
-          if (conceptMapServiceRef.current) {
-            setConceptMap(conceptMapServiceRef.current.getConceptMap());
-            setConceptMapReady(conceptMapServiceRef.current.hasReachedConfidence());
-            if (conceptMapServiceRef.current.hasReachedConfidence()) {
-              setTaPivot(conceptMapServiceRef.current.getTAPivot());
-            }
-          }
-        })
-      }
-    }
-  }, [isInitialized, state.conversationHistory, fileContext]);
-  
   // Track status changes to query Claude when status changes to PROCESSING
   useEffect(() => {
-    // Only proceed if status is PROCESSING and we have a finalized transcript
-    if (state.status === ConversationStatus.PROCESSING && state.conversationHistory.length > 0) {
+    // Only proceed if status is PROCESSING, we have a finalized transcript, and concept map is not processing
+    if (state.status === ConversationStatus.PROCESSING && 
+        state.conversationHistory.length > 0) {
       console.log('🤖 Status changed to PROCESSING, querying Claude...');
       
       // Clear any previous TTS queue
@@ -435,6 +559,10 @@ export const useConversationManager = () => {
           let currentSentenceBuffer = "";
           let sentenceCount = 0;
           
+          // Track highlighted lines
+          const highlightedLines = new Set<number>();
+          const lineReferenceRegex = /\bin line (\d+)\b/gi;
+          
           // Helper function to detect sentence endings
           const isSentenceEnd = (text: string) => {
             const sentenceEndingChars = ['.', '!', '?'];
@@ -461,16 +589,15 @@ export const useConversationManager = () => {
           
           const systemMessages = contextMessages.filter(msg => msg.role === 'system');
           const systemContent = systemMessages.map(msg => msg.content).join('\n\n');
-
+  
           // Get non-system messages from context messages (should be user/assistant only)
           const nonSystemMessages = contextMessages.filter(msg => msg.role !== 'system');
-
+  
           // Ensure only user/assistant messages from conversation history
           const filteredConversationMessages = conversationMessages.filter(
             msg => msg.role === 'user' || msg.role === 'assistant'
           );
-
-
+  
           // Create a properly typed array for the Anthropic API
           // Explicitly cast to only allow 'user' | 'assistant' roles
           const apiMessages = [...nonSystemMessages, ...filteredConversationMessages].map(msg => ({
@@ -479,7 +606,7 @@ export const useConversationManager = () => {
               : 'user', // Default to user if somehow not user/assistant
             content: msg.content
           }));
-
+  
           // Make the API call with the correct structure
           await anthropicClientRef.current?.messages.stream({
             system: systemContent,
@@ -508,6 +635,7 @@ export const useConversationManager = () => {
             console.log(`✅ [${endTime.toISOString()}] Claude response complete - ${duration.toFixed(2)}s`);
             console.log(`📊 Response summary: ${sentenceCount} sentences, ${fullResponse.length} characters`);
             console.log(`📄 Full response:\n${fullResponse}`);
+            console.log(`🔍 Referenced lines:`, [...highlightedLines]);
             
             // If no sentences were processed, return to IDLE
             if (sentenceCount === 0 && managerRef.current) {
@@ -551,7 +679,7 @@ export const useConversationManager = () => {
       
       streamResponse();
     }
-  }, [state.status, state.conversationHistory, queueOrSpeakText]);
+  }, [state.status, state.conversationHistory, isConceptMapProcessing, queueOrSpeakText, sessionId, studentId]);
   
   // Helper function to ensure manager exists
   const getManager = useCallback(() => {
