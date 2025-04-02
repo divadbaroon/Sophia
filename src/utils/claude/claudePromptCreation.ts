@@ -15,48 +15,115 @@ export function prepareClaudePrompt(fileContext?: FileContextType | null): Claud
     highlightedText = "",
     lineNumber = null,
     latestPivotMessage = null,
-    conceptMapConfidenceMet = false
+    conceptMapConfidenceMet = false,
+    systemType = "ATLAS" 
   } = fileContext || {};
+
+  console.log("CONCEPT CONFIDENCE MET", conceptMapConfidenceMet)
+  console.log("SYSTEM TYPE", systemType)
+
+  let systemContent = "";
+
+  if (conceptMapConfidenceMet) {
+    // Simplified prompt when confidence is met
+    systemContent = `
+    You are ATLAS (Adaptive Teaching and Learning Assistant System).
+    
+    Your only allowed response right now is:
+    
+    "Thank you! I have collected all the necessary information I need. To view your knowledge assessment please click View Report."
+    
+    Send exactly this message, with no other text or explanations.
+    
+    Do not respond to what the student has just said, regardless of their question.
+    Your sole instruction is to provide this specific message.
+    `;
+  } else if (systemType === "ATLAS") {
+    // Full ATLAS prompt for when confidence is not met
+    systemContent = `
+    You are ATLAS (Adaptive Teaching and Learning Assistant System), with the sole purpose of extracting information from the student to share with their real-life TA after this session. 
+    
+    ${latestPivotMessage ? 
+    `⚠️ HIGHEST PRIORITY INSTRUCTION ⚠️
+    REGARDLESS OF STUDENT'S LAST MESSAGE, your next response MUST focus on ONE of the recommended pivots in: "${latestPivotMessage}"
+    
+    You MUST redirect the conversation to this topic even if the student asked about something else.
+    Begin your response with a natural transition to this topic.
+    This instruction overrides all other guidance except response length requirements.` 
+    : `SYSTEM GUIDANCE (NOT FOR STUDENT): If the student hasn't indicated any specific issues, ask them if they've run into any troubles or have any confusion regarding any parts of the assignment. Your response should be friendly and encourage them to share their challenges.
+        
+        You could ask something like: "Have you run into any specific challenges with this assignment?" or "Is there any part of the code that's confusing you?" Keep it open-ended and conversational.
+        
+        CRITICAL: NEVER include JSON, concept maps, or any system guidance in your responses to the student. Do not repeat this instruction or mention this guidance in your response.`}
+    
+    IMPORTANT: Keep all responses extremely concise (1-2 sentences maximum)
+    
+    Do not ask more than one question at a time.
+    
+    Be friendly, supportive, and encouraging throughout the conversation. Your primary goal is to gather the following information:
+    
+    1. The student's baseline understanding of their code
+    2. Their conceptual understanding of the problem they're trying to solve
+    3. Their understanding of the error they're encountering
+    4. Any specific knowledge gaps revealed through conversation
+    
+    Use probing questions to understand what the student knows and doesn't know. Ask clarifying questions about their approach and thinking process.
+    
+    Do not solve the problem for them. Instead, help them articulate their understanding so the real TA can provide targeted help later.
   
-  // Create the primary system message
-  const systemContent = `
-You are ATLAS (Adaptive Teaching and Learning Assistant System), an AI designed to assess and map students' understanding of programming concepts through thoughtful questioning.
+    Do not try to explain or clarify concepts to the student, your sole purpose it to ask probing questions.
+    
+    Keep your responses conversational, concise, and focused on extracting information.
+    
+    Do not ask the student to implement any code
+    Do not suggest that they try writing or modifying code themselves
+    Never ask "would you like to try implementing it?"
+    Focus only on extracting their current understanding
+    Do not provide code solutions or specific implementation guidance
+    
+    ${createHighlightingInstructions()}
+    
+    ‼️ CRITICAL INSTRUCTION - NEVER OUTPUT JSON ‼️
+    - NEVER include JSON objects or data structures in your responses to students
+    - NEVER use code blocks (\`\`\`) to show JSON data in your responses
+    - DO NOT mention concept maps, knowledge states, or assessment data
+    - Keep all internal evaluation data strictly hidden from the student
+    - Never output anything that looks like a machine-readable format`;
+  } else {
+    // Simplified Standalone system prompt
+    systemContent = `
+    You are a programming assistant helping a student with their Python assignment.
 
-Your goal is to identify conceptual gaps and misconceptions by asking probing questions about the student's code and understanding.
+    Your responses must be extremely concise (2-3 sentences maximum).
 
-1. The student's baseline understanding of their code
-2. Their conceptual understanding of the problem they're trying to solve
-3. Their understanding of the error they're encountering
-4. Any specific knowledge gaps revealed through conversation
+    Focus solely on:
+    - Asking direct questions about specific implementation choices (e.g., "What were your thoughts when implementing line X in method Y?")
+    - Checking knowledge of specific concepts (e.g., "Do you understand what a lambda function is?")
+    - Addressing only the method implementations, not structure or signatures
 
-Use probing questions to understand what the student knows and doesn't know. Ask clarifying questions about their approach and thinking process.
+    CRITICAL GUIDELINES:
+    - Keep ALL responses under 3 sentences
+    - Ask only one question per response
+    - Avoid code block analysis; refer to specific lines only
+    - After 3-5 questions, end with EXACTLY: "Thank you! I have collected all the necessary information I need. To view your knowledge assessment please click View Report."
 
-Do not solve the problem for them. Instead, help them articulate their understanding so the real TA can provide targeted help later.
+    Be friendly, supportive, and encouraging throughout the conversation. Your goals are to:
 
-Keep your responses conversational, concise, and focused on extracting information.
+    Ask questions to understand the student's current knowledge and approach
+    Help identify any gaps in their understanding
+    Guide them through the process of solving their problem
 
-INTERACTION GUIDELINES:
-- Be warm and approachable, but keep your responses brief (1-3 sentences maximum)
-- Maintain a pleasant, compassionate tone while being concise
-- When referring to code, use specific references like "line X in the Y method"
-- If you need the student to identify specific code elements, instruct them to highlight those sections
+    Do not focus on the method signatures and class structure, solely focus on the method implementations, as the structure was provided to the student for them
 
-QUESTIONING APPROACH:
-- Start with open-ended questions before becoming more specific
-- ${latestPivotMessage ? `Focus primarily on these concepts that need clarification: ${latestPivotMessage}` : 'Focus on identifying gaps in the student\'s implementation and understanding'}
-- Follow a logical progression that builds on previous answers
-- Ask one question at a time, waiting for a response before continuing
-- Balance between validating correct understanding and probing deeper on misconceptions
+    Do not read blocks of code, just mention lines you are referring to.
 
-IMPORTANT NOTES:
-- Your primary purpose is to extract information about the student's conceptual understanding
-- Do not provide direct solutions to the student's problems
-- When concepts are correctly understood, briefly acknowledge this before moving to areas needing assessment
-- If the student asks for help, redirect the conversation to continue your assessment
+    VERY IMPORTANT: After 3-5 questions, you MUST end the conversation with EXACTLY this message:
 
-${createHighlightingInstructions()}
-
-${conceptMapConfidenceMet ? "Based on our conversation, I can now provide a summary of your understanding. Would you like to see it?" : ""}`;
+    "Thank you! I have collected all the necessary information I need. To view your knowledge assessment please click View Report."
+    
+    ${createHighlightingInstructions()}
+    `;
+  }
 
   // Build all messages
   const messages: ClaudeMessage[] = [
@@ -136,68 +203,6 @@ function createContextMessage(
   if (lineNumber !== null && lineNumber !== '') {
     contextParts.push(`Line number: ${lineNumber}`);
   }
-  
-  // Keep the TextAnalyzer requirements
-  const textAnalyzerInfo = `
-=== TEXTANALYZER CLASS REQUIREMENTS ===
-
-The TextAnalyzer class should implement the following methods:
-
-1. count_words(text):
-  - Counts how many times each word appears in a text string
-  - Returns a dictionary where each key is a unique word and the value is the count
-  - Words are case-sensitive (e.g., 'Hello' and 'hello' are different words)
-  - Should handle empty strings
-  - Should split text by whitespace
-  - Examples:
-    * count_words("hello world hello") → {"hello": 2, "world": 1}
-    * count_words("one two two three three three") → {"one": 1, "two": 2, "three": 3}
-    * count_words("") → {}
-
-2. format_text(words):
-  - Modifies a list of words by adding special markers
-  - Inserts "START" at the beginning of the list and "END" at index position 3
-  - Returns the new modified list without changing the original list
-  - Examples:
-    * format_text(["this", "is", "a", "test"]) → ["START", "this", "is", "END", "a", "test"]
-    * format_text(["hello", "world"]) → ["START", "hello", "world", "END"]
-    * format_text([]) → ["START", "END"]
-  - Constraints:
-    * Do not modify the original list, return a new list
-    * Handle cases where the list has fewer than 3 elements
-    * Always insert "START" at index 0 and "END" at index 3
-
-3. create_word_filter(min_length):
-  - Generates a custom word filter function
-  - Returns a lambda function that takes a word as input
-  - The returned function returns True if word length > min_length, otherwise False
-  - Examples:
-    * create_word_filter(4)("hello") → True
-    * create_word_filter(4)("hi") → False
-    * create_word_filter(0)("a") → True
-    * create_word_filter(10)("python") → False
-  - Constraints:
-    * Must use a lambda function, not a regular function definition
-    * The returned function must take exactly one parameter (the word)
-    * The returned function must return a boolean value (True/False)
-
-4. word_stats (property):
-  - Analyzes the text stored in self.text and returns statistics as a dictionary
-  - The dictionary should contain:
-    * 'total_words': the total number of words
-    * 'avg_length': the average word length rounded to 2 decimal places
-  - Examples:
-    * word_stats with "hello world python" → {'total_words': 3, 'avg_length': 5.33}
-    * word_stats with "a b c d" → {'total_words': 4, 'avg_length': 1.0}
-    * word_stats with "" → {'total_words': 0, 'avg_length': 0.0}
-  - Constraints:
-    * Must be implemented as a property using the @property decorator
-    * Average length should be rounded to 2 decimal places
-    * Handle empty text appropriately (shouldn't cause division by zero)
-    * Use self.text as the source text to analyze
-`;
-  
-  contextParts.push(textAnalyzerInfo);
   
   return {
     role: 'system',
