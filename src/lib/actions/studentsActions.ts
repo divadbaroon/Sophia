@@ -190,7 +190,7 @@ async function updateSessionMetrics(sessionId: number) {
       }
   
       // Get count of students who have joined this session
-      const { data: studentData, count, error: countError } = await supabase
+      const { count, error: countError } = await supabase
         .from('student_sessions')
         .select('id', { count: 'exact' })
         .eq('session_id', sessionId) as CountQueryResult

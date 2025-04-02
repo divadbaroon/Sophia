@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { checkAuthStatus, createAnonymousUser } from '@/lib/actions/user';
 import { createStudentSession } from '@/lib/actions/studentsActions';
 import { User } from '@/types';
