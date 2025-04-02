@@ -6,7 +6,33 @@ import ProbabilityBar from "./probability-bar"
 import TimeProgress from "./time-progress"
 import KnowledgeStateTooltip from "./knowledge-state-tooltip"
 
-import { Concept, KnowledgeStatesMap, CustomReasoningMap } from "@/types"
+import { CustomReasoningMap } from "@/types"
+
+export interface KnowledgeState {
+  understandingLevel: number
+  confidenceInAssessment: number
+  reasoning: string
+  lastUpdated: string
+}
+
+export interface Subconcept {
+  name: string
+  probability: number
+  colorIndex: number
+  knowledgeState?: KnowledgeState
+}
+
+export interface Concept {
+  name: string
+  probability: number
+  colorIndex: number
+  subconcepts: Subconcept[]
+  expanded?: boolean
+}
+
+export interface KnowledgeStatesMap {
+  [key: string]: KnowledgeState;
+}
 
 // Generates Sample knowledge states for subconcepts
 const generateKnowledgeStates = (timeIndex: number): KnowledgeStatesMap => {
