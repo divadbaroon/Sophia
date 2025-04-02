@@ -10,7 +10,7 @@ import { FileContextType, TestCase, TaskData, ConversationMessage } from '@/type
 import { usePathname } from 'next/navigation'
 
 // Define the session data structure with tasks, method templates, and test cases
-const condition1: TaskData = {
+const condition2: TaskData = {
   tasks: [
     {
       title: "1.) calculate_sum()",
@@ -259,7 +259,7 @@ const condition1: TaskData = {
   system: "ATLAS"
 }
 
-const condition2: TaskData = {
+const condition1: TaskData = {
   tasks: [
     {
       title: "1.) filter_high_scores()",
