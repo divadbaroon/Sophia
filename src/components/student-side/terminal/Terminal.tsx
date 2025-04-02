@@ -1,6 +1,5 @@
 "use client"
 
-import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -10,41 +9,424 @@ import { useFile } from "@/lib/context/FileContext"
 import { useToast } from "@/hooks/use-toast"
 import { Play } from "lucide-react"
 
-interface TestCase {
-  nums: number[]
-  target: number
-  expected: number[]
-}
-
-const testCases: TestCase[] = [
-  {
-    nums: [2, 7, 11, 15],
-    target: 9,
-    expected: [0, 1],
-  },
-  {
-    nums: [3, 2, 4],
-    target: 6,
-    expected: [1, 2],
-  },
-  {
-    nums: [3, 3],
-    target: 6,
-    expected: [0, 1],
-  },
-]
-
-const Terminal: React.FC = () => {
+const Terminal = () => {
   const [output, setOutput] = useState("")
   const [compiler, setCompiler] = useState("python")
   const { pyodide } = usePythonRunner()
-  const { fileContent, isSaved, setErrorContent } = useFile()
+  const { 
+    fileContent, 
+    isSaved, 
+    setErrorContent,
+    activeMethodId,
+    currentTestCases
+  } = useFile()
+  
   const { toast } = useToast()
+
+  const getFullCodeWithTests = (): string => {
+    // Exit early if activeMethodId is not available
+    if (!activeMethodId) return fileContent;
+    
+    // Add test code to the class definition based on the current method
+    return `${fileContent}
+
+# Test code
+if __name__ == "__main__":
+    analyzer = TextAnalyzer()
+    
+    # Test the current method
+    if "${activeMethodId}" == "calculate_sum":
+        result = analyzer.calculate_sum(1, 6)
+        print(f"calculate_sum result: {result}")
+    elif "${activeMethodId}" == "create_pattern":
+        result = analyzer.create_pattern([7, 12, 9, 14, 6, 3])
+        print(f"create_pattern result: {result}")
+    elif "${activeMethodId}" == "create_multiplier":
+        multiplier = analyzer.create_multiplier(8)
+        print(f"multiplier(6) = {multiplier(6)}")
+    elif "${activeMethodId}" == "filter_high_scores":
+        result = analyzer.filter_high_scores({'Alice': 92, 'Bob': 75, 'Charlie': 85, 'David': 70}, 80)
+        print(f"filter_high_scores result: {result}")
+    elif "${activeMethodId}" == "slice_string":
+        result = analyzer.slice_string("Python Programming", 2, -2, 2)
+        print(f"slice_string result: {result}")
+    elif "${activeMethodId}" == "flatten_matrix":
+        result = analyzer.flatten_matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        print(f"flatten_matrix result: {result}")`;
+  };
+
+  const getTestRunnerCode = (): string => {
+    // Exit early if activeMethodId or testCases are not available
+    if (!activeMethodId || !currentTestCases) return "";
+    
+    const fullCodeWithTests = getFullCodeWithTests();
+    
+    // Generate different test runners based on the method
+    if (activeMethodId === "calculate_sum") {
+      return `
+# First execute the user's code to define the TextAnalyzer class
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for calculate_sum method:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    start = test["input"]["start"]
+    end = test["input"]["end"]
+    expected = test["expected"]
+    
+    analyzer = TextAnalyzer()
+    try:
+        result = analyzer.calculate_sum(start, end)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: start = {start}, end = {end}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: start = {start}, end = {end}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: start = {start}, end = {end}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+    } else if (activeMethodId === "create_pattern") {
+      return `
+# First execute the user's code to define the TextAnalyzer class
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for create_pattern method:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    numbers = test["input"]["numbers"]
+    expected = test["expected"]
+    
+    analyzer = TextAnalyzer()
+    try:
+        result = analyzer.create_pattern(numbers.copy())  # Pass a copy to prevent modification
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: numbers = {numbers}")
+            print(f"   Expected: '{expected}'")
+            print(f"   Result: '{result}'")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: numbers = {numbers}")
+            print(f"   Expected: '{expected}'")
+            print(f"   Result: '{result}'")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: numbers = {numbers}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+    } else if (activeMethodId === "create_multiplier") {
+      return `
+# First execute the user's code to define the TextAnalyzer class
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+import inspect
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for create_multiplier method:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    factor = test["input"]["factor"]
+    test_value = test["input"]["test_value"]
+    expected = test["expected"]
+    
+    analyzer = TextAnalyzer()
+    try:
+        multiplier = analyzer.create_multiplier(factor)
+        
+        # Check if it's a lambda function
+        is_lambda = multiplier.__name__ == '<lambda>'
+        if not is_lambda:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Not a lambda function. You returned: {multiplier}")
+            continue
+            
+        # Test the multiplier
+        result = multiplier(test_value)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: factor = {factor}, test_value = {test_value}")
+            print(f"   Expected: multiplier({test_value}) = {expected}")
+            print(f"   Result: multiplier({test_value}) = {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: factor = {factor}, test_value = {test_value}")
+            print(f"   Expected: multiplier({test_value}) = {expected}")
+            print(f"   Result: multiplier({test_value}) = {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: factor = {factor}, test_value = {test_value}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+    } else if (activeMethodId === "filter_high_scores") {
+      return `
+# First execute the user's code to define the TextAnalyzer class
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for filter_high_scores method:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    scores = test["input"]["scores"]
+    threshold = test["input"]["threshold"]
+    expected = test["expected"]
+    
+    analyzer = TextAnalyzer()
+    try:
+        # Create a copy of scores to ensure original isn't modified
+        result = analyzer.filter_high_scores(dict(scores), threshold)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: scores = {scores}, threshold = {threshold}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: scores = {scores}, threshold = {threshold}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: scores = {scores}, threshold = {threshold}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+    } else if (activeMethodId === "slice_string") {
+      return `
+# First execute the user's code to define the TextAnalyzer class
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for slice_string method:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    text = test["input"]["text"]
+    start = test["input"]["start"]
+    end = test["input"]["end"]
+    step = test["input"]["step"]
+    expected = test["expected"]
+    
+    analyzer = TextAnalyzer()
+    try:
+        result = analyzer.slice_string(text, start, end, step)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: text = '{text}', start = {start}, end = {end}, step = {step}")
+            print(f"   Expected: '{expected}'")
+            print(f"   Result: '{result}'")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: text = '{text}', start = {start}, end = {end}, step = {step}")
+            print(f"   Expected: '{expected}'")
+            print(f"   Result: '{result}'")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: text = '{text}', start = {start}, end = {end}, step = {step}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+    } else if (activeMethodId === "flatten_matrix") {
+      return `
+# First execute the user's code to define the TextAnalyzer class
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for flatten_matrix method:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    matrix = test["input"]["matrix"]
+    expected = test["expected"]
+    
+    analyzer = TextAnalyzer()
+    try:
+        # Make a deep copy of the matrix to ensure original isn't modified
+        import copy
+        matrix_copy = copy.deepcopy(matrix)
+        result = analyzer.flatten_matrix(matrix_copy)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: matrix = {matrix}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: matrix = {matrix}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: matrix = {matrix}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+    }
+    
+    // Default case - should not happen
+    return "";
+  };
 
   const handleRun = async (): Promise<void> => {
     if (!isSaved()) {
       toast({
         title: "Please save the file before running",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!activeMethodId) {
+      toast({
+        title: "No method selected",
+        description: "Please select a method to test",
         variant: "destructive",
       })
       return
@@ -56,8 +438,6 @@ const Terminal: React.FC = () => {
 
         // First, execute the code to validate syntax
         const checkSyntaxCode = `
-from typing import List
-
 def check_code_syntax():
     try:
         # Execute the code to check for syntax errors
@@ -87,67 +467,14 @@ syntax_valid, error_message = check_code_syntax()
         }
 
         // If syntax is valid, run test cases
-        const testRunnerCode = `
-from typing import List
-import sys
-from io import StringIO
-
-# First execute the user's code to define the Solution class
-${fileContent}
-
-# Define test cases
-test_cases = ${JSON.stringify(testCases)}
-
-# Capture output
-output_buffer = StringIO()
-sys.stdout = output_buffer
-
-print("Running test cases for twoSum function:")
-print("=====================================")
-
-all_passed = True
-for i, test in enumerate(test_cases):
-    nums = test["nums"]
-    target = test["target"]
-    expected = test["expected"]
-    
-    solution = Solution()
-    try:
-        result = solution.twoSum(nums, target)
-        # Sort both lists to handle different order
-        result_sorted = sorted(result) if result else result
-        expected_sorted = sorted(expected)
+        const testRunnerCode = getTestRunnerCode();
         
-        if result_sorted == expected_sorted:
-            print(f"✅ Test {i+1} PASSED")
-            print(f"   Input: nums = {nums}, target = {target}")
-            print(f"   Expected: {expected}")
-            print(f"   Result: {result}")
-        else:
-            all_passed = False
-            print(f"❌ Test {i+1} FAILED")
-            print(f"   Input: nums = {nums}, target = {target}")
-            print(f"   Expected: {expected}")
-            print(f"   Result: {result}")
-    except Exception as e:
-        all_passed = False
-        print(f"❌ Test {i+1} ERROR")
-        print(f"   Input: nums = {nums}, target = {target}")
-        print(f"   Error: {str(e)}")
-        
-    print()
+        if (!testRunnerCode) {
+          setOutput(`Error: No test cases available for method '${activeMethodId}'`)
+          return;
+        }
 
-if all_passed:
-    print("🎉 All tests passed! Your solution works for all test cases.")
-else:
-    print("Some tests failed. Review your solution and try again.")
-
-# Restore stdout and get output
-sys.stdout = sys.__stdout__
-test_output = output_buffer.getvalue()
-`.trim()
-
-        console.log("Running test cases...")
+        console.log(`Running test cases for ${activeMethodId}...`)
         await pyodide?.runPython(testRunnerCode)
 
         const testOutput = await pyodide?.globals.get("test_output")
@@ -229,4 +556,3 @@ test_output = output_buffer.getvalue()
 }
 
 export default Terminal
-
