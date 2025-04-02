@@ -9,9 +9,9 @@ export type ConversationStateListener = (state: ConversationState) => void;
 
 // Enum for conversation flow states
 export enum ConversationStatus {
-  IDLE = 'idle',           // No active processing or speaking
-  PROCESSING = 'processing', // System is processing/generating a response
-  SPEAKING = 'speaking'    // System is speaking the response
+  IDLE = 'idle',           
+  PROCESSING = 'processing', 
+  SPEAKING = 'speaking'   
 }
 
 export class ConversationManager extends EventEmitter {
@@ -161,27 +161,44 @@ export class ConversationManager extends EventEmitter {
         this.mediaRecorder = recorder;
       });
 
+      // Track the previous interim result to avoid duplicates
+      let previousInterim = "";
+
       dgConnection.addListener(LiveTranscriptionEvents.Transcript, (data: LiveTranscriptionResponse) => {
         const transcriptText = data.channel.alternatives[0].transcript.trim();
         
         if (transcriptText) {
-          // Log with interim/final status
-          if (data.is_final) {
-            console.log(`🎙️ Final: "${transcriptText}"`);
-          }
-          
-          // Update with user's transcript
+          // For UI updates, always show the latest transcript
           this.updateState({
             transcript: transcriptText
           });
           
-          // Don't accumulate, just use the latest final transcript
+          // For final results, add to our accumulated transcript
           if (data.is_final) {
-            // Replace the accumulated transcript instead of appending
-            this.accumulatedTranscript = transcriptText;
+            console.log(`🎙️ Final: "${transcriptText}"`);
             
-            // Print the accumulated transcript so far
-            console.log(`📝 New final transcript: "${this.accumulatedTranscript}"`);
+            // Check if this is a new utterance or a duplicate
+            if (!this.accumulatedTranscript.endsWith(transcriptText)) {
+              // Append to accumulated transcript with appropriate spacing
+              if (this.accumulatedTranscript) {
+                this.accumulatedTranscript += ' ' + transcriptText;
+              } else {
+                this.accumulatedTranscript = transcriptText;
+              }
+              
+              console.log(`📝 Accumulated transcript: "${this.accumulatedTranscript}"`);
+            } else {
+              console.log(`⚠️ Skipping duplicate transcript: "${transcriptText}"`);
+            }
+            
+            // Reset previous interim
+            previousInterim = "";
+          } else {
+            // For interim results, only log if different from previous
+            if (transcriptText !== previousInterim) {
+              console.log(`🎙️ Interim: "${transcriptText}"`);
+              previousInterim = transcriptText;
+            }
           }
           
           // Reset silence timer
