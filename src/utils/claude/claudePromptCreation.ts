@@ -1,9 +1,8 @@
 import { ClaudeMessage, FileContextType } from "@/types";
-import { addLineNumbers, extractTwoSumFunction } from "./codeModifier";
+import { addLineNumbers } from "./codeModifier";
 
 /**
  * Prepares system message and context for communicating with Claude
- * based on the selected role and scenario
  */
 export function prepareClaudePrompt(fileContext?: FileContextType | null): ClaudeMessage[] {
   
@@ -13,26 +12,60 @@ export function prepareClaudePrompt(fileContext?: FileContextType | null): Claud
     errorContent: errorMessage = "",
     studentTask = "",
     executionOutput = "",
-    speakTo: role = "student",
-    scenario = "one-on-one",
     highlightedText = "",
-    lineNumber = null
+    lineNumber = null,
+    latestPivotMessage = null,
+    conceptMapConfidenceMet = false
   } = fileContext || {};
   
-  // Create system message based on the selected role
-  let systemContent = createRoleBasedSystemContent(role, scenario);
+  // Create the primary system message
+  const systemContent = `
+You are ATLAS (Adaptive Teaching and Learning Assistant System), an AI designed to assess and map students' understanding of programming concepts through thoughtful questioning.
 
-  // Add instructions for system highlighting capability
-  systemContent += createHighlightingInstructions();
+Your goal is to identify conceptual gaps and misconceptions by asking probing questions about the student's code and understanding.
+
+1. The student's baseline understanding of their code
+2. Their conceptual understanding of the problem they're trying to solve
+3. Their understanding of the error they're encountering
+4. Any specific knowledge gaps revealed through conversation
+
+Use probing questions to understand what the student knows and doesn't know. Ask clarifying questions about their approach and thinking process.
+
+Do not solve the problem for them. Instead, help them articulate their understanding so the real TA can provide targeted help later.
+
+Keep your responses conversational, concise, and focused on extracting information.
+
+INTERACTION GUIDELINES:
+- Be warm and approachable, but keep your responses brief (1-3 sentences maximum)
+- Maintain a pleasant, compassionate tone while being concise
+- When referring to code, use specific references like "line X in the Y method"
+- If you need the student to identify specific code elements, instruct them to highlight those sections
+
+QUESTIONING APPROACH:
+- Start with open-ended questions before becoming more specific
+- ${latestPivotMessage ? `Focus primarily on these concepts that need clarification: ${latestPivotMessage}` : 'Focus on identifying gaps in the student\'s implementation and understanding'}
+- Follow a logical progression that builds on previous answers
+- Ask one question at a time, waiting for a response before continuing
+- Balance between validating correct understanding and probing deeper on misconceptions
+
+IMPORTANT NOTES:
+- Your primary purpose is to extract information about the student's conceptual understanding
+- Do not provide direct solutions to the student's problems
+- When concepts are correctly understood, briefly acknowledge this before moving to areas needing assessment
+- If the student asks for help, redirect the conversation to continue your assessment
+
+${createHighlightingInstructions()}
+
+${conceptMapConfidenceMet ? "Based on our conversation, I can now provide a summary of your understanding. Would you like to see it?" : ""}`;
 
   // Build all messages
   const messages: ClaudeMessage[] = [
     { role: 'system', content: systemContent }
   ];
   
-  // craeates message for currently available context
+  // Creates message for currently available context
   const contextMessage = createContextMessage(
-    role, studentTask, studentCode, errorMessage, 
+    studentTask, studentCode, errorMessage, 
     executionOutput, highlightedText, lineNumber
   );
   
@@ -40,78 +73,8 @@ export function prepareClaudePrompt(fileContext?: FileContextType | null): Claud
   if (contextMessage) {
     messages.push(contextMessage);
   }
-  
+
   return messages;
-}
-
-/**
- * Creates appropriate system content based on selected role and scenario
- */
-function createRoleBasedSystemContent(role: string, scenario: string): string {
-  if (scenario === 'group') {
-    return `You are simulating a classroom discussion between a teacher and another student named Alex about programming concepts.
-    
-    IMPORTANT: Format all responses as a back-and-forth dialogue with clear speaker labels:
-    
-    Teacher: [Very brief statement]
-    Alex: [Short question or response]
-    Teacher: [Concise reply]
-    
-    Each response should include 2-3 turns in the conversation. Make all statements extremely brief - one short sentence per turn whenever possible.
-    
-    The real user (David) is observing this conversation but not participating directly.
-    
-    When discussing code, ONLY use line numbers (e.g., 'line 5') - the system will highlight that line for David.
-    
-    CRITICAL: Keep individual speaking turns extremely concise - no more than 10-25 words per turn. Use simple language an actual student would use.`;
-  }
-  
-  if (role === "ta") {
-    return `You are a teaching assistant with the sole purpose of extracting information from the student to share with their real-life TA after this session. 
-
-            IMPORTANT: Keep all responses extremely concise (1-2 sentences maximum)
-
-            Do not ask more than one question at a time.
-
-            The student's name is David
-
-            Be friendly, supportive, and encouraging throughout the conversation. Your primary goal is to gather the following information:
-
-            1. The student's baseline understanding of their code
-            2. Their conceptual understanding of the problem they're trying to solve
-            3. Their understanding of the error they're encountering
-            4. Any specific knowledge gaps revealed through conversation
-
-            Use probing questions to understand what the student knows and doesn't know. Ask clarifying questions about their approach and thinking process.
-
-            Do not solve the problem for them. Instead, help them articulate their understanding so the real TA can provide targeted help later.
-
-            Keep your responses conversational, concise, and focused on extracting information.`;
-  }
-  
-  // Default to fellow student role
-  return `You are a fellow student in the same programming class as David. You're helping him with his code during class.
-
-          IMPORTANT: Keep all responses extremely concise (1-2 sentences maximum). Never exceed 40 words total.
-
-          Keep all responses conversational and natural, as if you're another student (not an expert).
-
-          As a fellow student:
-          1. You have a good but imperfect understanding of the coursework
-          2. You're helpful but sometimes uncertain
-          3. You occasionally use casual language and student expressions
-          4. You speak concisely (1-3 sentences per response)
-          5. You sometimes ask questions when you don't fully understand something
-
-          You're trying to help David figure out his code issues on his own, not just give him the answer.
-          
-          Occasionally mention your own similar experiences with coding challenges.
-          
-          NEVER identify yourself as an AI, assistant, or anything other than a fellow student.
-
-          Use a friendly, collaborative tone like you're figuring things out together.
-          
-          Never exceed 40 words total in you response.`;
 }
 
 /**
@@ -119,18 +82,19 @@ function createRoleBasedSystemContent(role: string, scenario: string): string {
  */
 function createHighlightingInstructions(): string {
   return `
-  IMPORTANT - Special Interaction Features:
+SPECIAL INTERACTION FEATURES:
 
-  1. Text Highlighting by Student:
-    - The student can highlight portions of code in the editor to draw your attention to specific parts
-    - When they do, you'll see "Student's highlighted text: [text they highlighted]" in your context
-    - Respond directly to any highlighted code sections when you see them
+1. Text Highlighting by Student:
+  - You can instruct the student to highlight portions of their code in the editor which will include it as context to you
+  - When they do, you'll see "Student's highlighted text: [text they highlighted]" in your context
+  - Respond directly to any highlighted code sections when you see them
 
- 2. Code Line References:
-   - CRITICAL: When discussing code, ONLY reference line numbers (e.g., "Look at line 5") 
-   - Always use the SINGULAR form "line X" even when referring to multiple lines
-   - For multiple lines, say "line 5" and then "line 10" separately, not "lines 5 and 10"
-   - NEVER quote the actual code content from those lines
+2. Code Line References:
+  - CRITICAL: When discussing code, reference line numbers using the exact format "in line X" (e.g., "in line 5")
+  - Reference only ONE line number at a time in each sentence
+  - If you need to refer to multiple lines, use separate sentences for each line reference
+  - NEVER quote the actual code content from those lines
+  - The system will automatically highlight any line numbers you mention in this format
   `;
 }
 
@@ -138,65 +102,105 @@ function createHighlightingInstructions(): string {
  * Creates a context message with all relevant file and scenario details
  */
 function createContextMessage(
-  role: string, 
   studentTask: string, 
   studentCode: string, 
   errorMessage: string,
   executionOutput: string,
   highlightedText: string,
-  lineNumber: number | string | null
+  lineNumber: number | string | null,
 ): ClaudeMessage | null {
-
-  // Create appropriate intro based on role
-  const contextIntro = role === "ta" 
-  ? "Here is context about the student's current situation:"
-  : "Here is the code that you're looking at together:";
-
+  // Same implementation as before
   const contextParts = [];
 
-  if (role) {
-    contextParts.push(`Role: ${role}`);
-  }
-
-  if (lineNumber !== null && lineNumber !== '') {
-    contextParts.push(`line number: ${lineNumber}`);
-  }
-  
   if (studentTask) {
     contextParts.push(`Task: ${studentTask}`);
   }
   
   if (studentCode) {
-    // For now                  
-    // Extracting just the twoSum function and add line numbers
-    const twoSumFunctionOnly = extractTwoSumFunction(studentCode);
-    const numberedCode = addLineNumbers(twoSumFunctionOnly);
-    contextParts.push(`Here is David's twoSum function with line numbers:\n\`\`\`python\n${numberedCode}\n\`\`\``);
+    const numberedCode = addLineNumbers(studentCode);
+    contextParts.push(`=== STUDENT CODE ===\n\`\`\`python\n${numberedCode}\n\`\`\``);
   }
   
   if (errorMessage) {
-    contextParts.push(`Error message:\n\`\`\`\n${errorMessage}\n\`\`\``);
+    contextParts.push(`=== ERROR MESSAGE ===\n\`\`\`\n${errorMessage}\n\`\`\``);
   }
   
   if (executionOutput) {
-    contextParts.push(`Execution output:\n\`\`\`\n${executionOutput}\n\`\`\``);
+    contextParts.push(`=== EXECUTION OUTPUT ===\n\`\`\`\n${executionOutput}\n\`\`\``);
   }
 
   if (highlightedText) {
-    contextParts.push(`Student's highlighted text: "${highlightedText}"`);
+    contextParts.push(`=== HIGHLIGHTED TEXT ===\nStudent's highlighted text: "${highlightedText}"`);
+  }
+
+  if (lineNumber !== null && lineNumber !== '') {
+    contextParts.push(`Line number: ${lineNumber}`);
   }
   
-  // Add role-specific guidance
-  const roleGuidance = role === "ta"
-    ? "\n\nUse this information to ask relevant questions that help assess their understanding.VERY IMPORTANT: When discussing code, ONLY reference line numbers (e.g., 'Check line 5') and NEVER quote the actual code content from those lines. The system will automatically highlight the line for the student."
-    : "\n\nTry to help guide David toward finding the issue, drawing on your own understanding as a fellow student. VERY IMPORTANT: When discussing code, ONLY reference line numbers (e.g., 'Check line 5') and NEVER quote the actual code content from those lines. The system will automatically highlight the line for the student.";
-  
-  const initialPrompt = !highlightedText 
-  ? "\n\nStart by asking David to highlight the specific part of the code he thinks is causing the issue."
-  : "";
+  // Keep the TextAnalyzer requirements
+  const textAnalyzerInfo = `
+=== TEXTANALYZER CLASS REQUIREMENTS ===
 
+The TextAnalyzer class should implement the following methods:
+
+1. count_words(text):
+  - Counts how many times each word appears in a text string
+  - Returns a dictionary where each key is a unique word and the value is the count
+  - Words are case-sensitive (e.g., 'Hello' and 'hello' are different words)
+  - Should handle empty strings
+  - Should split text by whitespace
+  - Examples:
+    * count_words("hello world hello") → {"hello": 2, "world": 1}
+    * count_words("one two two three three three") → {"one": 1, "two": 2, "three": 3}
+    * count_words("") → {}
+
+2. format_text(words):
+  - Modifies a list of words by adding special markers
+  - Inserts "START" at the beginning of the list and "END" at index position 3
+  - Returns the new modified list without changing the original list
+  - Examples:
+    * format_text(["this", "is", "a", "test"]) → ["START", "this", "is", "END", "a", "test"]
+    * format_text(["hello", "world"]) → ["START", "hello", "world", "END"]
+    * format_text([]) → ["START", "END"]
+  - Constraints:
+    * Do not modify the original list, return a new list
+    * Handle cases where the list has fewer than 3 elements
+    * Always insert "START" at index 0 and "END" at index 3
+
+3. create_word_filter(min_length):
+  - Generates a custom word filter function
+  - Returns a lambda function that takes a word as input
+  - The returned function returns True if word length > min_length, otherwise False
+  - Examples:
+    * create_word_filter(4)("hello") → True
+    * create_word_filter(4)("hi") → False
+    * create_word_filter(0)("a") → True
+    * create_word_filter(10)("python") → False
+  - Constraints:
+    * Must use a lambda function, not a regular function definition
+    * The returned function must take exactly one parameter (the word)
+    * The returned function must return a boolean value (True/False)
+
+4. word_stats (property):
+  - Analyzes the text stored in self.text and returns statistics as a dictionary
+  - The dictionary should contain:
+    * 'total_words': the total number of words
+    * 'avg_length': the average word length rounded to 2 decimal places
+  - Examples:
+    * word_stats with "hello world python" → {'total_words': 3, 'avg_length': 5.33}
+    * word_stats with "a b c d" → {'total_words': 4, 'avg_length': 1.0}
+    * word_stats with "" → {'total_words': 0, 'avg_length': 0.0}
+  - Constraints:
+    * Must be implemented as a property using the @property decorator
+    * Average length should be rounded to 2 decimal places
+    * Handle empty text appropriately (shouldn't cause division by zero)
+    * Use self.text as the source text to analyze
+`;
+  
+  contextParts.push(textAnalyzerInfo);
+  
   return {
-  role: 'system',
-  content: `${contextIntro}\n\n${contextParts.join('\n\n')}${roleGuidance}${initialPrompt}`
+    role: 'system',
+    content: `${contextParts.join('\n\n')}`
   };
 }
