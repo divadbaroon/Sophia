@@ -300,7 +300,7 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
                     ) : (
                       <>
                         <p>
-                          Based on the assessment of your code and approach to the task, we've prepared a summary of your programming skills.
+                          Based on the assessment of your code and approach to the task, we&apos;ve prepared a summary of your programming skills.
                           This evaluation highlights your strengths and identifies areas where additional practice could be beneficial.
                         </p>
                         <p className="font-medium">
@@ -340,6 +340,7 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
     });
 
     Object.entries(subcategories).forEach(([skillKey, subcat]) => {
+      console.log(skillKey)
       radarData.push({
         subject: subcat.name,
         value: Number.parseFloat((subcat.value * 100).toFixed(1)),

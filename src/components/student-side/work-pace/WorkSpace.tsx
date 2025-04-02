@@ -28,7 +28,6 @@ export const WorkspaceLayout = () => {
     sessionId,
     currentMethodIndex,
     showReport,
-    setShowReport,
     studentTask,
     fileContent,
     conversationHistory,
@@ -99,16 +98,6 @@ export const WorkspaceLayout = () => {
     }
   }, [showReport]);
 
-  // Handle TA button click
-  const handleTAButtonClick = () => {
-    if (conceptMapConfidenceMet) {
-      if (isQuestionPanelVisible) {
-        setIsQuestionPanelVisible(false);
-      }
-      setIsTAModalOpen(true);
-    }
-  };
-
   // Function to update terminal height
   const updateTerminalHeight = (newHeight: number) => {
     const limitedHeight = Math.min(Math.max(newHeight, 5), 70);
@@ -146,6 +135,15 @@ export const WorkspaceLayout = () => {
           size="lg"
           onClick={() => {
             if (showReport) {
+              // Close the question panel if it's open
+              if (isQuestionPanelVisible) {
+                setIsQuestionPanelVisible(false);
+              }
+              // Close the TA modal if it's open
+              if (isTAModalOpen) {
+                setIsTAModalOpen(false);
+              }
+              // Open the report modal
               setIsKnowledgeRadarModalOpen(true);
             }
           }}
@@ -244,7 +242,7 @@ export const WorkspaceLayout = () => {
 
                   <p className="mb-4">
                     Your code understanding has reached the threshold to receive direct
-                    assistance. Use the Zoom link below to join the TA's office hours:
+                    assistance. Use the Zoom link below to join the TA&apos;s office hours:
                   </p>
 
                   <div className="bg-slate-50 p-3 rounded-md mb-4 border border-slate-200 font-mono text-sm break-all">
