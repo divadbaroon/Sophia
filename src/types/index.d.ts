@@ -204,12 +204,18 @@ export interface FileSystemDirectoryHandle extends FileSystemHandle {
   getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>;
 }
 
-interface TestCase {
-  input: {
-    nums: number[],
-    target: number
-  },
-  expected: number[]
+export interface TestCase {
+  input: Record<string, any>
+  expected: any
+  methodId?: string
+}
+
+export interface TaskData {
+  tasks: TaskSidebarProps[]
+  methodTemplates: Record<string, string>
+  testCases: Record<string, TestCase[]>
+  conceptMappings: Record<number, string[]>
+  system: string
 }
 
 export interface FileContextType {
@@ -219,26 +225,39 @@ export interface FileContextType {
   selectFile: (fileName: string, content: string, path: string) => void
   cachedFileContent: string
   updateCachedFileContent: (content: string) => void
-  setFileContent: (content: string) => void
+  setFileContent: React.Dispatch<React.SetStateAction<string>>
   errorContent: string
-  setErrorContent: (error: string) => void
+  setErrorContent: React.Dispatch<React.SetStateAction<string>>
   executionOutput: string
   updateExecutionOutput: (output: string) => void
   isSaved: () => boolean
   fileNode: FileSystemNode | null
-  setFileNode: (node: FileSystemNode | null) => void
+  setFileNode: React.Dispatch<React.SetStateAction<FileSystemNode | null>>
   highlightedText: string
   updateHighlightedText: (text: string) => void
-  testCases: TestCase[]
-  updateTestCases: (newTestCases: TestCase[]) => void
   studentTask: string
   updateStudentTask: (task: string) => void
   speakTo: 'student' | 'ta'
   updateSpeakTo: (role: 'student' | 'ta') => void
   scenario: 'one-on-one' | 'group'
-  updateScenario: (scenario: 'one-on-one' | 'group') => void
+  updateScenario: (newScenario: 'one-on-one' | 'group') => void
   lineNumber: number | null
   updateLineNumber: (line: number | null) => void
+  conceptMapConfidenceMet: boolean
+  updateConceptMapConfidence: (isConfident: boolean) => void
+  latestPivotMessage: string | null
+  updateLatestPivotMessage: (message: string | null) => void
+  
+  // Task-related properties
+  sessionId: string
+  sessionData: TaskData
+  currentMethodIndex: number
+  activeMethodId: string
+  currentTestCases: TestCase[]
+  goToNextMethod: () => void
+  goToPrevMethod: () => void
+  getCurrentMethodTemplate: () => string
+  getAllMethodTemplates: () => Record<string, string>
 }
 
 export type FolderContextType = {
@@ -351,11 +370,13 @@ export type TranscriptFinalizedCallback = (data: TranscriptData) => void
 export type TranscriptFinalizedSubscription = (callback: TranscriptFinalizedCallback) => () => void
 
 export interface QuestionPanelProps {
-  onBack?: () => void
-  isVisible?: boolean
-  onLineDetected?: (lineNumber: number) => void
-  onClearHighlight?: () => void
+  onBack?: () => void;
+  onLineDetected?: (lineNumber: number) => void;
+  onClearHighlight?: () => void;
+  methodId?: string;
+  onReadyForTA?: () => void;
 }
+
 
 // Settings related types
 export type SpeakToOption = 'student' | 'ta'
