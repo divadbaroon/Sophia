@@ -561,7 +561,6 @@ export const useConversationManager = () => {
           
           // Track highlighted lines
           const highlightedLines = new Set<number>();
-          const lineReferenceRegex = /\bin line (\d+)\b/gi;
           
           // Helper function to detect sentence endings
           const isSentenceEnd = (text: string) => {

@@ -81,14 +81,12 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     cachedFileContent,
     updateCachedFileContent, 
     setFileContent, 
-    highlightedText,
     updateHighlightedText,
     updateExecutionOutput,
     setErrorContent,
     sessionId,
     sessionData,
     activeMethodId,
-    getAllMethodTemplates
   } = useFile();
   
   const editorViewRef = useRef<EditorView | null>(null);

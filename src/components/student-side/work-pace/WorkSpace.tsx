@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
-import { HelpCircle, MessageCircle, X } from "lucide-react"
+import { HelpCircle, X } from "lucide-react"
 
 import { useFile } from '@/lib/context/FileContext'
 import { textAnalyzerClassData } from "@/lib/data/student_tasks"
@@ -18,22 +18,12 @@ import { textAnalyzerClassData } from "@/lib/data/student_tasks"
 export const WorkspaceLayout = () => {
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
   const [isTAModalOpen, setIsTAModalOpen] = useState(false)
-  const [currentMethodIndex, setCurrentMethodIndex] = useState(0)
-  const [blinkingState, setBlinkingState] = useState(false)
   const [terminalHeight, setTerminalHeight] = useState(50)
   
   const { updateStudentTask, conceptMapConfidenceMet } = useFile()
+  console.log(conceptMapConfidenceMet)
   
   const codeEditorRef = useRef<CodeEditorRef>(null)
-
-  const methodIds = [
-    'count_words',
-    'format_text',
-    'create_word_filter',
-    'word_stats'
-  ]
-
-  const currentMethodId = methodIds[currentMethodIndex]
 
   // TA office hours Zoom link
   const taZoomLink = "https://zoom.us/j/123456789?pwd=examplepassword"
@@ -41,53 +31,6 @@ export const WorkspaceLayout = () => {
   useEffect(() => {
     updateStudentTask(textAnalyzerClassData.description)
   }, [updateStudentTask])
-
-  // Set up blinking effect when confidence threshold is first met
-  useEffect(() => {
-    if (conceptMapConfidenceMet) {
-      // Start blinking effect
-      const blinkInterval = setInterval(() => {
-        setBlinkingState(prev => !prev)
-      }, 500) // Blink every 500ms
-
-      // Stop blinking after 5 seconds
-      const stopBlinkTimeout = setTimeout(() => {
-        clearInterval(blinkInterval)
-        setBlinkingState(false)
-      }, 5000)
-
-      return () => {
-        clearInterval(blinkInterval)
-        clearTimeout(stopBlinkTimeout)
-      }
-    }
-  }, [conceptMapConfidenceMet])
-
-  // Navigate between methods
-  const handlePrevMethod = () => {
-    if (currentMethodIndex > 0) {
-      setCurrentMethodIndex(currentMethodIndex - 1)
-    }
-  }
-  
-  const handleNextMethod = () => {
-    if (currentMethodIndex < methodIds.length - 1) {
-      setCurrentMethodIndex(currentMethodIndex + 1)
-    }
-  }
-
-  // Handle TA button click
-  const handleTAButtonClick = () => {
-    if (conceptMapConfidenceMet) {
-      // Close question panel if open
-      if (isQuestionPanelVisible) {
-        setIsQuestionPanelVisible(false)
-      }
-      
-      // Open TA modal
-      setIsTAModalOpen(true)
-    }
-  }
 
   // Function to update terminal height
   const updateTerminalHeight = (newHeight: number) => {
@@ -202,7 +145,7 @@ export const WorkspaceLayout = () => {
                     </Button>
                   </div>
                   
-                  <p className="mb-4">Your code understanding has reached the threshold to receive direct assistance. Use the Zoom link below to join the TA's office hours:</p>
+                  <p className="mb-4">Your code understanding has reached the threshold to receive direct assistance. Use the Zoom link below to join the TA&apos;s office hours:</p>
                   
                   <div className="bg-slate-50 p-3 rounded-md mb-4 border border-slate-200 font-mono text-sm break-all">
                     {taZoomLink}

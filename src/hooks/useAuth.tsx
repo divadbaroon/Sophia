@@ -16,7 +16,6 @@ interface UseAuthReturn {
 
 export const useAuth = (): UseAuthReturn => {
   const router = useRouter();
-  const params = useParams();
   const sessionId = 5
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);

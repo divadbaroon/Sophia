@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { TrendingUp, X, Award, BookOpen, Brain, Lightbulb, BarChart3 } from "lucide-react"
+import { X, BarChart3 } from "lucide-react"
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart } from "recharts"
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -223,46 +223,6 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({ isOpen, onClo
     },
   } satisfies ChartConfig
 
-  // Category-specific chart configs
-  const categoryConfigs: Record<string, ChartConfig> = {
-    Functions: {
-      proficiency: {
-        label: "Functions",
-        color: "hsl(var(--chart-3))",
-      },
-    },
-    "Python OOP": {
-      proficiency: {
-        label: "Python OOP",
-        color: "hsl(var(--chart-4))",
-      },
-    },
-    "List Operations": {
-      proficiency: {
-        label: "List Operations",
-        color: "hsl(var(--chart-5))",
-      },
-    },
-    "Basic Programming": {
-      proficiency: {
-        label: "Basic Programming",
-        color: "hsl(var(--chart-6))",
-      },
-    },
-    "String Manipulation": {
-      proficiency: {
-        label: "String Manipulation",
-        color: "hsl(var(--chart-7))",
-      },
-    },
-    "Dictionary Operations": {
-      proficiency: {
-        label: "Dictionary Operations",
-        color: "hsl(var(--chart-8))",
-      },
-    },
-  }
-
   // Custom tooltip component that only shows when directly over a point
   const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
     if (!active || !payload?.length) return null
@@ -318,25 +278,9 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({ isOpen, onClo
     return "border-rose-200 dark:border-rose-800"
   }
 
-  // Calculate overall proficiency score
-  const overallScore = Number.parseFloat(
-    (categoryAverages.reduce((sum, cat) => sum + cat.value, 0) / categoryAverages.length).toFixed(1)
-  )
-
   // Get top skills and development areas
   const sortedSkills = [...radarData].sort((a, b) => b.value - a.value)
-  const topSkills = sortedSkills.slice(0, 3)
   const developmentAreas = [...sortedSkills].sort((a, b) => a.value - b.value).slice(0, 3)
-
-  // Category icons mapping
-  const categoryIcons = {
-    "Functions": <BookOpen className="h-5 w-5" />,
-    "Python OOP": <Brain className="h-5 w-5" />,
-    "List Operations": <BarChart3 className="h-5 w-5" />,
-    "Basic Programming": <Lightbulb className="h-5 w-5" />,
-    "String Manipulation": <TrendingUp className="h-5 w-5" />,
-    "Dictionary Operations": <Award className="h-5 w-5" />
-  };
 
   return (
     <div 
@@ -448,7 +392,7 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({ isOpen, onClo
                     skills provide a solid base for continuing your learning journey.
                   </p>
                   <p className="font-medium">
-                    You're making excellent progress! Your strong grasp of core programming concepts shows you have a natural aptitude for logical thinking. With these fundamentals mastered, you're well-positioned to tackle more advanced topics. Keep up the great work - your dedication is clearly paying off!
+                    You&apos;re making excellent progress! Your strong grasp of core programming concepts shows you have a natural aptitude for logical thinking. With these fundamentals mastered, you&apos;re well-positioned to tackle more advanced topics. Keep up the great work - your dedication is clearly paying off!
                   </p>
                 </div>
 
