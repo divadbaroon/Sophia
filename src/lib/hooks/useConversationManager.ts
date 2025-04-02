@@ -112,6 +112,10 @@ export const useConversationManager = () => {
         pivot: taPivot
       };
 
+      if (conceptMap) {
+        fileContext.updateConceptMap(conceptMap);
+      }
+
       console.log("🔵🔵🔵 UPDATING SESSION FOR USER:", studentId);
       
       // If we have sessionId and studentId, save the data directly
@@ -155,6 +159,14 @@ export const useConversationManager = () => {
       }
     }
   }, [conceptMap, conceptMapReady, taPivot, sessionId, studentId]);
+
+  useEffect(() => {
+    // When conversation history changes, update the FileContext's conversation history
+    if (state.conversationHistory.length > 0) {
+      fileContext.updateConversationHistory(state.conversationHistory);
+      console.log("Updated FileContext conversationHistory", state.conversationHistory);
+    }
+  }, [state.conversationHistory, fileContext]);
   
   // Manager reference
   const managerRef = useRef<ConversationManager | null>(null);
@@ -214,14 +226,37 @@ export const useConversationManager = () => {
       
       // Initialize the concept map service
       const conceptService = new ConceptMapService(
+        fileContext?.sessionData?.conceptMap || {
+          categories: {
+            "Basic Programming": {
+              "Conditional Logic": {
+                name: "Conditional Logic",
+                value: 0,
+                knowledgeState: {
+                  understandingLevel: 0,
+                  confidenceInAssessment: 0,
+                  reasoning: "Initial assessment pending",
+                  lastUpdated: "Just now"
+                }
+              }
+            }
+          }
+        },
         ANTHROPIC_API_KEY, 
         () => {            
           setConceptMapReady(true);
           if (conceptMapServiceRef.current) {
             setTaPivot(conceptMapServiceRef.current.getTAPivot());
             setConceptMap(conceptMapServiceRef.current.getConceptMap());
+            
+            // Update fileContext when confidence is reached
+            if (fileContext && typeof fileContext.updateConceptMapConfidence === 'function') {
+              fileContext.updateConceptMapConfidence(true);
+              console.log("✅ FileContext confidence state updated to true via callback");
+            }
           }
-        }
+        },
+        fileContext 
       );
       
       // Initialize
@@ -230,7 +265,7 @@ export const useConversationManager = () => {
       // Set up event listeners for transcript events
       manager.on('transcriptFinalized', ({ text, timestamp }) => {
         console.log(`[EVENT] Transcript finalized at ${new Date(timestamp).toISOString()}:`, text);
-        
+   
         // Process the transcript with concept map immediately after user message is finalized
         if (conceptMapServiceRef.current && text.trim() !== '') {
           // Set processing flag to true
@@ -660,6 +695,17 @@ export const useConversationManager = () => {
               managerRef.current.updateState({
                 conversationHistory: updatedHistory
               });
+
+              // Check if Claude's response contains the report trigger phrase
+              if (fullResponse.includes("I have collected all the necessary information I need. To view your knowledge assessment please click View Report")) {
+                console.log("📊 Report trigger phrase detected in Claude's response");
+                
+                // Wait a few seconds, then show the report
+                setTimeout(() => {
+                  console.log("📈 Showing report after delay");
+                  fileContext.setShowReport(true);
+                }, 1000); 
+              }
             }
           });
         } catch (error) {
