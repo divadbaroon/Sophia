@@ -1,36 +1,113 @@
-import { useState, useEffect, useRef } from 'react'
+"use client";
 
-import QuestionPanelWrapper from "@/components/student-side/question-panel/QuestionPanelWrapper"
-import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader"
-
-import CodeEditor, { CodeEditorRef } from "@/components/student-side/code-editor/CodeEditor"
-import Terminal from "@/components/student-side/terminal/Terminal"
-
-import { Card } from "@/components/ui/card"
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
-import { Button } from "@/components/ui/button"
-import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
-import { HelpCircle, X } from "lucide-react"
-
-import { useFile } from '@/lib/context/FileContext'
-import { textAnalyzerClassData } from "@/lib/data/student_tasks"
+import { useState, useEffect, useRef } from "react";
+import QuestionPanelWrapper from "@/components/student-side/question-panel/QuestionPanelWrapper";
+import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader";
+import CodeEditor, { CodeEditorRef } from "@/components/student-side/code-editor/CodeEditor";
+import Terminal from "@/components/student-side/terminal/Terminal";
+import { Card } from "@/components/ui/card";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { Button } from "@/components/ui/button";
+import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar";
+import { HelpCircle, X, MessageCircle } from "lucide-react";
+import { useFile } from "@/lib/context/FileContext";
+import KnowledgeRadarModal from "@/components/student-side/student-report/studentReport"; 
 
 export const WorkspaceLayout = () => {
-  const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
-  const [isTAModalOpen, setIsTAModalOpen] = useState(false)
-  const [terminalHeight, setTerminalHeight] = useState(50)
-  
-  const { updateStudentTask, conceptMapConfidenceMet } = useFile()
-  console.log(conceptMapConfidenceMet)
-  
-  const codeEditorRef = useRef<CodeEditorRef>(null)
+  const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false);
+  const [isTAModalOpen, setIsTAModalOpen] = useState(false);
+  const [blinkingState, setBlinkingState] = useState(false);
+  const [terminalHeight, setTerminalHeight] = useState(50);
+  const [isKnowledgeRadarModalOpen, setIsKnowledgeRadarModalOpen] = useState(false);
 
-  // TA office hours Zoom link
-  const taZoomLink = "https://zoom.us/j/123456789?pwd=examplepassword"
+  // Destructure additional properties from FileContext
+  const {
+    updateStudentTask,
+    conceptMapConfidenceMet,
+    sessionData,
+    sessionId,
+    currentMethodIndex,
+    showReport,
+    setShowReport,
+    studentTask,
+    fileContent,
+    conversationHistory,
+    conceptMap,
+    systemType,
+  } = useFile();
+
+  const codeEditorRef = useRef<CodeEditorRef>(null);
 
   useEffect(() => {
-    updateStudentTask(textAnalyzerClassData.description)
-  }, [updateStudentTask])
+    console.log("KnowledgeRadarModal received conceptMap:", conceptMap);
+  }, [conceptMap]);
+
+  useEffect(() => {
+    console.log("conversationHistory received conceptMap:", conversationHistory);
+  }, [conversationHistory]);
+
+  // TA office hours Zoom link
+  const taZoomLink = "https://zoom.us/j/123456789?pwd=examplepassword";
+
+  // Update student task when session data or current method changes
+  useEffect(() => {
+    if (sessionData && sessionData.tasks) {
+      let taskDescription = sessionData.system || "ATLAS";
+
+      if (sessionData.tasks[currentMethodIndex]) {
+        const currentTask = sessionData.tasks[currentMethodIndex];
+        taskDescription += `\n\n${currentTask.title}\n${currentTask.description}`;
+
+        if (currentTask.examples && currentTask.examples.length > 0) {
+          taskDescription += "\n\nExamples:";
+          currentTask.examples.forEach((example, index) => {
+            taskDescription += `\nExample ${index + 1}: Input: ${JSON.stringify(
+              example.input
+            )} -> Output: ${example.output}`;
+          });
+        }
+
+        if (currentTask.constraints && currentTask.constraints.length > 0) {
+          taskDescription += "\n\nConstraints:";
+          currentTask.constraints.forEach((constraint) => {
+            taskDescription += `\n- ${constraint}`;
+          });
+        }
+      }
+
+      updateStudentTask(taskDescription);
+    }
+  }, [sessionData, currentMethodIndex, updateStudentTask, sessionId]);
+
+  // Set up blinking effect when confidence threshold is met
+  useEffect(() => {
+    if (showReport) {
+      setBlinkingState(true);
+      const blinkInterval = setInterval(() => {
+        setBlinkingState((prev) => !prev);
+      }, 500);
+  
+      const stopBlinkTimeout = setTimeout(() => {
+        clearInterval(blinkInterval);
+        setBlinkingState(false);
+      }, 5000);
+  
+      return () => {
+        clearInterval(blinkInterval);
+        clearTimeout(stopBlinkTimeout);
+      };
+    }
+  }, [showReport]);
+
+  // Handle TA button click
+  const handleTAButtonClick = () => {
+    if (conceptMapConfidenceMet) {
+      if (isQuestionPanelVisible) {
+        setIsQuestionPanelVisible(false);
+      }
+      setIsTAModalOpen(true);
+    }
+  };
 
   // Function to update terminal height
   const updateTerminalHeight = (newHeight: number) => {
@@ -45,124 +122,144 @@ export const WorkspaceLayout = () => {
         <Button
           variant="outline"
           size="lg"
-          className={`absolute top-3.5 right-16 mr-6 z-50 gap-2 font-medium ${
-            isQuestionPanelVisible ? 'bg-secondary' : 
-            'bg-background hover:bg-secondary/80' 
+          className={`absolute top-3.5 right-56 mr-6 z-50 gap-2 font-medium ${
+            isQuestionPanelVisible
+              ? "bg-secondary"
+              : "bg-background hover:bg-secondary/80"
           }`}
           onClick={() => {
-            setIsQuestionPanelVisible(!isQuestionPanelVisible)
-            // Close TA modal if open
+            setIsQuestionPanelVisible(!isQuestionPanelVisible);
             if (isTAModalOpen) {
-              setIsTAModalOpen(false)
+              setIsTAModalOpen(false);
             }
           }}
         >
           <>
             <HelpCircle className="h-5 w-5" />
-            {isQuestionPanelVisible ? 'End Session' : 'Map My Understanding'}
+            {isQuestionPanelVisible ? "End Session" : "Knowledge gap discovery"}
+          </>
+        </Button>
+
+        {/* View Report Button */}
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={() => {
+            if (showReport) {
+              setIsKnowledgeRadarModalOpen(true);
+            }
+          }}
+          title={
+            !showReport
+              ? "System has not reached enough confidence to show report yet"
+              : ""
+          }
+          className={`absolute top-3.5 right-16 mr-3 z-50 gap-2 font-medium ${
+            !showReport
+              ? "bg-amber-100 hover:bg-amber-100 text-amber-800 cursor-not-allowed opacity-70"
+              : `bg-amber-500 hover:bg-amber-600 cursor-pointer ${blinkingState ? "animate-pulse" : ""}`
+          }`}
+        >
+          <>
+            <MessageCircle className="h-5 w-5" />
+            View Report
           </>
         </Button>
 
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel defaultSize={28} minSize={20} maxSize={40}>
             <PanelWithHeader>
-              <TaskSidebar 
-
-              />
+              <TaskSidebar />
             </PanelWithHeader>
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={70}>
-=            <div className="relative h-full">
-              <div className="absolute inset-0 -mt-7">
+            <div className="relative h-full">
+              <div className="absolute inset-0 -mt-2">
                 <PanelWithHeader>
-                  <CodeEditor 
-                    ref={codeEditorRef}
-                  />
+                  <CodeEditor ref={codeEditorRef} />
                 </PanelWithHeader>
               </div>
-              
-              {/* Custom drag handle */}
-              <div 
+
+              {/* Custom drag handle for the terminal */}
+              <div
                 className="absolute left-0 right-0 h-2 bg-gray-100 hover:bg-gray-200 cursor-ns-resize z-10"
-                style={{ 
+                style={{
                   bottom: `${terminalHeight}%`,
-                  marginBottom: '-4px' 
+                  marginBottom: "-4px",
                 }}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  
                   const startY = e.clientY;
                   const startHeight = terminalHeight;
-                  const containerHeight = e.currentTarget.parentElement?.clientHeight || 0;
-                  
+                  const containerHeight =
+                    e.currentTarget.parentElement?.clientHeight || 0;
+
                   const handleMouseMove = (moveEvent: MouseEvent) => {
                     const deltaY = startY - moveEvent.clientY;
                     const deltaPercent = (deltaY / containerHeight) * 100;
                     const newHeight = startHeight + deltaPercent;
                     updateTerminalHeight(newHeight);
                   };
-                  
+
                   const handleMouseUp = () => {
-                    document.removeEventListener('mousemove', handleMouseMove);
-                    document.removeEventListener('mouseup', handleMouseUp);
+                    document.removeEventListener("mousemove", handleMouseMove);
+                    document.removeEventListener("mouseup", handleMouseUp);
                   };
-                  
-                  document.addEventListener('mousemove', handleMouseMove);
-                  document.addEventListener('mouseup', handleMouseUp);
+
+                  document.addEventListener("mousemove", handleMouseMove);
+                  document.addEventListener("mouseup", handleMouseUp);
                 }}
               />
-              
+
               {/* Terminal - Fixed at bottom with controlled height */}
-              <div 
+              <div
                 className="absolute left-0 right-0 bottom-0 bg-background"
                 style={{ height: `${terminalHeight}%` }}
               >
                 <Terminal />
               </div>
-              
+
               {/* Question Panel Popup */}
               {isQuestionPanelVisible && (
-                <Card className="absolute top-9 right-4 w-[400px] z-50 shadow-lg mt-6 mr-1">
-                  <QuestionPanelWrapper 
-                    editorRef={codeEditorRef}
-                  />
+                <Card className="absolute top-14 right-4 w-[400px] z-50 shadow-lg mt-6 mr-1">
+                  <QuestionPanelWrapper editorRef={codeEditorRef} />
                 </Card>
               )}
-              
+
               {/* TA Zoom Link Modal */}
               {isTAModalOpen && (
                 <Card className="absolute top-9 right-4 w-[400px] z-50 shadow-lg mt-6 mr-1 p-4">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-medium">Connect with a TA</h3>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setIsTAModalOpen(false)}
                       className="h-8 w-8"
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                  
-                  <p className="mb-4">Your code understanding has reached the threshold to receive direct assistance. Use the Zoom link below to join the TA&apos;s office hours:</p>
-                  
+
+                  <p className="mb-4">
+                    Your code understanding has reached the threshold to receive direct
+                    assistance. Use the Zoom link below to join the TA's office hours:
+                  </p>
+
                   <div className="bg-slate-50 p-3 rounded-md mb-4 border border-slate-200 font-mono text-sm break-all">
                     {taZoomLink}
                   </div>
-                  
+
                   <div className="flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsTAModalOpen(false)}
-                    >
+                    <Button variant="outline" onClick={() => setIsTAModalOpen(false)}>
                       Close
                     </Button>
-                    
-                    <Button 
+
+                    <Button
                       variant="default"
                       onClick={() => {
-                        window.open(taZoomLink, '_blank');
+                        window.open(taZoomLink, "_blank");
                       }}
                       className="bg-blue-600 hover:bg-blue-700"
                     >
@@ -175,6 +272,20 @@ export const WorkspaceLayout = () => {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+      {/* Render the Knowledge Radar Modal with the additional props */}
+      {isKnowledgeRadarModalOpen && (
+        <KnowledgeRadarModal
+          isOpen={isKnowledgeRadarModalOpen}
+          onClose={() => setIsKnowledgeRadarModalOpen(false)}
+          studentTask={studentTask}
+          code={fileContent}
+          conversationHistory={conversationHistory}
+          conceptMap={conceptMap}
+          systemType={systemType}
+        />
+      )}
     </main>
-  )
-}
+  );
+};
+
+export default WorkspaceLayout;
