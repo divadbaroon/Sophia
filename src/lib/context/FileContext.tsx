@@ -6,11 +6,11 @@ import React, {
   ReactNode,
 } from 'react'
 import { FileSystemNode } from '@/utils/FileUtils'
-import { FileContextType, TestCase, TaskData } from '@/types'
+import { FileContextType, TestCase, TaskData, ConversationMessage } from '@/types'
 import { usePathname } from 'next/navigation'
 
 // Define the session data structure with tasks, method templates, and test cases
-const session5Data: TaskData = {
+const condition1: TaskData = {
   tasks: [
     {
       title: "1.) calculate_sum()",
@@ -184,10 +184,82 @@ const session5Data: TaskData = {
     1: ["Conditional Logic", "String Manipulation"],
     2: ["Lambda Functions", "Closures"]
   },
+  conceptMap: {
+    categories: {
+      "Basic Programming": {
+        "Conditional Logic": {
+          name: "Conditional Logic",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        },
+        "Loops": {
+          name: "Loops",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        },
+        "Variable Assignment": {
+          name: "Variable Assignment",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        }
+      },
+      "Functions": {
+        "Lambda Functions": {
+          name: "Lambda Functions",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        }
+      },
+      "List Operations": {
+        "Indexing": {
+          name: "Indexing",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        }
+      },
+      "String Manipulation": {
+        "String Concatenation": {
+          name: "String Concatenation",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        }
+      }
+    }
+  },
   system: "ATLAS"
 }
 
-const session12Data: TaskData = {
+const condition2: TaskData = {
   tasks: [
     {
       title: "1.) filter_high_scores()",
@@ -361,7 +433,141 @@ const session12Data: TaskData = {
     1: ["String Manipulation", "Array Manipulation"],
     2: ["List Operations", "Array Manipulation"]
   },
-  system: "ATLAS"
+  conceptMap: {
+    categories: {
+      "Basic Programming": {
+        "Conditional Logic": {
+          name: "Conditional Logic",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        },
+        "Loops": {
+          name: "Loops",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        },
+        "Variable Assignment": {
+          name: "Variable Assignment",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        }
+      },
+      "Dictionary Operations": {
+        "Dictionary Creation": {
+          name: "Dictionary Creation",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        },
+        "Dictionary Iteration": {
+          name: "Dictionary Iteration",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        },
+        "Dictionary Comprehension": {
+          name: "Dictionary Comprehension",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        }
+      },
+      "List Operations": {
+        "List Comprehension": {
+          name: "List Comprehension",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        },
+        "Nested Lists": {
+          name: "Nested Lists",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        }
+      },
+      "String Manipulation": {
+        "String Slicing": {
+          name: "String Slicing",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        },
+        "Negative Indexing": {
+          name: "Negative Indexing",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        }
+      },
+      "Array Manipulation": {
+        "Matrix Operations": {
+          name: "Matrix Operations",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        },
+        "Slicing": {
+          name: "Slicing",
+          value: 0,
+          knowledgeState: {
+            understandingLevel: 0,
+            confidenceInAssessment: 0,
+            reasoning: "",
+            lastUpdated: "Just now"
+          }
+        }
+      }
+    }
+  },
+  system: "Standalone"
 }
 
 const FileContext = createContext<FileContextType | undefined>(undefined)
@@ -384,17 +590,25 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   
   // Session-related state
   const [sessionId, setSessionId] = useState<string>('5') // Default to session 5
-  const [sessionData, setSessionData] = useState<TaskData>(session5Data)
+  const [sessionData, setSessionData] = useState<TaskData>(condition1)
   const [currentMethodIndex, setCurrentMethodIndex] = useState<number>(0)
   const [activeMethodId, setActiveMethodId] = useState<string>('calculate_sum')
-  const [currentTestCases, setCurrentTestCases] = useState<TestCase[]>(session5Data.testCases.calculate_sum)
+  const [currentTestCases, setCurrentTestCases] = useState<TestCase[]>(condition1.testCases.calculate_sum)
+  
+  // System type state
+  const [systemType, setSystemType] = useState<'ATLAS' | 'Standalone'>('ATLAS')
   
   // Concept map and pivot state
   const [conceptMapConfidenceMet, setConceptMapConfidenceMet] = useState<boolean>(false)
   const [latestPivotMessage, setLatestPivotMessage] = useState<string | null>(null)
 
+  const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
+  const [conceptMap, setConceptMap] = useState<any>(condition1.conceptMap);
+
   const [speakTo, setSpeakTo] = useState<'student' | 'ta'>('ta')
   const [scenario, setScenario] = useState<'one-on-one' | 'group'>('one-on-one')
+
+  const [showReport, setShowReport] = useState<boolean>(false);
 
   // Extract session ID from URL and update session data
   useEffect(() => {
@@ -409,9 +623,11 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         
         // Set the appropriate session data based on ID
         if (newSessionId === '5') {
-          setSessionData(session5Data)
+          setSessionData(condition1)
+          setSystemType('ATLAS') // Update system type
         } else if (newSessionId === '12') {
-          setSessionData(session12Data)
+          setSessionData(condition2)
+          setSystemType('Standalone') // Update system type
         }
         
         // Reset to first method when changing sessions
@@ -436,6 +652,34 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }, [currentMethodIndex, sessionData])
+
+  // Add this useEffect to your FileProvider component
+  useEffect(() => {
+    // Create an object with all the system information
+    const systemInfo = {
+      systemType,
+      studentTask,
+      studentCode: fileContent,
+      conceptMapInitial: sessionData.conceptMap,
+    };
+    
+    // Log the entire object for inspection
+    console.log('=== SYSTEM INFORMATION ===', systemInfo);
+    
+    // Log individual components with clearer formatting
+    console.log('System Type:', systemType);
+    console.log('Student Task:', studentTask);
+    console.log('Student Code:', fileContent);
+    console.log('Initial Concept Map:', sessionData.conceptMap);
+  }, [systemType, studentTask, fileContent, sessionData]);
+
+  const updateConversationHistory = (newHistory: ConversationMessage[]) => {
+    setConversationHistory(newHistory);
+  };
+
+  const updateConceptMap = (newConceptMap: any) => {
+    setConceptMap(newConceptMap);
+  };
 
   const updateHighlightedText = (text: string) => {
     setHighlightedText(text)
@@ -513,6 +757,11 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     return sessionData?.methodTemplates || {}
   }
 
+  // Helper to update the system type manually if needed
+  const updateSystemType = (type: 'ATLAS' | 'Standalone') => {
+    setSystemType(type);
+  }
+
   return (
     <FileContext.Provider
       value={{
@@ -544,8 +793,6 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         updateConceptMapConfidence,
         latestPivotMessage,
         updateLatestPivotMessage,
-        
-        // Session and task-related data
         sessionId,
         sessionData,
         currentMethodIndex,
@@ -554,7 +801,15 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         goToNextMethod,
         goToPrevMethod,
         getCurrentMethodTemplate,
-        getAllMethodTemplates
+        getAllMethodTemplates,
+        conversationHistory,
+        updateConversationHistory,
+        conceptMap,
+        updateConceptMap,
+        showReport,
+        setShowReport,
+        systemType,
+        updateSystemType,
       }}>
       {children}
     </FileContext.Provider>
