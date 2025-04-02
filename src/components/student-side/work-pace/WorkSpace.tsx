@@ -23,7 +23,6 @@ export const WorkspaceLayout = () => {
   // Destructure additional properties from FileContext
   const {
     updateStudentTask,
-    conceptMapConfidenceMet,
     sessionData,
     sessionId,
     currentMethodIndex,
