@@ -1,6 +1,6 @@
 import { ClaudeMessage } from "@/types";
 import Anthropic from '@anthropic-ai/sdk';
-
+ 
 export interface KnowledgeState {
   understandingLevel: number;
   confidenceInAssessment: number;
@@ -34,9 +34,12 @@ export class ConceptMapService {
   private readonly CONFIDENCE_THRESHOLD = 0.69;
   private onReadyCallback?: OnReadyCallback;
   private anthropicClient: Anthropic | null = null;
+  private fileContext: any = null
 
-  constructor(anthropicApiKey?: string, onReadyCallback?: OnReadyCallback) {
+  constructor(initialConceptMap: ConceptMap, anthropicApiKey?: string, onReadyCallback?: OnReadyCallback, fileContext?: any) {
+    this.conceptMap = initialConceptMap;
     this.onReadyCallback = onReadyCallback;
+    this.fileContext = fileContext; // Store the fileContext
     
     // Initialize Anthropic client if API key is provided
     if (anthropicApiKey) {
@@ -45,154 +48,14 @@ export class ConceptMapService {
         dangerouslyAllowBrowser: true
       });
     }
-    
-    // Initialize with default concept map
-    this.conceptMap = {
-      categories: {
-        "Dictionary Operations": {
-          "Dictionary Creation": {
-            name: "Dictionary Creation",
-            value: 0,
-            knowledgeState: {
-              understandingLevel: 0,
-              confidenceInAssessment: 0,
-              reasoning: "Initial assessment pending student interaction",
-              lastUpdated: "Just now"
-            }
-          },
-          "Key-Value Pairs": {
-            name: "Key-Value Pairs",
-            value: 0,
-            knowledgeState: {
-              understandingLevel: 0,
-              confidenceInAssessment: 0,
-              reasoning: "Initial assessment pending student interaction",
-              lastUpdated: "Just now"
-            }
-          },
-          "Dictionary Lookups": {
-            name: "Dictionary Lookups",
-            value: 0,
-            knowledgeState: {
-              understandingLevel: 0,
-              confidenceInAssessment: 0,
-              reasoning: "Initial assessment pending student interaction",
-              lastUpdated: "Just now"
-            }
-          },
-          "Dictionary Updates": {
-            name: "Dictionary Updates",
-            value: 0,
-            knowledgeState: {
-              understandingLevel: 0,
-              confidenceInAssessment: 0,
-              reasoning: "Initial assessment pending student interaction",
-              lastUpdated: "Just now"
-            }
-          }
-        },
-        "String Manipulation": {
-          "String Splitting": {
-            name: "String Splitting",
-            value: 0,
-            knowledgeState: {
-              understandingLevel: 0,
-              confidenceInAssessment: 0,
-              reasoning: "Initial assessment pending student interaction",
-              lastUpdated: "Just now"
-            }
-          }
-        },
-        "List Operations": {
-          "List Creation": {
-            name: "List Creation",
-            value: 0,
-            knowledgeState: {
-              understandingLevel: 0,
-              confidenceInAssessment: 0,
-              reasoning: "Initial assessment pending student interaction",
-              lastUpdated: "Just now"
-            }
-          },
-          "List Modification": {
-            name: "List Modification",
-            value: 0,
-            knowledgeState: {
-              understandingLevel: 0,
-              confidenceInAssessment: 0,
-              reasoning: "Initial assessment pending student interaction",
-              lastUpdated: "Just now"
-            }
-          },
-          "Indexing": {
-            name: "Indexing",
-            value: 0,
-            knowledgeState: {
-              understandingLevel: 0,
-              confidenceInAssessment: 0,
-              reasoning: "Initial assessment pending student interaction",
-              lastUpdated: "Just now"
-            }
-          }
-        },
-        "Functions": {
-          "Lambda Functions": {
-            name: "Lambda Functions",
-            value: 0,
-            knowledgeState: {
-              understandingLevel: 0,
-              confidenceInAssessment: 0,
-              reasoning: "Initial assessment pending student interaction",
-              lastUpdated: "Just now"
-            }
-          }
-        },
-        "Python OOP": {
-          "Properties and Decorators": {  
-            name: "Properties and Decorators",
-            value: 0,
-            knowledgeState: {
-              understandingLevel: 0,
-              confidenceInAssessment: 0,
-              reasoning: "Initial assessment pending student interaction",
-              lastUpdated: "Just now"
-            }
-          },
-        },
-        "Basic Programming": {
-          "Conditional Logic": {
-            name: "Conditional Logic",
-            value: 0,
-            knowledgeState: {
-              understandingLevel: 0,
-              confidenceInAssessment: 0,
-              reasoning: "Initial assessment pending student interaction",
-              lastUpdated: "Just now"
-            }
-          },
-          "Loops": {
-            name: "Loops",
-            value: 0,
-            knowledgeState: {
-              understandingLevel: 0,
-              confidenceInAssessment: 0,
-              reasoning: "Initial assessment pending student interaction",
-              lastUpdated: "Just now"
-            }
-          },
-          "Variable Assignment": {
-            name: "Variable Assignment",
-            value: 0,
-            knowledgeState: {
-              understandingLevel: 0,
-              confidenceInAssessment: 0,
-              reasoning: "Initial assessment pending student interaction",
-              lastUpdated: "Just now"
-            }
-          }
-        }
-      }
-    };
+  }
+
+  /**
+   * Set the file context
+   */
+  public setFileContext(fileContext: any): void {
+    this.fileContext = fileContext;
+    console.log("FileContext has been set in ConceptMapService");
   }
 
   /**
@@ -416,6 +279,18 @@ private checkConfidenceThresholds(): boolean {
     // Check if this is a new change to confidence level
     if (!previouslyReached) {
       console.log("📊 System Confidence level has been reached");
+      
+      // Safely try to update the fileContext
+      if (this.fileContext && typeof this.fileContext.updateConceptMapConfidence === 'function') {
+        try {
+          this.fileContext.updateConceptMapConfidence(true);
+          console.log("✅ FileContext confidence state updated to true in checkConfidenceThresholds");
+        } catch (error) {
+          console.error("Error updating conceptMapConfidence:", error);
+        }
+      } else {
+        console.warn("⚠️ Could not update fileContext in checkConfidenceThresholds - not available or missing method");
+      }
     }
     
     return true;
@@ -446,7 +321,7 @@ private async updateCategory(
       .join('\n\n');
     
     // Create the prompt for Claude
-    const prompt = `You are an expert programming concept assessment agent analyzing student understanding of "${category}" concepts. You evaluate their mastery based on conversation, code, and error messages.
+    const prompt = `You are a concept assessment agent responsible for the "${category}" category in a programming learning context. Your job is to analyze the student's understanding of specific subconcepts based on their conversation and code
 
                     ## Current Knowledge State
                     \`\`\`json
