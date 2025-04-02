@@ -6,6 +6,7 @@ import { WorkspaceLayout } from '@/components/student-side/work-pace/WorkSpace';
 import { FolderProvider } from '@/components/context/FolderContext';
 import { FileProvider } from '@/lib/context/FileContext';
 import { useAuth } from '@/hooks/useAuth';
+import { Toaster } from 'sonner';
 
 const JoinSessionPage: React.FC = () => {
   const {
@@ -20,14 +21,17 @@ const JoinSessionPage: React.FC = () => {
 
   if (!isAuthenticated) {
     return (
-      <AuthDialog
-        isOpen={showDialog}
-        onClose={closeDialog}
-        onCreateAccount={handleCreateAccount}
-        existingUser={user || undefined}
-        onContinueWithExisting={handleContinueWithExisting}
-        onCreateNew={handleCreateNew}
-      />
+      <>
+        <AuthDialog
+          isOpen={showDialog}
+          onClose={closeDialog}
+          onCreateAccount={handleCreateAccount}
+          existingUser={user || undefined}
+          onContinueWithExisting={handleContinueWithExisting}
+          onCreateNew={handleCreateNew}
+        />
+        <Toaster position="top-right" />
+      </>
     );
   }
 
@@ -35,6 +39,7 @@ const JoinSessionPage: React.FC = () => {
     <FolderProvider>
       <FileProvider>
         <WorkspaceLayout />
+        <Toaster position="top-right" />
       </FileProvider>
     </FolderProvider>
   );
