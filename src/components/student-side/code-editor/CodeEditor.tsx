@@ -10,36 +10,41 @@ import { EditorView } from '@codemirror/view';
 import { ViewUpdate } from '@uiw/react-codemirror';
 import { SelectionRange, Extension, Range } from '@codemirror/state';
 import { Decoration } from '@codemirror/view';
+import { indentUnit } from '@codemirror/language';
 
 export interface CodeEditorRef {
   highlightLine: (lineNumber: number) => void;
   clearHighlight: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetZoom: () => void;
 }
 
-const functionTemplate = `def twoSum(self, nums: List[int], target: int) -> List[int]:
-    # Write your solution here
-    pass`;
+const generateFullTemplate = (methodsCode: Record<string, string>): string => {
+  // Convert all method code into a single string with proper indentation
+  const allMethodsCode = Object.values(methodsCode)
+    .map(code => code.replace(/\n/g, '\n    '))
+    .join('\n\n    ');
 
-const generateFullTemplate = (userCode: string): string => {
-  return `from typing import List
-
-class Solution:
-    ${userCode.replace(/\n/g, '\n    ')}
-
-# Simple function call
-if __name__ == "__main__":
-    solution = Solution()
-    result = solution.twoSum([2, 7, 11, 15], 9)
-    print(f"Result: {result}")`;
+  // Only show the class definition, not the test code
+  return `class TextAnalyzer:
+    def __init__(self, text=""):
+        self.text = text
+        
+    ${allMethodsCode}`;
 };
 
-// Local storage key for saving code
-const LOCAL_STORAGE_CODE_KEY = 'saved_editor_code';
+// Local storage keys for saving code
+const LOCAL_STORAGE_CODE_KEY_PREFIX = 'textanalyzer_methods_'; // Will append session ID
+const LOCAL_STORAGE_ZOOM_KEY = 'code_editor_zoom_level';
+
+// Default base font size in pixels
+const DEFAULT_FONT_SIZE = 14;
 
 // Create a custom extension for line highlighting
 const createLineHighlightExtension = (lineNumber: number) => {
   const highlightLine = Decoration.line({
-    attributes: { class: "bg-yellow-100" } // Tailwind class for subtle yellow highlight
+    attributes: { class: "bg-yellow-100" } 
   });
 
   return EditorView.decorations.of((view) => {
@@ -52,6 +57,15 @@ const createLineHighlightExtension = (lineNumber: number) => {
     }
     
     return Decoration.set(decorations);
+  });
+};
+
+// Create a custom extension for font size
+const createFontSizeExtension = (fontSize: number) => {
+  return EditorView.theme({
+    "&": {
+      fontSize: `${fontSize}px`
+    }
   });
 };
 
@@ -70,15 +84,22 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     highlightedText,
     updateHighlightedText,
     updateExecutionOutput,
-    setErrorContent
+    setErrorContent,
+    sessionId,
+    sessionData,
+    activeMethodId,
+    getAllMethodTemplates
   } = useFile();
   
   const editorViewRef = useRef<EditorView | null>(null);
-  const [userCode, setUserCode] = useState<string>(functionTemplate);
+  const editorContainerRef = useRef<HTMLDivElement | null>(null);
+  const [methodsCode, setMethodsCode] = useState<Record<string, string>>({});
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [localHighlightedText, setLocalHighlightedText] = useState<string>('');
   const [highlightedLineNumber, setHighlightedLineNumber] = useState<number | null>(null);
   const [customExtensions, setCustomExtensions] = useState<Extension[]>([]);
+  // Add zoom state
+  const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
   
   // Function to highlight a specific line by line number
   const highlightLineByNumber = (lineNumber: number) => {
@@ -108,47 +129,79 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     console.log("Clearing highlighted line");
     setHighlightedLineNumber(null);
   };
+
+  // Add zoom functions
+  const zoomIn = () => {
+    setFontSize(prev => {
+      const newSize = Math.min(prev + 1, 30); // Cap at 30px
+      localStorage.setItem(LOCAL_STORAGE_ZOOM_KEY, String(newSize));
+      return newSize;
+    });
+  };
+
+  const zoomOut = () => {
+    setFontSize(prev => {
+      const newSize = Math.max(prev - 1, 8); // Don't go below 8px
+      localStorage.setItem(LOCAL_STORAGE_ZOOM_KEY, String(newSize));
+      return newSize;
+    });
+  };
+
+  const resetZoom = () => {
+    setFontSize(DEFAULT_FONT_SIZE);
+    localStorage.setItem(LOCAL_STORAGE_ZOOM_KEY, String(DEFAULT_FONT_SIZE));
+  };
   
   // Expose functions via ref
   useImperativeHandle(ref, () => ({
     highlightLine: highlightLineByNumber,
-    clearHighlight: clearHighlightedLine
+    clearHighlight: clearHighlightedLine,
+    zoomIn,
+    zoomOut,
+    resetZoom
   }));
   
-  // Debug logging for initial values
+  // Load saved code from localStorage or initialize with templates
   useEffect(() => {
-    console.log("Initial values from FileContext:", {
-      highlightedText,
-      updateHighlightedText: typeof updateHighlightedText === 'function',
-    });
-  }, []);
-  
-  useEffect(() => {
-    console.log("CodeEditor state:", {
-      userCodeLength: userCode?.length || 0,
-      fileContentLength: fileContent?.length || 0,
-      cachedContentLength: cachedFileContent?.length || 0,
-      highlightedText,
-      localHighlightedText,
-      highlightedLineNumber,
-    });
-  }, [userCode, fileContent, cachedFileContent, highlightedText, localHighlightedText, highlightedLineNumber]);
-
-  // Load saved code from localStorage on initial render
-  useEffect(() => {
-    if (isInitialized) return;
+    if (isInitialized || !sessionData || !sessionData.methodTemplates) return;
     
-    console.log("CodeEditor initializing...");
+    console.log("CodeEditor initializing with templates for session", sessionId);
+    
+    // Create a session-specific localStorage key
+    const storageKey = `${LOCAL_STORAGE_CODE_KEY_PREFIX}${sessionId}`;
     
     // Try to load from localStorage first
-    let initialCode = functionTemplate;
+    let initialMethodsCode = { ...sessionData.methodTemplates };
     
     if (typeof window !== 'undefined') {
       try {
-        const savedCode = localStorage.getItem(LOCAL_STORAGE_CODE_KEY);
+        const savedCode = localStorage.getItem(storageKey);
         if (savedCode) {
-          console.log("Found saved code in localStorage");
-          initialCode = savedCode;
+          console.log("Found saved code in localStorage for session", sessionId);
+          const parsedCode = JSON.parse(savedCode);
+          
+          // Verify the saved methods match the current session's methods
+          const templateKeys = Object.keys(sessionData.methodTemplates);
+          const savedKeys = Object.keys(parsedCode);
+          
+          const methodsMatch = templateKeys.length === savedKeys.length && 
+                               templateKeys.every(key => savedKeys.includes(key));
+                               
+          if (methodsMatch) {
+            console.log("Using saved code from localStorage");
+            initialMethodsCode = parsedCode;
+          } else {
+            console.log("Saved code doesn't match current session templates, using defaults");
+          }
+        }
+
+        // Load saved zoom level
+        const savedZoom = localStorage.getItem(LOCAL_STORAGE_ZOOM_KEY);
+        if (savedZoom) {
+          const parsedZoom = parseInt(savedZoom, 10);
+          if (!isNaN(parsedZoom)) {
+            setFontSize(parsedZoom);
+          }
         }
       } catch (err) {
         console.error("Error accessing localStorage:", err);
@@ -156,8 +209,8 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     }
     
     // Generate and set initial content with proper indentation
-    const initialFullCode = generateFullTemplate(initialCode);
-    setUserCode(initialCode);
+    const initialFullCode = generateFullTemplate(initialMethodsCode);
+    setMethodsCode(initialMethodsCode);
     setFileContent(initialFullCode);
     updateCachedFileContent(initialFullCode);
     
@@ -165,29 +218,61 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     updateExecutionOutput('');
     setErrorContent('');
     
-    console.log("CodeEditor initialized with code from storage or template");
+    console.log("CodeEditor initialized with methods for session", sessionId);
     setIsInitialized(true);
-  }, [isInitialized, updateCachedFileContent, setFileContent, updateExecutionOutput, setErrorContent]);
+  }, [sessionData, sessionId, isInitialized, updateCachedFileContent, setFileContent, updateExecutionOutput, setErrorContent]);
+
+  // Reset initialization when session changes
+  useEffect(() => {
+    setIsInitialized(false);
+  }, [sessionId]);
 
   // Extract user code from full template if fileContent changes externally
   useEffect(() => {
-    if (!isInitialized || !fileContent || fileContent === cachedFileContent) return;
+    if (!isInitialized || !fileContent || fileContent === cachedFileContent || !sessionData?.methodTemplates) return;
     
-    // Extract the twoSum function from the full code
-    const regex = /class Solution:\n\s+(def twoSum[\s\S]*?)(?=\n\n|$)/;
-    const match = fileContent.match(regex);
+    // For each method, try to extract its code
+    const updatedMethods = { ...methodsCode };
+    let codeUpdated = false;
     
-    if (match && match[1] && match[1].trim() !== userCode.trim()) {
-      // Remove the 4-space indentation that comes from the class
-      const extractedCode = match[1].replace(/\n\s{4}/g, '\n');
-      console.log("Extracted code from fileContent:", extractedCode);
-      setUserCode(extractedCode);
+    const methodIds = Object.keys(sessionData.methodTemplates);
+    for (const methodId of methodIds) {
+      // Adjust regex pattern based on method name and type
+      let methodPattern;
+      if (methodId === 'word_stats' || methodId.includes('property')) {
+        methodPattern = `@property\\s+def\\s+${methodId.replace('_property', '')}`;
+      } else {
+        methodPattern = `def\\s+${methodId}`;
+      }
+      
+      // Extract the method function from the full code
+      const methodRegex = new RegExp(`class TextAnalyzer:[\\s\\S]*?(${methodPattern}[\\s\\S]*?)(?=\\n\\s*(?:def|@property|$|if __name__))`, 'i');
+      const match = fileContent.match(methodRegex);
+      
+      if (match && match[1]) {
+        // Remove the indentation that comes from the class
+        const extractedCode = match[1].replace(/\n\s{4}/g, '\n');
+        if (extractedCode.trim() !== updatedMethods[methodId]?.trim()) {
+          updatedMethods[methodId] = extractedCode;
+          codeUpdated = true;
+        }
+      }
     }
-  }, [isInitialized, fileContent, cachedFileContent, userCode]);
+    
+    if (codeUpdated) {
+      console.log("Updated methods code from fileContent:", updatedMethods);
+      setMethodsCode(updatedMethods);
+    }
+  }, [isInitialized, fileContent, cachedFileContent, methodsCode, sessionData]);
 
-  // Update custom extensions when highlighted line changes
+  // Update custom extensions when highlighted line or font size changes
   useEffect(() => {
-    const extensions: Extension[] = [];
+    const extensions: Extension[] = [
+      // Add font size extension
+      createFontSizeExtension(fontSize),
+      // Set indentation to 4 spaces for Python
+      indentUnit.of("    ")
+    ];
     
     if (highlightedLineNumber !== null) {
       extensions.push(createLineHighlightExtension(highlightedLineNumber));
@@ -195,7 +280,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     
     setCustomExtensions(extensions);
     
-    // If editor view exists, force a refresh to show the highlight
+    // If editor view exists, force a refresh to show the highlight and font size
     if (editorViewRef.current) {
       setTimeout(() => {
         // Just dispatch a minimal transaction to force redraw
@@ -204,7 +289,38 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
         });
       }, 100);
     }
-  }, [highlightedLineNumber]);
+  }, [highlightedLineNumber, fontSize]);
+
+  // Add event listener for wheel events to handle zooming
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      // Only zoom if Ctrl key is pressed
+      if (e.ctrlKey) {
+        e.preventDefault();
+        
+        if (e.deltaY < 0) {
+          // Zoom in (wheel up)
+          zoomIn();
+        } else {
+          // Zoom out (wheel down)
+          zoomOut();
+        }
+      }
+    };
+    
+    // Add the event listener to the editor container
+    const container = editorContainerRef.current;
+    if (container) {
+      container.addEventListener('wheel', handleWheel, { passive: false });
+    }
+    
+    // Cleanup function
+    return () => {
+      if (container) {
+        container.removeEventListener('wheel', handleWheel);
+      }
+    };
+  }, []);
 
   // Auto-save code changes after a delay
   useEffect(() => {
@@ -222,41 +338,55 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     return () => clearTimeout(autoSaveTimer);
   }, [isInitialized, fileContent, cachedFileContent, updateCachedFileContent]);
 
-  // Save user code to localStorage whenever it changes
+  // Save methods code to localStorage whenever it changes
   useEffect(() => {
-    if (!isInitialized || !userCode) return;
+    if (!isInitialized || !sessionId) return;
     
     try {
-      localStorage.setItem(LOCAL_STORAGE_CODE_KEY, userCode);
-      console.log("Saved code to localStorage");
+      // Use session-specific key
+      const storageKey = `${LOCAL_STORAGE_CODE_KEY_PREFIX}${sessionId}`;
+      localStorage.setItem(storageKey, JSON.stringify(methodsCode));
+      console.log(`Saved methods code to localStorage for session ${sessionId}`);
     } catch (err) {
       console.error("Error saving to localStorage:", err);
     }
-  }, [isInitialized, userCode]);
+  }, [isInitialized, methodsCode, sessionId]);
 
-  const handleCodeChange = (value: string): void => {
-    setUserCode(value);
+  // Scroll to current method when activeMethodId changes
+  useEffect(() => {
+    if (!activeMethodId || !editorViewRef.current) return;
     
-    // Generate the full template with updated user code
-    const updatedTemplate = generateFullTemplate(value);
+    // Find the line number where the method starts
+    const text = editorViewRef.current.state.doc.toString();
+    const lines = text.split('\n');
+    let lineNumber = 0;
     
-    // Update the file content with the new template
-    setFileContent(updatedTemplate);
+    for (let i = 0; i < lines.length; i++) {
+      if ((activeMethodId === 'word_stats' || activeMethodId.includes('property')) && lines[i].includes('@property')) {
+        lineNumber = i + 1;
+        break;
+      } else if (lines[i].includes(`def ${activeMethodId}`)) {
+        lineNumber = i + 1;
+        break;
+      }
+    }
     
-    console.log("Code updated:", {
-      userCodeLength: value.length,
-      updatedTemplateLength: updatedTemplate.length
-    });
-    
-    // Clear previous execution results
-    updateExecutionOutput('');
-    setErrorContent('');
-  };
+    if (lineNumber > 0) {
+      // Scroll to the method
+      const line = editorViewRef.current.state.doc.line(lineNumber);
+      editorViewRef.current.dispatch({
+        selection: { anchor: line.from, head: line.from },
+        scrollIntoView: true
+      });
+    }
+  }, [activeMethodId]);
 
   // Handle updates from CodeMirror including selection changes
   const handleEditorUpdate = (viewUpdate: ViewUpdate): void => {
-    // Store the editor view reference
-    editorViewRef.current = viewUpdate.view;
+    // Only store the editor view reference if it has actually changed
+    if (viewUpdate.view !== editorViewRef.current) {
+      editorViewRef.current = viewUpdate.view;
+    }
     
     // Check if this update includes selection changes
     if (viewUpdate.selectionSet) {
@@ -265,31 +395,24 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     }
   };
   
-  // Handle selection changes, both from mouse and keyboard
   const handleSelectionChange = (selection: SelectionRange): void => {
+    // Prevent unnecessary state updates if selection hasn't meaningfully changed
     if (selection.from !== selection.to) {
       // There is a selection
       const selectedText = editorViewRef.current?.state.sliceDoc(selection.from, selection.to) || '';
       
-      console.log("Selection changed:", {
-        from: selection.from,
-        to: selection.to,
-        text: selectedText
-      });
-      
-      // Update local state
-      setLocalHighlightedText(selectedText);
-      
-      // Update file context
-      if (typeof updateHighlightedText === 'function') {
-        console.log("Calling updateHighlightedText with:", selectedText);
-        updateHighlightedText(selectedText);
-      } else {
-        console.error("updateHighlightedText is not a function!");
+      // Only update if the selected text is different from the current selection
+      if (selectedText !== localHighlightedText) {
+        // Update local state
+        setLocalHighlightedText(selectedText);
+        
+        // Update file context
+        if (typeof updateHighlightedText === 'function') {
+          updateHighlightedText(selectedText);
+        }
       }
-    } else {
-      // No selection
-      console.log("Selection cleared");
+    } else if (localHighlightedText !== '') {
+      // Clear selection if it was previously set
       setLocalHighlightedText('');
       
       if (typeof updateHighlightedText === 'function') {
@@ -298,17 +421,46 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     }
   };
 
-  // Add this effect to monitor highlightedText changes from context
-  useEffect(() => {
-    console.log("Highlighted text in context changed to:", highlightedText);
-  }, [highlightedText]);
+  const handleCodeChange = (value: string): void => {
+    setFileContent(value); 
+  };
+
+  // Generate the full class code for the editor
+  const fullClassCode = isInitialized ? generateFullTemplate(methodsCode) : '';
 
   return (
-    <div className={`h-full flex flex-col ${className}`}>
+    <div 
+      className={`h-full flex flex-col ${className}`}
+      ref={editorContainerRef}
+    >
+      {/* Add a small zoom control indicator */}
+      <div className="absolute top-3 right-3 z-10 bg-white bg-opacity-75 rounded px-2 py-1 text-xs text-gray-600 flex items-center space-x-2">
+        <button 
+          onClick={zoomOut}
+          className="hover:text-blue-600 focus:outline-none"
+        >
+          −
+        </button>
+        <span>{fontSize}px</span>
+        <button 
+          onClick={zoomIn}
+          className="hover:text-blue-600 focus:outline-none"
+        >
+          +
+        </button>
+        <button 
+          onClick={resetZoom}
+          className="ml-1 text-gray-500 hover:text-blue-600 text-[10px] focus:outline-none"
+        >
+          reset
+        </button>
+      </div>
+      
       <ScrollArea className="flex-1">
         <CodeMirror
-          value={userCode}
-          height="540px"
+          key={sessionId} // Force re-render when session changes
+          value={fullClassCode}
+          height="680px"
           theme={vscodeLight}
           extensions={[python(), ...customExtensions]}
           onChange={handleCodeChange}
@@ -346,7 +498,6 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   );
 });
 
-// Add a display name for better debugging
 CodeEditor.displayName = 'CodeEditor';
 
 export default CodeEditor;
