@@ -87,43 +87,12 @@ const condition2: TaskData = {
   ],
   methodTemplates: {
     "calculate_sum": `def calculate_sum(self, start: int, end: int) -> int:
-    """
-    Calculate the sum of numbers in a range from start (inclusive) to end (exclusive).
-    
-    Args:
-        start: The starting number (inclusive)
-        end: The ending number (exclusive)
-        
-    Returns:
-        The sum of all numbers in the range
-    """
     pass`,
     
     "create_pattern": `def create_pattern(self, numbers: list) -> str:
-    """
-    Create a pattern string based on divisibility rules:
-    - If divisible by 3, add 'X'
-    - If divisible by 2, add 'O'
-    - Otherwise, add the number as a string
-    
-    Args:
-        numbers: A list of integers
-        
-    Returns:
-        The pattern string based on the rules
-    """
     pass`,
     
     "create_multiplier": `def create_multiplier(self, factor: int):
-    """
-    Create a lambda function that multiplies its input by the given factor.
-    
-    Args:
-        factor: The multiplication factor
-        
-    Returns:
-        A lambda function that takes a number and returns it multiplied by factor
-    """
     pass`
   },
   testCases: {
@@ -336,43 +305,12 @@ const condition1: TaskData = {
   ],
   methodTemplates: {
     "filter_high_scores": `def filter_high_scores(self, scores: dict, threshold: int) -> dict:
-    """
-    Filter a dictionary of scores to include only those that meet or exceed the threshold.
-    
-    Args:
-        scores: A dictionary with names as keys and scores as values
-        threshold: The minimum score to include (inclusive)
-        
-    Returns:
-        A new dictionary with only the entries that meet the threshold
-    """
     pass`,
     
     "slice_string": `def slice_string(self, text: str, start: int, end: int, step: int) -> str:
-    """
-    Extract a substring using Python's slicing notation.
-    
-    Args:
-        text: The input string
-        start: The starting index (inclusive)
-        end: The ending index (exclusive)
-        step: The step size
-        
-    Returns:
-        The sliced string according to [start:end:step]
-    """
     pass`,
     
     "flatten_matrix": `def flatten_matrix(self, matrix: list) -> list:
-    """
-    Flatten a 2D matrix (list of lists) into a single 1D list.
-    
-    Args:
-        matrix: A list of lists containing values
-        
-    Returns:
-        A single flat list containing all values from the matrix
-    """
     pass`
   },
   testCases: {
