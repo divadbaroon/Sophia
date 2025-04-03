@@ -168,6 +168,12 @@ export class ConversationManager extends EventEmitter {
         const transcriptText = data.channel.alternatives[0].transcript.trim();
         
         if (transcriptText) {
+          // First check if we're in IDLE state - only process if we are
+          if (this.state.status !== ConversationStatus.IDLE) {
+            console.log(`🔇 Ignoring transcript in ${this.state.status} state: "${transcriptText}"`);
+            return; // Skip all processing if not in IDLE state
+          }
+          
           // For UI updates, always show the latest transcript
           this.updateState({
             transcript: transcriptText
@@ -205,6 +211,7 @@ export class ConversationManager extends EventEmitter {
           this.resetSilenceTimeout();
         }
       });
+    
 
       dgConnection.addListener(LiveTranscriptionEvents.Error, (error: Error) => {
         console.error('❌ Deepgram error:', error);
@@ -289,7 +296,8 @@ export class ConversationManager extends EventEmitter {
   private finalizeTranscript(): void {
     const finalTranscript = this.accumulatedTranscript.trim();
     
-    if (finalTranscript) {
+    // Only process the transcript if we're in IDLE state
+    if (this.state.status === ConversationStatus.IDLE && finalTranscript) {
       console.log(`✅ TRANSCRIPT FINALIZED: "${finalTranscript}"`);
       
       // Update conversation history with the new transcript
@@ -318,9 +326,17 @@ export class ConversationManager extends EventEmitter {
         text: finalTranscript,
         timestamp: Date.now()
       });
+    } else if (finalTranscript) {
+      // If not in IDLE, just log that we're ignoring it and clear
+      console.log(`🚫 TRANSCRIPT IGNORED (not in IDLE state): "${finalTranscript}"`);
+      this.accumulatedTranscript = "";
+      
+      // Clear the UI transcript too
+      this.updateState({
+        transcript: ""
+      });
     }
   }
-  
   /**
    * Clean up resources
    */
