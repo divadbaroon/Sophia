@@ -603,9 +603,6 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
                               </Badge>
                             </td>
                             <td className="border border-gray-200 dark:border-gray-700 p-2">
-                              {(item.knowledgeState.confidenceInAssessment * 100).toFixed(1)}%
-                            </td>
-                            <td className="border border-gray-200 dark:border-gray-700 p-2">
                               {item.knowledgeState?.reasoning || "N/A"}
                             </td>
                             <td className="border border-gray-200 dark:border-gray-700 p-2">
@@ -615,16 +612,6 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
                         );
                       })}
                     </tbody>
-                    <tfoot>
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className="border border-gray-200 dark:border-gray-700 p-2 text-right font-bold"
-                        >
-                          Overall Average System Confidence: {averageConfidence.toFixed(1)}%
-                        </td>
-                      </tr>
-                    </tfoot>
                   </table>
                 </div>
               </CardContent>
