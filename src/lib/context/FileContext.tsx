@@ -225,7 +225,7 @@ const condition2: TaskData = {
       }
     }
   },
-  system: "ATLAS"
+  system: "Standalone"
 }
 
 const condition1: TaskData = {
@@ -505,7 +505,7 @@ const condition1: TaskData = {
       }
     }
   },
-  system: "Standalone"
+  system: "ATLAS"
 }
 
 const FileContext = createContext<FileContextType | undefined>(undefined)
@@ -562,10 +562,16 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         // Set the appropriate session data based on ID
         if (newSessionId === '5') {
           setSessionData(condition1)
-          setSystemType('ATLAS') // Update system type
+          setSystemType('ATLAS') 
         } else if (newSessionId === '12') {
           setSessionData(condition2)
-          setSystemType('Standalone') // Update system type
+          setSystemType('Standalone') 
+        } else if (newSessionId === '7') {
+          setSessionData(condition1)
+          setSystemType('Standalone') 
+        } else if (newSessionId === '6') {
+          setSessionData(condition2)
+          setSystemType('ATLAS') 
         }
         
         // Reset to first method when changing sessions
