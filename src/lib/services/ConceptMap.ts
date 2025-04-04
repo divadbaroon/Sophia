@@ -31,7 +31,7 @@ export class ConceptMapService {
   private isProcessing: boolean = false;
   private confidenceReached: boolean = false;
   private taPivot: string | null = null;
-  private readonly CONFIDENCE_THRESHOLD = 0.69;
+  private readonly CONFIDENCE_THRESHOLD = 0.7;
   private onReadyCallback?: OnReadyCallback;
   private anthropicClient: Anthropic | null = null;
   private fileContext: any = null
@@ -347,7 +347,7 @@ private async updateCategory(
                     For each subconcept in the knowledge state, provide an updated assessment with:
 
                     1. \`understandingLevel\` (0-1 scale):
-                      - 0.0-0.2: Minimal/no understanding
+                      - 0.0-0.2: Minimal/no understanding/ student did not implement
                       - 0.2-0.4: Basic awareness with significant gaps
                       - 0.4-0.6: Moderate understanding with some misconceptions
                       - 0.6-0.8: Strong understanding with minor gaps
@@ -357,7 +357,7 @@ private async updateCategory(
                       - 0.0-0.3: Very low (insufficient evidence)
                       - 0.3-0.6: Moderate (some evidence but limited)
                       - 0.6-0.8: Substantial (clear evidence)
-                      - 0.8-1.0: High (multiple consistent demonstrations)
+                      - 0.8-1.0: High (Demonstrates conceptual knowledge through code and verbal confirmaton)
 
                     CRITICAL RULE FOR LOW UNDERSTANDING CONCEPTS:
                     For any concept where understandingLevel is below 0.4:
@@ -487,75 +487,75 @@ private async generateTAPivot(
     
     // Start concept filtering timing
     const filterStartTime = performance.now();
-    // Manually filter and rank the concepts
+    // Get prioritized concepts
     const prioritizedConcepts = this.getPrioritizedConcepts();
     
-    // Create a simplified concept map with only the prioritized concepts
-    const simplifiedConceptMap = this.createSimplifiedConceptMap(prioritizedConcepts);
+    // Check if we have any concepts to assess
+    if (prioritizedConcepts.length === 0) {
+      return "All concepts have been assessed with high confidence. The student appears to have a good understanding of the required concepts.";
+    }
+    
+    // Focus only on the single lowest concept
+    const lowestConcept = prioritizedConcepts[0];
+    console.log(`Focusing on concept: ${lowestConcept.category} - ${lowestConcept.subconcept}`);
+    
     const filterEndTime = performance.now();
     console.log(`Concept filtering completed (${(filterEndTime - filterStartTime).toFixed(2)}ms)`);
     
     // Create the prompt for Claude
     const promptStartTime = performance.now();
-    const prompt = `You are given a problem description, a students code and a set of concepts to judge the students progress. You will be given the values of the students understanding before they made new changes to the code. Each category is given a score between 0 and 1. 0 being the student doesn't have any clue about the concept and a 1 being the student has shown that they understand the concept really well. All categories start at 0. You will also be given the conversation the student just had with a TA. 
-                     Your job is to update the student's score. Do not lower a students score unless they have explicitly shown a misunderstanding of the concept. Json response only. Do not add anything else to your response.
+    const prompt = `As the concept mapping agent for ATLAS, focus entirely on assessing the student's understanding of a single concept.
 
-                  ## Student's Current Knowledge State
-                  Below are the priority concepts that need attention (already filtered for low understanding and low confidence):
-                  \`\`\`json
-                  ${JSON.stringify(simplifiedConceptMap, null, 2)}
-                  \`\`\`
-
-                  ## Context
-                  - Student Task: ${studentTask}
-                  - Error Message: ${errorMessage || "None provided"}
-                  - Recent Code: 
-                  \`\`\`
-                  ${studentCode || "No code provided"}
-                  \`\`\`
-
-                  ## Conversation History
-                  \`\`\`
-                  ${conversationText}
-                  \`\`\`
-
-                  ## Guidance Format
-                  For each prioritized concept, provide:
-
-                  1. Concept name and current metrics
-                  2. Why this concept needs attention (connection to current code/conversation)
-                  3. 2-3 specific diagnostic questions the TA should ask to better assess understanding
-
-                  Keep your response brief and actionable (under 200 words total).
-                  
-                  Focus only on the concepts provided in the Knowledge State section.
-
-                  ## Response Example
-                  \`\`\`
-                  Priority Concept: [concept name] (understanding: [level], confidence: [level])
-
-                  Connection: [How this relates to their current work]
-
-                  Diagnostic Questions:
-                  1. [Specific question to assess understanding]
-                  2. [Follow-up question]
-                  \`\`\``;
-                  
+                    OBJECTIVE: Generate 1-3 extremely concise questions to assess the student's understanding of this specific concept.
+                    
+                    FOCUS CONCEPT: ${lowestConcept.subconcept} (from category: ${lowestConcept.category})
+                    Current understanding level: ${lowestConcept.details.knowledgeState.understandingLevel.toFixed(2)}
+                    Current confidence in assessment: ${lowestConcept.details.knowledgeState.confidenceInAssessment.toFixed(2)}
+                    
+                    QUESTION REQUIREMENTS:
+                    - EXTREMELY BRIEF (max 10 words per question)
+                    - Focus on CONCEPTUAL UNDERSTANDING, not problem-solving
+                    - NO code examples for students to complete
+                    - Simple enough to answer verbally
+                    - Direct and to the point
+                    
+                    GOOD EXAMPLES:
+                    - "What does a list comprehension do?"
+                    - "When would you use dictionary vs. list?"
+                    - "How do lambda functions work?"
+                    - "What's the purpose of the 'self' parameter?"
+                    
+                    BAD EXAMPLES:
+                    - "Rewrite this for loop using a list comprehension: for x in range..."
+                    - "Explain how you would implement a function that..."
+                    - "What would be the output of the following code..."
+                    
+                    RESPONSE FORMAT:
+                    - CONCEPT: ${lowestConcept.subconcept}
+                    - QUESTIONS:
+                      1. [First direct question]
+                      2. [Second direct question]
+                      3. [Third direct question]
+                    
+                    CONTEXT:
+                    Student Task: ${studentTask}
+                    Conversation History: ${conversationText}
+                    Student Code: ${studentCode}
+                    Error Message: ${errorMessage}`;
+                                
     const promptEndTime = performance.now();
     console.log(`Prompt preparation completed (${(promptEndTime - promptStartTime).toFixed(2)}ms)`);
 
-    console.log("Generating TA pivot with manually filtered concepts");
-    
-    // API call timing
-    const apiCallStartTime = performance.now();
+    console.log("Generating TA pivot focused on single lowest concept");
+
     // Throw an error if no Anthropic client is available
     if (!this.anthropicClient) {
       throw new Error('No Anthropic client available');
     }
-
+    
     // Use non-streaming API
     const response = await this.anthropicClient.messages.create({
-      system: "You are a teaching assistant providing guidance about student conceptual understanding. Be concise and direct.",
+      system: "You are a teaching assistant conducting a focused assessment of a student's understanding of a specific programming concept.",
       messages: [
         {
           role: 'user',
@@ -565,11 +565,8 @@ private async generateTAPivot(
       model: 'claude-3-7-sonnet-20250219',
       max_tokens: 512,
     });
-    const apiCallEndTime = performance.now();
-    console.log(`Pivot API call completed (${(apiCallEndTime - apiCallStartTime).toFixed(2)}ms)`);
     
-    // Processing response timing
-    const processingStartTime = performance.now();
+    // Process response
     if (!response.content || response.content.length === 0) {
       throw new Error('Empty response from Claude API');
     }
@@ -580,8 +577,6 @@ private async generateTAPivot(
     }
 
     const result = contentBlock.text;
-    const processingEndTime = performance.now();
-    console.log(`Response processing completed (${(processingEndTime - processingStartTime).toFixed(2)}ms)`);
     
     const endTime = performance.now();
     console.log(`Total TA pivot generation completed (${(endTime - startTime).toFixed(2)}ms)`);
@@ -627,35 +622,16 @@ private getPrioritizedConcepts(): Array<{
     }
   }
   
-  // Sort the concepts by understanding level (ascending)
+  // Sort the concepts by confidence level (ascending)
   const sortedConcepts = filteredConcepts.sort((a, b) => {
-    return a.details.knowledgeState.understandingLevel - b.details.knowledgeState.understandingLevel;
+    return a.details.knowledgeState.confidenceInAssessment - b.details.knowledgeState.confidenceInAssessment;
   });
   
-  console.log(`Found ${filteredConcepts.length} concepts with low confidence, sorted by understanding level`);
+  console.log(`Found ${filteredConcepts.length} concepts with low confidence, sorted by confidence level`);
   
   return sortedConcepts;
 }
 
-/**
- * Create a simplified concept map containing only the prioritized concepts
- */
-private createSimplifiedConceptMap(
-  prioritizedConcepts: Array<{category: string; subconcept: string; details: Subconcept;}>
-): any {
-  const simplifiedMap: any = {};
-  
-  // Group the concepts by category
-  prioritizedConcepts.forEach(item => {
-    if (!simplifiedMap[item.category]) {
-      simplifiedMap[item.category] = {};
-    }
-    
-    simplifiedMap[item.category][item.subconcept] = item.details;
-  });
-  
-  return simplifiedMap;
-}
 }
 
 export default ConceptMapService;
