@@ -16,8 +16,14 @@ import { QuestionPanelProps, TranscriptData, SpeakToOption, ScenarioOption, Voic
  */
 const mapStatusToVoiceState = (
   status: ConversationStatus | undefined, 
-  isUserSpeaking: boolean
+  isUserSpeaking: boolean,
+  isInitializing: boolean
 ): VoiceCircleState => {
+  // Check for initialization first
+  if (isInitializing) {
+    return "initializing";
+  }
+  
   if (status === undefined) {
     return "idle";
   }
@@ -77,12 +83,14 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
     speakTo: fileSpeakTo, 
     scenario: fileScenario, 
     updateSpeakTo, 
-    updateScenario 
+    updateScenario,
+    conceptMapInitializing
   } = useFile() as {
     speakTo: SpeakToOption,
     scenario: ScenarioOption,
     updateSpeakTo: (value: SpeakToOption) => void,
-    updateScenario: (value: ScenarioOption) => void
+    updateScenario: (value: ScenarioOption) => void,
+    conceptMapInitializing: boolean
   }
 
   const contentRef = useRef<HTMLDivElement>(null)
@@ -133,7 +141,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
   }
 
   // Determine the current voice state
-  const voiceState = mapStatusToVoiceState(status, isUserSpeaking)
+  const voiceState = mapStatusToVoiceState(status, isUserSpeaking, conceptMapInitializing)
 
   if (error) {
     return (
@@ -159,14 +167,16 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
 
         <TabsContent value="live" className="mt-4">
           <div ref={contentRef}>
-            {!isUserSpeaking && showInitialGreeting ? (
+            {!isUserSpeaking && (showInitialGreeting || conceptMapInitializing) ? (
               <div className="rounded-md border p-4 relative">
                 <div className="flex flex-col items-center">
                   <div className="h-28 w-28 mx-auto mb-4">
-                    <VoiceCircle state="idle" />
+                    <VoiceCircle state={conceptMapInitializing ? "initializing" : "idle"} />
                   </div>
                   <p className="text-muted-foreground mb-2 text-center">
-                    Explain the problem you&apos;re running into
+                    {conceptMapInitializing 
+                      ? "Analyzing your code and initializing the system..." 
+                      : "Explain the problem you're running into"}
                   </p>
                 </div>
               </div>
