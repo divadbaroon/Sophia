@@ -205,7 +205,7 @@ export const useConversationManager = () => {
     if (managerRef.current) {
       return;
     }
-
+  
     try {
       const conversationOptions: ConversationManagerOptions = {
         silenceThreshold: 2000, // 2 seconds
@@ -317,6 +317,43 @@ export const useConversationManager = () => {
       managerRef.current = manager;
       conceptMapServiceRef.current = conceptService;
       setIsInitialized(true);
+      
+      // Initialize the concept map and generate the pivot queue
+      // Only if the pivot queue doesn't exist or is empty
+      if (!fileContext.pivotQueue || fileContext.pivotQueue.length === 0) {
+        console.log("Initializing concept map and generating pivot queue...");
+        setIsConceptMapProcessing(true);
+        
+        conceptService.initialize(
+          manager.getState().conversationHistory,
+          fileContext?.studentTask || '',
+          fileContext?.fileContent || '',
+          fileContext?.errorContent || '',
+          5 // Default queue size
+        ).then(() => {
+          if (conceptMapServiceRef.current) {
+            // Update concept map and related state
+            setConceptMap(conceptService.getConceptMap());
+            const newConfidenceState = conceptService.hasReachedConfidence();
+            setConceptMapReady(newConfidenceState);
+            
+            // Get pivot queue and update the file context
+            const pivotQueue = conceptService.getTAPivotQueue();
+            
+            if (fileContext && typeof fileContext.updatePivotQueue === 'function') {
+              fileContext.updatePivotQueue(pivotQueue);
+              console.log(`✅ Initialized pivot queue with ${pivotQueue.length} items`);
+            }
+          }
+          
+          setIsConceptMapProcessing(false);
+        }).catch(error => {
+          console.error('Error initializing concept map:', error);
+          setIsConceptMapProcessing(false);
+        });
+      } else {
+        console.log(`Skipping initialization - pivot queue already exists with ${fileContext.pivotQueue.length} items`);
+      }
       
       // Initialize Anthropic client
       if (ANTHROPIC_API_KEY) {
