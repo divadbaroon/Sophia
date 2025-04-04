@@ -230,14 +230,6 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
     });
   });
 
-  // Compute overall average system confidence (as a percentage)
-  const totalConfidence = radarData.reduce(
-    (acc, item) => acc + item.knowledgeState.confidenceInAssessment,
-    0
-  );
-  const averageConfidence =
-    radarData.length > 0 ? (totalConfidence / radarData.length) * 100 : 0;
-
   const overviewConfig = {
     proficiency: {
       label: "Proficiency",
