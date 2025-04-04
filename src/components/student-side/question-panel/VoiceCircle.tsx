@@ -136,6 +136,89 @@ const VoiceCircle: React.FC<VoiceCircleProps> = ({ state }) => {
         }
 
         ctx.restore()
+      } else if (state === "initializing") {
+        // Initialization animation - scanning effect with growing and shrinking circles
+        
+        // Draw base circle
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+        ctx.fill();
+        
+        // Inner pulsing circle
+        const innerPulse = 0.35 + Math.sin(time * 1.5) * 0.15;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * innerPulse, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+        ctx.fill();
+        
+        // Scanning effect - vertical moving line
+        ctx.save();
+        
+        // Create gradient for scanning line
+        const scanY = centerY + Math.sin(time * 1.2) * radius * 0.6;
+        const gradient = ctx.createLinearGradient(
+          centerX - radius,
+          scanY,
+          centerX + radius,
+          scanY
+        );
+        gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
+        gradient.addColorStop(0.4, "rgba(0, 0, 0, 0.15)");
+        gradient.addColorStop(0.6, "rgba(0, 0, 0, 0.15)");
+        gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+        
+        // Create a clipping path for the scan line to only show within the circle
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 0.7, 0, Math.PI * 2);
+        ctx.clip();
+        
+        // Draw scan line
+        ctx.beginPath();
+        ctx.rect(centerX - radius, scanY - 3, radius * 2, 6);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        ctx.restore();
+        
+        // Expanding rings effect
+        const ringCount = 3;
+        for (let i = 0; i < ringCount; i++) {
+          // Create expanding rings that reset
+          const ringProgress = ((time * 0.7) + i / ringCount) % 1;
+          const ringRadius = radius * (0.7 * ringProgress);
+          const opacity = 0.3 * (1 - ringProgress);
+          
+          if (opacity > 0.01) {  // Only draw visible rings
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, ringRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(0, 0, 0, ${opacity})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+        }
+        
+        // Rotating dots around the perimeter
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        
+        const dotCount = 6;
+        const rotationSpeed = time * 0.5;
+        
+        for (let i = 0; i < dotCount; i++) {
+          const angle = (i / dotCount) * Math.PI * 2 + rotationSpeed;
+          const dotDistance = radius * 0.8;
+          const dotX = Math.cos(angle) * dotDistance;
+          const dotY = Math.sin(angle) * dotDistance;
+          const dotSize = 5;
+          
+          ctx.beginPath();
+          ctx.arc(dotX, dotY, dotSize, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+          ctx.fill();
+        }
+        
+        ctx.restore();
       } else if (state === "speaking") {
         // ChatGPT-style speaking animation (concentric waves)
 
@@ -181,7 +264,7 @@ const VoiceCircle: React.FC<VoiceCircleProps> = ({ state }) => {
       }
 
       animationRef.current = requestAnimationFrame(animate)
-    }
+    } 
 
     animate()
 
