@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
 import { ConversationMessage } from "@/types";
-import { Anthropic } from '@anthropic-ai/sdk';
+import { Anthropic } from "@anthropic-ai/sdk";
 
 // Define the missing RadarDataPoint interface
 interface RadarDataPoint {
@@ -64,7 +64,7 @@ interface ConceptMap {
   categories: Categories;
 }
 
-// Modal props interface now includes additional data with proper typing
+// Modal props interface (systemType removed)
 interface KnowledgeRadarModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -72,7 +72,6 @@ interface KnowledgeRadarModalProps {
   code: string;
   conversationHistory: ConversationMessage[];
   conceptMap: ConceptMap;
-  systemType?: 'ATLAS' | 'Standalone'; // Add system type prop
 }
 
 // Loading screen component
@@ -97,7 +96,6 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
   code,
   conversationHistory,
   conceptMap,
-  systemType = 'ATLAS', // Default to ATLAS
 }) => {
   const [loading, setLoading] = useState(true);
   const [assessmentOverview, setAssessmentOverview] = useState<string>("");
@@ -111,36 +109,27 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Generate skills assessment overview using Claude API
+  // Generate skills assessment overview using Anthropic API
   const generateSkillsAssessment = async () => {
     setIsGeneratingOverview(true);
-    
+
     try {
       // Create Anthropic client 
       const client = new Anthropic({
-        apiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
-        dangerouslyAllowBrowser: true // For client-side usage
+        apiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || "",
+        dangerouslyAllowBrowser: true, // For client-side usage
       });
-      
-      // Generate different prompts based on system type
-      let prompt;
-      
-      if (systemType === 'ATLAS') {
-        // Full ATLAS prompt with concept map data
-        prompt = `
-          I need you to analyze a student's programming knowledge based on their concept map data,
-          the task they were asked to perform, and the code they wrote.
+
+      // Use the detailed prompt with concept map data
+      const prompt = `
+          I need you to analyze a student's programming knowledge based on their concept map data.
           
           CONCEPT MAP DATA:
           ${JSON.stringify(conceptMap, null, 2)}
-          
-          STUDENT TASK:
-          ${studentTask}
-          
-          CODE SUBMITTED:
-          ${code}
-          
-          Please generate a Skills Assessment Overview that includes:
+
+          IMPORTANT: FOCUS ON CONCEPTS THAT YOU HAVE A HIGH CONFIDENCE ( .7 and above) IN YOUR ASSESMENT
+             
+          Please generate a very concise Skills Assessment Overview that includes:
           1. A comprehensive analysis of the student's current proficiency based on the concept map data
           2. Identification of areas of strength (concepts with values > 0.6)
           3. Identification of development areas (concepts with values < 0.4)
@@ -154,86 +143,52 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
           Format the response as HTML with paragraphs (<p>) and potentially lists if needed, but keep it concise, actionable, and encouraging.
           The total response should be around 2-3 paragraphs.
         `;
-      } else {
-        // Simplified Standalone prompt without concept map data
-        prompt = `
-          Based on the student's task and submitted code, please generate a brief learning assessment.
-          
-          STUDENT TASK:
-          ${studentTask}
-          
-          CODE SUBMITTED:
-          ${code}
-          
-          CONVERSATION HISTORY:
-          ${JSON.stringify(conversationHistory.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          })))}
-          
-          Please generate a Skills Assessment Overview that includes:
-          1. A general analysis of the student's approach to the programming task
-          2. Identification of strong coding practices demonstrated
-          3. Areas where the student could improve
-          4. Specific, actionable advice for continued learning
-          5. An encouraging summary of their progress
 
-          Do not include Skills Assessment Overview as a title in your response.
-          
-          Make your response intuitive, encouraging, and personalized.
-          
-          Format the response as HTML with paragraphs (<p>) and potentially lists if needed, but keep it concise, actionable, and encouraging.
-          The total response should be around 2-3 paragraphs.
-        `;
-      }
-      
-      // Call Claude API
+      // Call Anthropic API
       const response = await client.messages.create({
         model: "claude-3-7-sonnet-20250219",
         max_tokens: 1024,
-        messages: [
-          {role: "user", content: prompt}
-        ]
+        messages: [{ role: "user", content: prompt }],
       });
 
-      // Look at the example response structure
-      console.log("Claude API response:", response);
+      console.log("Anthropic API response:", response);
 
       // Extract the text from the response
       if (response.content && response.content.length > 0) {
         const contentBlock = response.content[0];
-        
-        // Using type checking to safely access the text property
-        if (contentBlock.type === 'text') {
+        if (contentBlock.type === "text") {
           setAssessmentOverview(contentBlock.text);
         } else {
           console.error("Unexpected content type:", contentBlock.type);
-          setAssessmentOverview("<p>Unable to generate a personalized assessment. Please review the detailed breakdown below.</p>");
+          setAssessmentOverview(
+            "<p>Unable to generate a personalized assessment. Please review the detailed breakdown below.</p>"
+          );
         }
       }
     } catch (error) {
       console.error("Error generating skills assessment:", error);
-      setAssessmentOverview("<p>Unable to generate a personalized skills assessment at this time. Please review the detailed breakdown below for specific feedback on each concept.</p>");
+      setAssessmentOverview(
+        "<p>Unable to generate a personalized skills assessment at this time. Please review the detailed breakdown below for specific feedback on each concept.</p>"
+      );
     } finally {
       setIsGeneratingOverview(false);
     }
   };
-  
+
   // Generate the assessment when the component is ready
   useEffect(() => {
-    if (!loading && (conceptMap || systemType === 'Standalone') && !assessmentOverview) {
+    if (!loading && conceptMap && !assessmentOverview) {
       generateSkillsAssessment();
     }
-  }, [loading, conceptMap, assessmentOverview, systemType]);
-  
+  }, [loading, conceptMap, assessmentOverview]);
+
   // Log the received data for debugging purposes
   useEffect(() => {
-    console.log("System Type:", systemType);
     console.log("Student Task:", studentTask);
     console.log("Code:", code);
     console.log("Conversation History:", conversationHistory);
     console.log("Concept Map:", conceptMap);
-  }, [systemType, studentTask, code, conversationHistory, conceptMap]);
+  }, [studentTask, code, conversationHistory, conceptMap]);
 
   if (!isOpen) return null;
 
@@ -244,95 +199,19 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
     }
   };
 
-  // Add a null check for conceptMap only for ATLAS mode
-  if (systemType === 'ATLAS' && (!conceptMap || !conceptMap.categories)) {
-    return (
-      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-2xl">
-          <h2 className="text-2xl font-bold mb-4">Loading Assessment Data</h2>
-          <p>Please wait while we prepare your knowledge assessment...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // For Standalone mode, just show a simplified report with only the assessment overview
-  if (systemType === 'Standalone') {
-    return (
-      <div
-        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
-        onClick={handleBackdropClick}
-      >
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto relative border border-gray-200 dark:border-gray-800">
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute right-4 top-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors z-10"
-            aria-label="Close dialog"
-          >
-            <X className="h-5 w-5" />
-          </button>
-
-          {loading ? (
-            <LoadingScreen />
-          ) : (
-            <div className="p-6">
-              <div className="flex flex-col items-center mb-6 space-y-2">
-                <h1 className="text-3xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600">
-                  Student Knowledge Assessment
-                </h1>
-                <p className="text-gray-500 dark:text-gray-400 max-w-2xl text-center">
-                  Analysis of your Python programming skills
-                </p>
-              </div>
-
-              {/* Text Overview Section */}
-              <Card className="mt-6 shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-800">
-                <CardContent className="space-y-6 pt-6">
-                  <div className="space-y-3 prose dark:prose-invert max-w-none">
-                    {isGeneratingOverview ? (
-                      <div className="flex flex-col items-center py-4">
-                        <div className="w-10 h-10 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <p className="text-gray-500">Generating personalized assessment...</p>
-                      </div>
-                    ) : assessmentOverview ? (
-                      <div dangerouslySetInnerHTML={{ __html: assessmentOverview }} />
-                    ) : (
-                      <>
-                        <p>
-                          Based on the assessment of your code and approach to the task, we&apos;ve prepared a summary of your programming skills.
-                          This evaluation highlights your strengths and identifies areas where additional practice could be beneficial.
-                        </p>
-                        <p className="font-medium">
-                          Please wait while we analyze your work...
-                        </p>
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Continue with full ATLAS report visualization
   // Prepare data for the radar charts
   const radarData: RadarDataPoint[] = [];
   const categoryAverages: { subject: string; value: number; fullMark: number }[] = [];
 
   Object.entries(conceptMap.categories).forEach(([categoryName, subcategories]) => {
-    // Map the subcategory values
     const subcategoryValues = Object.values(subcategories).map(
       (subcat: Subcategory) => subcat.value
     );
-    
+
     const categoryAvg =
       subcategoryValues.reduce((sum, val) => sum + val, 0) /
       subcategoryValues.length;
-      
+
     categoryAverages.push({
       subject: categoryName,
       value: Number.parseFloat((categoryAvg * 100).toFixed(1)),
@@ -340,7 +219,7 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
     });
 
     Object.entries(subcategories).forEach(([skillKey, subcat]) => {
-      console.log(skillKey)
+      console.log(skillKey);
       radarData.push({
         subject: subcat.name,
         value: Number.parseFloat((subcat.value * 100).toFixed(1)),
@@ -350,6 +229,14 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
       });
     });
   });
+
+  // Compute overall average system confidence (as a percentage)
+  const totalConfidence = radarData.reduce(
+    (acc, item) => acc + item.knowledgeState.confidenceInAssessment,
+    0
+  );
+  const averageConfidence =
+    radarData.length > 0 ? (totalConfidence / radarData.length) * 100 : 0;
 
   const overviewConfig = {
     proficiency: {
@@ -644,15 +531,14 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
               </CardContent>
             </Card>
 
-            {/* Skill Breakdown Table with additional columns for Reasoning and Last Updated */}
+            {/* Skill Breakdown Table with additional columns for Reasoning, System Confidence and Last Updated */}
             <Card className="mt-6 shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-800">
               <CardHeader className="items-center pb-4">
                 <CardTitle className="text-xl flex items-center gap-2">
                   Concept Knowledge Breakdown
                 </CardTitle>
                 <CardDescription>
-                  Detailed view of all assessed skills with reasoning and update
-                  timestamps
+                  Detailed view of all assessed skills with reasoning, system confidence, and update timestamps
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -671,6 +557,9 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
                         </th>
                         <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
                           Level
+                        </th>
+                        <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
+                          System Confidence
                         </th>
                         <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
                           Reasoning
@@ -714,6 +603,9 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
                               </Badge>
                             </td>
                             <td className="border border-gray-200 dark:border-gray-700 p-2">
+                              {(item.knowledgeState.confidenceInAssessment * 100).toFixed(1)}%
+                            </td>
+                            <td className="border border-gray-200 dark:border-gray-700 p-2">
                               {item.knowledgeState?.reasoning || "N/A"}
                             </td>
                             <td className="border border-gray-200 dark:border-gray-700 p-2">
@@ -723,6 +615,16 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
                         );
                       })}
                     </tbody>
+                    <tfoot>
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="border border-gray-200 dark:border-gray-700 p-2 text-right font-bold"
+                        >
+                          Overall Average System Confidence: {averageConfidence.toFixed(1)}%
+                        </td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               </CardContent>
