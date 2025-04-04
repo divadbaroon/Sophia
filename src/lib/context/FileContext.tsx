@@ -548,6 +548,10 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
 
   const [showReport, setShowReport] = useState<boolean>(false);
 
+  const [pivotQueue, setPivotQueue] = useState<string[]>([]);
+
+  const [conceptMapInitializing, setConceptMapInitializing] = useState<boolean>(false);
+
   // Extract session ID from URL and update session data
   useEffect(() => {
     const sessionIdMatch = pathname?.match(/\/sessions\/(\d+)/)
@@ -617,6 +621,15 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     console.log('Initial Concept Map:', sessionData.conceptMap);
   }, [systemType, studentTask, fileContent, sessionData]);
 
+  const updatePivotQueue = (queue: string[]) => {
+    setPivotQueue(queue);
+  }
+
+  const updateConceptMapInitializing = (isInitializing: boolean) => {
+    setConceptMapInitializing(isInitializing);
+    console.log(`Concept map initialization state updated to: ${isInitializing ? 'initializing' : 'complete'}`);
+  };
+  
   const updateConversationHistory = (newHistory: ConversationMessage[]) => {
     setConversationHistory(newHistory);
   };
@@ -754,6 +767,10 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         setShowReport,
         systemType,
         updateSystemType,
+        pivotQueue,
+        updatePivotQueue,
+        conceptMapInitializing,
+        updateConceptMapInitializing,
       }}>
       {children}
     </FileContext.Provider>
