@@ -296,6 +296,20 @@ export class ConversationManager extends EventEmitter {
   private finalizeTranscript(): void {
     const finalTranscript = this.accumulatedTranscript.trim();
     
+    // Check if concept map is initializing
+    const isConceptMapInitializing = this.options.fileContext?.conceptMapInitializing || false;
+    
+    if (isConceptMapInitializing) {
+      console.log(`🚫 TRANSCRIPT IGNORED (concept map initializing): "${finalTranscript}"`);
+      this.accumulatedTranscript = "";
+      
+      // Clear the UI transcript too
+      this.updateState({
+        transcript: ""
+      });
+      return;
+    }
+    
     // Only process the transcript if we're in IDLE state
     if (this.state.status === ConversationStatus.IDLE && finalTranscript) {
       console.log(`✅ TRANSCRIPT FINALIZED: "${finalTranscript}"`);
@@ -337,6 +351,7 @@ export class ConversationManager extends EventEmitter {
       });
     }
   }
+  
   /**
    * Clean up resources
    */
