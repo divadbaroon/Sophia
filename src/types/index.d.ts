@@ -293,6 +293,12 @@ export interface FileContextType {
   // System type properties
   systemType: 'ATLAS' | 'Standalone';
   updateSystemType: (type: 'ATLAS' | 'Standalone') => void;
+
+  pivotQueue?: string[];
+  updatePivotQueue?: (queue: string[]) => void;
+
+  conceptMapInitializing: boolean;
+  updateConceptMapInitializing: (isInitializing: boolean) => void;
 }
 
 export type FolderContextType = {
@@ -394,7 +400,12 @@ export interface AnthropicMessage {
   content: string;
 }
 
-export type VoiceCircleState = 'idle' | 'listening' | 'processing' | 'speaking'
+export type VoiceCircleState = 
+  | "idle" 
+  | "listening" 
+  | "processing" 
+  | "speaking" 
+  | "initializing";
 
 export interface TranscriptData {
   text: string
