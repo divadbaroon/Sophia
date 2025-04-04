@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar";
-import { HelpCircle, X, MessageCircle } from "lucide-react";
+import { HelpCircle, X, MessageCircle, Clock } from "lucide-react";
 import { useFile } from "@/lib/context/FileContext";
 import KnowledgeRadarModal from "@/components/student-side/student-report/studentReport"; 
 
@@ -19,6 +19,8 @@ export const WorkspaceLayout = () => {
   const [blinkingState, setBlinkingState] = useState(false);
   const [terminalHeight, setTerminalHeight] = useState(50);
   const [isKnowledgeRadarModalOpen, setIsKnowledgeRadarModalOpen] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(600); // 10 minutes in seconds
+  const [timerActive, setTimerActive] = useState(false);
 
   // Destructure additional properties from FileContext
   const {
@@ -35,6 +37,83 @@ export const WorkspaceLayout = () => {
   } = useFile();
 
   const codeEditorRef = useRef<CodeEditorRef>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize timer from localStorage
+  useEffect(() => {
+    if (sessionId) {
+      const timerKey = `knowledgeTimer_${sessionId}_${currentMethodIndex}`;
+      const storedTime = localStorage.getItem(timerKey);
+      const storedStartTime = localStorage.getItem(`${timerKey}_start`);
+      
+      if (storedTime && storedStartTime) {
+        const elapsedSeconds = Math.floor((Date.now() - parseInt(storedStartTime)) / 1000);
+        const remainingTime = Math.max(0, parseInt(storedTime) - elapsedSeconds);
+        
+        setTimeRemaining(remainingTime);
+        if (remainingTime > 0) {
+          setTimerActive(true);
+        }
+      }
+    }
+  }, [sessionId, currentMethodIndex]);
+
+  // Timer logic
+  useEffect(() => {
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    // If timer is active and time remaining, start countdown
+    if (timerActive && timeRemaining > 0) {
+      timerRef.current = setInterval(() => {
+        setTimeRemaining(prev => {
+          const newTime = Math.max(0, prev - 1);
+          
+          // Save to localStorage
+          if (sessionId) {
+            const timerKey = `knowledgeTimer_${sessionId}_${currentMethodIndex}`;
+            localStorage.setItem(timerKey, newTime.toString());
+          }
+          
+          // Stop timer if we reach zero
+          if (newTime === 0) {
+            clearInterval(timerRef.current!);
+            timerRef.current = null;
+            setTimerActive(false);
+          }
+          
+          return newTime;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [timerActive, timeRemaining, sessionId, currentMethodIndex]);
+
+  // Start timer when task changes
+  useEffect(() => {
+    if (sessionId && currentMethodIndex >= 0) {
+      const timerKey = `knowledgeTimer_${sessionId}_${currentMethodIndex}`;
+      
+      // Check if timer already exists for this task
+      if (!localStorage.getItem(timerKey)) {
+        // Initialize timer
+        setTimeRemaining(600); // 10 minutes
+        setTimerActive(true);
+        
+        // Save start time
+        localStorage.setItem(timerKey, "600");
+        localStorage.setItem(`${timerKey}_start`, Date.now().toString());
+      }
+    }
+  }, [sessionId, currentMethodIndex]);
 
   useEffect(() => {
     console.log("KnowledgeRadarModal received conceptMap:", conceptMap);
@@ -103,29 +182,46 @@ export const WorkspaceLayout = () => {
     setTerminalHeight(limitedHeight);
   };
 
+  // Format time remaining as MM:SS
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <main className="flex flex-col h-screen">
       <div className="flex-1 flex relative">
-        {/* Get Help Button */}
+        {/* Knowledge Gap Discovery Button with Timer */}
         <Button
           variant="outline"
           size="lg"
           className={`absolute top-3.5 right-56 mr-6 z-50 gap-2 font-medium ${
-            isQuestionPanelVisible
-              ? "bg-secondary"
-              : "bg-background hover:bg-secondary/80"
+            isQuestionPanelVisible ? 'bg-secondary' : 
+            timeRemaining === 0 ? 'bg-background hover:bg-secondary/80' : 'bg-secondary/30 cursor-not-allowed'
           }`}
           onClick={() => {
-            setIsQuestionPanelVisible(!isQuestionPanelVisible);
-            if (isTAModalOpen) {
-              setIsTAModalOpen(false);
+            if (timeRemaining === 0) {
+              setIsQuestionPanelVisible(!isQuestionPanelVisible);
+              if (isTAModalOpen) {
+                setIsTAModalOpen(false);
+              }
             }
           }}
+          disabled={timeRemaining > 0}
+          title={timeRemaining > 0 ? "Please complete your attempt before requesting assistance" : "Start conversation with ATLAS"}
         >
-          <>
-            <HelpCircle className="h-5 w-5" />
-            {isQuestionPanelVisible ? "End Session" : "Knowledge gap discovery"}
-          </>
+          {timeRemaining === 0 ? (
+            <>
+              <HelpCircle className="h-5 w-5" />
+              {isQuestionPanelVisible ? 'End Session' : 'Test My Understanding'}
+            </>
+          ) : (
+            <>
+              <Clock className="h-5 w-5" />
+              {`Available in ${formatTime(timeRemaining)}`}
+            </>
+          )}
         </Button>
 
         {/* View Report Button */}
