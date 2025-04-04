@@ -160,31 +160,31 @@ public async generateTAPivotQueue(
           // Create the prompt for Claude (similar to generateTAPivot but focused on this concept)
           const prompt = `As the concept mapping agent for ATLAS, focus entirely on assessing the student's understanding of a single concept.
 
-                          OBJECTIVE: Generate 1 high-quality question to assess the student's understanding of this specific concept. 
-                          Your questions should be specific to their code where possible and must help determine their conceptual understanding.
+                          OBJECTIVE: Generate 1 extremely concise and high quality question (max 15 words) to assess the student's understanding of this concept.
                           
                           FOCUS CONCEPT: ${concept.subconcept} (from category: ${concept.category})
                           Current understanding level: ${concept.details.knowledgeState.understandingLevel.toFixed(2)}
                           Current confidence in assessment: ${concept.details.knowledgeState.confidenceInAssessment.toFixed(2)}
                           
                           QUESTION REQUIREMENTS:
-                          - Make questions contextually relevant to the student's specific code where appropriate
-                          - Focus on CONCEPTUAL UNDERSTANDING, not just syntax
-                          - Refer to specific parts of their implementation when relevant
-                          - Questions should be probing yet conversational
-                          - Some questions can be code-specific, others can be more theoretical
-                          - If errors exist related to this concept, ask about their understanding of the error
+                          - EXTREMELY BRIEF AND DIRECT (max 15 words per question)
+                          - Focus on CONCEPTUAL UNDERSTANDING, not syntax
+                          - NEVER ask students to rewrite or implement anything
+                          - Refer to their code with specific line numbers if relevant
+                          - Questions should be simple enough to answer verbally
+                          - Avoid multi-part questions
                           
                           GOOD EXAMPLE QUESTIONS:
-                          - "In line 14, you used append() instead of extend(). What's the difference between these methods?"
-                          - "I notice you're using dictionary.items() in your loop. What does this method return?"
-                          - "Your code has a NameError for 'item'. What was your intention with this variable?"
-                          - "How would list comprehension help simplify your matrix flattening code?"
+                          - "Why did you use append() instead of extend() on line 14?"
+                          - "What does dictionary.items() return in your loop?"
+                          - "Why did the 'item' variable cause a NameError?"
+                          - "How does flattening a nested list work in Python?"
                           
-                          BAD EXAMPLES (TOO GENERIC):
-                          - "What does a list comprehension do?"
-                          - "When would you use a dictionary vs. list?"
-                          - "What is a loop in Python?"
+                          BAD EXAMPLES (DO NOT USE):
+                          - "Can you rewrite this using dictionary comprehension?"
+                          - "How would you implement this differently?"
+                          - "Write a function that would..."
+                          - "Explain in detail how you would..."
                           
                           RESPONSE FORMAT:
                           - CONCEPT: ${concept.subconcept}
