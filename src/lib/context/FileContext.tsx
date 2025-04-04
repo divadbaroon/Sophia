@@ -257,7 +257,7 @@ const condition1: TaskData = {
     {
       title: "2.) slice_string()",
       difficulty: "Easy",
-      description: "Implement a function that extracts a substring using Python's slicing notation. The function should take a string and three slice parameters (start, end, step) and return the sliced result.",
+      description: "Implement a function that extracts a substring using Python's slicing notation. The function should take a string and three slice parameters and return the sliced result.",
       examples: [
         {
           input: { text: "Python Programming", start: 2, end: -2, step: 2 },
