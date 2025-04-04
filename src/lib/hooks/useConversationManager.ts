@@ -80,6 +80,13 @@ export const useConversationManager = () => {
   // Track if confidence was previously met (to detect changes)
   const wasConfidenceMetRef = useRef<boolean>(false);
 
+  const MAX_ATLAS_QUESTIONS = 4;
+  const MAX_STANDALONE_QUESTIONS = 7;
+
+  const claudeQueryCountRef = useRef<number>(0);
+
+  const isClaudeGeneratingRef = useRef<boolean>(false);
+
   const previousLogRef = useRef<{
     conceptMapString: string;
     ready: boolean;
@@ -561,6 +568,43 @@ export const useConversationManager = () => {
       // Clear any previous TTS queue
       ttsQueueRef.current = [];
       isSpeakingRef.current = false;
+
+      // Check if we've reached the maximum number of queries based on system type
+      // or if confidence has been met
+      if ((fileContext?.systemType === "ATLAS" && claudeQueryCountRef.current >= MAX_ATLAS_QUESTIONS) ||
+          (fileContext?.systemType === "Standalone" && claudeQueryCountRef.current >= MAX_STANDALONE_QUESTIONS) ||
+          wasConfidenceMetRef.current) {
+        console.log('🛑 Maximum questions reached or confidence met. Showing report instead of querying Claude.');
+        
+        // Display final message
+        if (managerRef.current) {
+          const finalMessage = "Thank you! I have collected all of the information I need. To view your report, please click view report above.";
+          
+          // Add the final message to conversation history
+          const updatedHistory = [
+            ...state.conversationHistory,
+            {
+              role: 'assistant' as const,
+              content: finalMessage,
+              timestamp: Date.now()
+            }
+          ];
+          
+          managerRef.current.updateState({
+            conversationHistory: updatedHistory
+          });
+          
+          // Speak the final message
+          queueOrSpeakText(finalMessage, true);
+          
+          // Show the report
+          if (fileContext?.setShowReport) {
+            fileContext.setShowReport(true);
+          }
+          
+          return;
+        }
+      }
       
       // Check if Anthropic client is available
       if (!anthropicClientRef.current) {
@@ -572,6 +616,13 @@ export const useConversationManager = () => {
       const streamResponse = async () => {
         try {
           const startTime = new Date();
+          
+          // Set flag to indicate Claude is generating a response
+          isClaudeGeneratingRef.current = true;
+          
+          // Increment the Claude query counter
+          claudeQueryCountRef.current += 1;
+          console.log(`🔒 Claude response generation started (Query #${claudeQueryCountRef.current}) - user input will be ignored`);
           
           // Use prepareClaudePrompt to get the initial system and context messages
           const contextMessages = prepareClaudePrompt(fileContext);
@@ -623,15 +674,15 @@ export const useConversationManager = () => {
           
           const systemMessages = contextMessages.filter(msg => msg.role === 'system');
           const systemContent = systemMessages.map(msg => msg.content).join('\n\n');
-  
+
           // Get non-system messages from context messages (should be user/assistant only)
           const nonSystemMessages = contextMessages.filter(msg => msg.role !== 'system');
-  
+
           // Ensure only user/assistant messages from conversation history
           const filteredConversationMessages = conversationMessages.filter(
             msg => msg.role === 'user' || msg.role === 'assistant'
           );
-  
+
           // Create a properly typed array for the Anthropic API
           // Explicitly cast to only allow 'user' | 'assistant' roles
           const apiMessages = [...nonSystemMessages, ...filteredConversationMessages].map(msg => ({
@@ -640,7 +691,7 @@ export const useConversationManager = () => {
               : 'user', // Default to user if somehow not user/assistant
             content: msg.content
           }));
-  
+
           // Make the API call with the correct structure
           await anthropicClientRef.current?.messages.stream({
             system: systemContent,
@@ -656,12 +707,20 @@ export const useConversationManager = () => {
               processSentenceBuffer();
             }
           }).on('error', (error) => {
+            // Set flag to indicate Claude is no longer generating
+            isClaudeGeneratingRef.current = false;
+            console.log('🔓 Claude response generation ended (error) - user input now accepted');
+            
             console.error(`❌ [${new Date().toISOString()}] Claude API error:`, error);
           }).on('end', () => {
             // Process any remaining text in the buffer
             if (currentSentenceBuffer.trim()) {
               processSentenceBuffer();
             }
+            
+            // Set flag to indicate Claude is no longer generating
+            isClaudeGeneratingRef.current = false;
+            console.log('🔓 Claude response generation ended - user input now accepted');
             
             const endTime = new Date();
             const duration = (endTime.getTime() - startTime.getTime()) / 1000;
@@ -695,20 +754,13 @@ export const useConversationManager = () => {
               managerRef.current.updateState({
                 conversationHistory: updatedHistory
               });
-
-              // Check if Claude's response contains the report trigger phrase
-              if (fullResponse.includes("I have collected all the necessary information I need. To view your knowledge assessment please click View Report")) {
-                console.log("📊 Report trigger phrase detected in Claude's response");
-                
-                // Wait a few seconds, then show the report
-                setTimeout(() => {
-                  console.log("📈 Showing report after delay");
-                  fileContext.setShowReport(true);
-                }, 1000); 
-              }
             }
           });
         } catch (error) {
+          // Make sure to reset the flag if there's an error
+          isClaudeGeneratingRef.current = false;
+          console.log('🔓 Claude response generation ended (error) - user input now accepted');
+          
           console.error(`❌ [${new Date().toISOString()}] Error streaming from Claude:`, error);
           // Change status back to IDLE on error
           if (managerRef.current) {
