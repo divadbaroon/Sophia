@@ -35,6 +35,7 @@ export class ConceptMapService {
   private onReadyCallback?: OnReadyCallback;
   private anthropicClient: Anthropic | null = null;
   private fileContext: any = null
+  private taPivotQueue: string[] = [];
 
   constructor(initialConceptMap: ConceptMap, anthropicApiKey?: string, onReadyCallback?: OnReadyCallback, fileContext?: any) {
     this.conceptMap = initialConceptMap;
@@ -95,6 +96,290 @@ export class ConceptMapService {
       dangerouslyAllowBrowser: true
     });
   }
+
+  /**
+ * Get the current TA pivot queue
+ */
+public getTAPivotQueue(): string[] {
+  return this.taPivotQueue;
+}
+
+  /**
+ * Generate a queue of TA pivots for the lowest confidence concepts
+ * @param conversationHistory - Recent conversation messages
+ * @param studentTask - The task description for the student
+ * @param studentCode - The student's current code
+ * @param errorMessage - Any error message from the student's code
+ * @param queueSize - Number of concepts to include in the queue (default: 5)
+ * @returns An array of pivot messages for the lowest confidence concepts
+ */
+public async generateTAPivotQueue(
+  conversationHistory: ClaudeMessage[],
+  studentTask: string,
+  studentCode: string,
+  errorMessage: string,
+  queueSize: number = 5
+): Promise<string[]> {
+  console.log(`Generating TA pivot queue for ${queueSize} concepts...`);
+  const startTime = performance.now();
+  
+  try {
+    // Get the prioritized concepts (already sorted by confidence level)
+    const prioritizedConcepts = this.getPrioritizedConcepts();
+    
+    // Limit to the requested queue size or available concepts, whichever is smaller
+    const conceptsToProcess = prioritizedConcepts.slice(0, Math.min(queueSize, prioritizedConcepts.length));
+    
+    // Log the concepts we'll be processing
+    console.log(`Found ${conceptsToProcess.length} concepts to process for pivot queue`);
+    conceptsToProcess.forEach((concept, index) => {
+      console.log(`Queue position ${index + 1}: ${concept.category} - ${concept.subconcept} (confidence: ${concept.details.knowledgeState.confidenceInAssessment.toFixed(2)})`);
+    });
+    
+    // If we have no concepts to process, return an empty queue
+    if (conceptsToProcess.length === 0) {
+      console.log("No concepts need assessment - returning empty queue");
+      return [];
+    }
+    
+    // Generate pivots for each concept in parallel
+    const pivotPromises = conceptsToProcess.map(async (concept) => {
+      // Temporarily set this as the "lowest" concept for the pivot generator
+      const tempPrioritizedConcepts = [concept];
+      
+      // Create a modified version of generateTAPivot that uses our specific concept
+      const pivotForConcept = async (): Promise<string> => {
+        try {
+          // Format conversation for prompt (same as in generateTAPivot)
+          const conversationText = conversationHistory
+            .filter(msg => msg.role !== 'system')
+            .slice(-8)
+            .map(msg => `${msg.role === 'user' ? 'Student' : 'TA'}: ${msg.content}`)
+            .join('\n\n');
+          
+          console.log(`Generating pivot for ${concept.category} - ${concept.subconcept}`);
+          
+          // Create the prompt for Claude (similar to generateTAPivot but focused on this concept)
+          const prompt = `As the concept mapping agent for ATLAS, focus entirely on assessing the student's understanding of a single concept.
+
+                          OBJECTIVE: Generate 1-3 extremely concise questions to assess the student's understanding of this specific concept.
+                          
+                          FOCUS CONCEPT: ${concept.subconcept} (from category: ${concept.category})
+                          Current understanding level: ${concept.details.knowledgeState.understandingLevel.toFixed(2)}
+                          Current confidence in assessment: ${concept.details.knowledgeState.confidenceInAssessment.toFixed(2)}
+                          
+                          QUESTION REQUIREMENTS:
+                          - EXTREMELY BRIEF (max 10 words per question)
+                          - Focus on CONCEPTUAL UNDERSTANDING, not problem-solving
+                          - NO code examples for students to complete
+                          - Simple enough to answer verbally
+                          - Direct and to the point
+                          
+                          GOOD EXAMPLES:
+                          - "What does a list comprehension do?"
+                          - "When would you use dictionary vs. list?"
+                          - "How do lambda functions work?"
+                          - "What's the purpose of the 'self' parameter?"
+                          
+                          BAD EXAMPLES:
+                          - "Rewrite this for loop using a list comprehension: for x in range..."
+                          - "Explain how you would implement a function that..."
+                          - "What would be the output of the following code..."
+                          
+                          RESPONSE FORMAT:
+                          - CONCEPT: ${concept.subconcept}
+                          - QUESTIONS:
+                            1. [First direct question]
+                            2. [Second direct question]
+                            3. [Third direct question]
+                          
+                          CONTEXT:
+                          Student Task: ${studentTask}
+                          Conversation History: ${conversationText}
+                          Student Code: ${studentCode}
+                          Error Message: ${errorMessage}`;
+          
+          // Throw an error if no Anthropic client is available
+          if (!this.anthropicClient) {
+            throw new Error('No Anthropic client available');
+          }
+          
+          // Use non-streaming API
+          const response = await this.anthropicClient.messages.create({
+            system: "You are a teaching assistant conducting a focused assessment of a student's understanding of a specific programming concept.",
+            messages: [
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            model: 'claude-3-7-sonnet-20250219',
+            max_tokens: 512,
+          });
+          
+          // Process response
+          if (!response.content || response.content.length === 0) {
+            throw new Error('Empty response from Claude API');
+          }
+
+          const contentBlock = response.content[0];
+          if (contentBlock.type !== 'text') {
+            throw new Error(`Unexpected content block type: ${contentBlock.type}`);
+          }
+
+          const result = contentBlock.text;
+          
+          console.log(`Successfully generated pivot for ${concept.category} - ${concept.subconcept}`);
+          return result.trim();
+        } catch (error) {
+          console.error(`Error generating pivot for ${concept.category} - ${concept.subconcept}:`, error);
+          return `Questions about ${concept.subconcept}: Could not generate questions due to an error.`;
+        }
+      };
+      
+      // Generate the pivot for this specific concept
+      return await pivotForConcept();
+    });
+    
+    // Wait for all pivots to be generated
+    const pivotQueue = await Promise.all(pivotPromises);
+    
+    // Log completion
+    const endTime = performance.now();
+    console.log(`Generated ${pivotQueue.length} TA pivots in ${(endTime - startTime).toFixed(2)}ms`);
+    
+    return pivotQueue;
+  } catch (error) {
+    console.error('Error generating TA pivot queue:', error);
+    const endTime = performance.now();
+    console.log(`Error in TA pivot queue generation (${(endTime - startTime).toFixed(2)}ms)`);
+    return ["Error generating TA pivot queue. Please try again."];
+  }
+}
+
+  /**
+ * Initialize the concept map and generate initial pivot queue
+ * This function calibrates the concept map based on initial conversation state
+ * and generates a queue of TA pivots
+ * 
+ * @param conversationHistory - Current conversation history
+ * @param studentTask - The task description for the student
+ * @param studentCode - The student's current code
+ * @param errorMessage - Any error message from the student's code
+ * @param queueSize - Number of concepts to include in the pivot queue (default: 5)
+ * @returns Promise that resolves when initialization is complete
+ */
+public async initialize(
+  conversationHistory: ClaudeMessage[],
+  studentTask: string,
+  studentCode: string,
+  errorMessage: string = "",
+  queueSize: number = 5
+): Promise<void> {
+  console.log("Initializing concept map and pivot queue...");
+  const startTime = performance.now();
+  
+  try {
+    this.isProcessing = true;
+
+    if (this.fileContext && typeof this.fileContext.updateConceptMapInitializing === 'function') {
+      this.fileContext.updateConceptMapInitializing(true);
+      console.log("Set concept map initializing state to TRUE");
+    }
+    
+    // Step 1: Run an initial calibration of the concept map
+    console.log("Performing initial concept map calibration");
+    const calibrationStartTime = performance.now();
+    
+    // Get all categories that need assessment (should be all categories initially)
+    const categoriesNeedingAssessment = Object.keys(this.conceptMap.categories);
+    console.log(`Found ${categoriesNeedingAssessment.length} categories for initial calibration`);
+    
+    // Process all categories in parallel
+    const updatedCategories = await Promise.all(
+      categoriesNeedingAssessment.map(category => 
+        this.updateCategory(
+          category, 
+          this.conceptMap.categories[category],
+          conversationHistory,
+          studentTask,
+          studentCode,
+          errorMessage
+        )
+      )
+    );
+    
+    // Update concept map with calibration results
+    const newConceptMap: ConceptMap = { 
+      categories: {...this.conceptMap.categories} // Create a copy
+    };
+    
+    // Update all categories
+    categoriesNeedingAssessment.forEach((category, index) => {
+      newConceptMap.categories[category] = updatedCategories[index];
+    });
+    
+    // Replace the concept map
+    this.conceptMap = newConceptMap;
+    
+    const calibrationEndTime = performance.now();
+    console.log(`Initial calibration completed in ${(calibrationEndTime - calibrationStartTime).toFixed(2)}ms`);
+    
+    // Step 2: Check confidence thresholds
+    const wasConfidentBefore = this.confidenceReached;
+    const allConfident = this.checkConfidenceThresholds();
+    
+    if (allConfident) {
+      this.confidenceReached = true;
+      console.log("Concept map already reached confidence threshold after initial calibration");
+      
+      if (this.fileContext && typeof this.fileContext.updateConceptMapConfidence === 'function') {
+        this.fileContext.updateConceptMapConfidence(true);
+      }
+    }
+    
+    // Generate TA pivot queue
+    console.log(`Generating initial TA pivot queue (size ${queueSize})`);
+    this.taPivotQueue = await this.generateTAPivotQueue(
+      conversationHistory,
+      studentTask,
+      studentCode,
+      errorMessage,
+      queueSize
+    );
+    
+    // Update file context with queue if available
+    if (this.fileContext && typeof this.fileContext.updatePivotQueue === 'function') {
+      this.fileContext.updatePivotQueue(this.taPivotQueue);
+    }
+    
+    // Call the onReadyCallback if provided
+    if (this.onReadyCallback) {
+      console.log("Calling onReadyCallback after initialization");
+      this.onReadyCallback();
+    }
+    
+    const endTime = performance.now();
+    console.log(`Concept map initialization completed in ${(endTime - startTime).toFixed(2)}ms`);
+
+    if (this.fileContext && typeof this.fileContext.updateConceptMapInitializing === 'function') {
+      this.fileContext.updateConceptMapInitializing(false);
+      console.log("Set concept map initializing state to FALSE - initialization complete");
+    }
+    
+  } catch (error) {
+    console.error('Error during concept map initialization:', error);
+
+    if (this.fileContext && typeof this.fileContext.updateConceptMapInitializing === 'function') {
+      this.fileContext.updateConceptMapInitializing(false);
+      console.log("Set concept map initializing state to FALSE - initialization complete");
+    }
+    
+    throw error; // Re-throw the error to allow caller to handle it
+  } finally {
+    this.isProcessing = false;
+  }
+}
 
 /**
  * Process a new message and update the concept map
@@ -180,31 +465,6 @@ public async processNewMessage(
     }
     const confidenceEndTime = performance.now();
     console.log(`Confidence check completed (${(confidenceEndTime - confidenceStartTime).toFixed(2)}ms)`);
-    
-    // Start pivot generation timing
-    const pivotStartTime = performance.now();
-    console.log("Generating TA pivot based on current concept map");
-    this.taPivot = await this.generateTAPivot(
-      conversationHistory,
-      studentTask,
-      studentCode,
-      errorMessage
-    );
-    const pivotEndTime = performance.now();
-    console.log(`TA pivot generation completed (${(pivotEndTime - pivotStartTime).toFixed(2)}ms)`);
-    
-    // Start file context update timing
-    const contextUpdateStartTime = performance.now();
-    if (fileContext && typeof fileContext.updateLatestPivotMessage === 'function' && this.taPivot) {
-      fileContext.updateLatestPivotMessage(this.taPivot);
-    }
-    
-    if (this.onReadyCallback && (this.confidenceReached || !wasConfidentBefore)) {
-      console.log("Calling onReadyCallback");
-      this.onReadyCallback();
-    }
-    const contextUpdateEndTime = performance.now();
-    console.log(`File context update completed (${(contextUpdateEndTime - contextUpdateStartTime).toFixed(2)}ms)`);
     
     // Log total process time
     const totalEndTime = performance.now();
