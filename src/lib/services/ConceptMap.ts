@@ -144,8 +144,6 @@ public async generateTAPivotQueue(
     
     // Generate pivots for each concept in parallel
     const pivotPromises = conceptsToProcess.map(async (concept) => {
-      // Temporarily set this as the "lowest" concept for the pivot generator
-      const tempPrioritizedConcepts = [concept];
       
       // Create a modified version of generateTAPivot that uses our specific concept
       const pivotForConcept = async (): Promise<string> => {
@@ -162,29 +160,31 @@ public async generateTAPivotQueue(
           // Create the prompt for Claude (similar to generateTAPivot but focused on this concept)
           const prompt = `As the concept mapping agent for ATLAS, focus entirely on assessing the student's understanding of a single concept.
 
-                          OBJECTIVE: Generate 1-3 extremely concise questions to assess the student's understanding of this specific concept.
+                          OBJECTIVE: Generate 2-3 high-quality questions to assess the student's understanding of this specific concept. 
+                          Your questions should be specific to their code where possible and must help determine their conceptual understanding.
                           
                           FOCUS CONCEPT: ${concept.subconcept} (from category: ${concept.category})
                           Current understanding level: ${concept.details.knowledgeState.understandingLevel.toFixed(2)}
                           Current confidence in assessment: ${concept.details.knowledgeState.confidenceInAssessment.toFixed(2)}
                           
                           QUESTION REQUIREMENTS:
-                          - EXTREMELY BRIEF (max 10 words per question)
-                          - Focus on CONCEPTUAL UNDERSTANDING, not problem-solving
-                          - NO code examples for students to complete
-                          - Simple enough to answer verbally
-                          - Direct and to the point
+                          - Make questions contextually relevant to the student's specific code where appropriate
+                          - Focus on CONCEPTUAL UNDERSTANDING, not just syntax
+                          - Refer to specific parts of their implementation when relevant
+                          - Questions should be probing yet conversational
+                          - Some questions can be code-specific, others can be more theoretical
+                          - If errors exist related to this concept, ask about their understanding of the error
                           
-                          GOOD EXAMPLES:
+                          GOOD EXAMPLE QUESTIONS:
+                          - "In line 14, you used append() instead of extend(). What's the difference between these methods?"
+                          - "I notice you're using dictionary.items() in your loop. What does this method return?"
+                          - "Your code has a NameError for 'item'. What was your intention with this variable?"
+                          - "How would list comprehension help simplify your matrix flattening code?"
+                          
+                          BAD EXAMPLES (TOO GENERIC):
                           - "What does a list comprehension do?"
-                          - "When would you use dictionary vs. list?"
-                          - "How do lambda functions work?"
-                          - "What's the purpose of the 'self' parameter?"
-                          
-                          BAD EXAMPLES:
-                          - "Rewrite this for loop using a list comprehension: for x in range..."
-                          - "Explain how you would implement a function that..."
-                          - "What would be the output of the following code..."
+                          - "When would you use a dictionary vs. list?"
+                          - "What is a loop in Python?"
                           
                           RESPONSE FORMAT:
                           - CONCEPT: ${concept.subconcept}
@@ -326,7 +326,6 @@ public async initialize(
     console.log(`Initial calibration completed in ${(calibrationEndTime - calibrationStartTime).toFixed(2)}ms`);
     
     // Step 2: Check confidence thresholds
-    const wasConfidentBefore = this.confidenceReached;
     const allConfident = this.checkConfidenceThresholds();
     
     if (allConfident) {
@@ -453,7 +452,6 @@ public async processNewMessage(
     // Start confidence check timing
     const confidenceStartTime = performance.now();
     // Rest of the method remains the same...
-    const wasConfidentBefore = this.confidenceReached;
     const allConfident = this.checkConfidenceThresholds();
     
     if (allConfident) {
