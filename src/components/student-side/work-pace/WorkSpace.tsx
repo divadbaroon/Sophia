@@ -374,7 +374,6 @@ export const WorkspaceLayout = () => {
           code={fileContent}
           conversationHistory={conversationHistory}
           conceptMap={conceptMap}
-          systemType={systemType}
         />
       )}
     </main>
