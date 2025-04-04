@@ -33,7 +33,6 @@ export const WorkspaceLayout = () => {
     fileContent,
     conversationHistory,
     conceptMap,
-    systemType,
   } = useFile();
 
   const codeEditorRef = useRef<CodeEditorRef>(null);
