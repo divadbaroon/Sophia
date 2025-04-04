@@ -160,7 +160,7 @@ public async generateTAPivotQueue(
           // Create the prompt for Claude (similar to generateTAPivot but focused on this concept)
           const prompt = `As the concept mapping agent for ATLAS, focus entirely on assessing the student's understanding of a single concept.
 
-                          OBJECTIVE: Generate 2-3 high-quality questions to assess the student's understanding of this specific concept. 
+                          OBJECTIVE: Generate 1 high-quality question to assess the student's understanding of this specific concept. 
                           Your questions should be specific to their code where possible and must help determine their conceptual understanding.
                           
                           FOCUS CONCEPT: ${concept.subconcept} (from category: ${concept.category})
