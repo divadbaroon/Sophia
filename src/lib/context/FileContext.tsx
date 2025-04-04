@@ -97,36 +97,36 @@ const condition2: TaskData = {
   },
   testCases: {
     "calculate_sum": [
-      {
-        input: { start: 1, end: 6 },
-        expected: 15,
-        methodId: "calculate_sum"
-      },
-      {
-        input: { start: 5, end: 10 },
-        expected: 35,
-        methodId: "calculate_sum"
-      },
-      {
-        input: { start: 1, end: 1 },
-        expected: 0,
-        methodId: "calculate_sum"
-      }
-    ],
+    {
+      input: { start: 1, end: 6 },
+      expected: 15,  
+      methodId: "calculate_sum"
+    },
+    {
+      input: { start: 5, end: 10 },
+      expected: 35,  
+      methodId: "calculate_sum"
+    },
+    {
+      input: { start: 1, end: 1 },
+      expected: 0,   
+      methodId: "calculate_sum"
+    }
+  ],
     "create_pattern": [
       {
         input: { numbers: [7, 12, 9, 14, 6, 3] },
-        expected: "7OXO6X",
+        expected: "7XXOXX",  
         methodId: "create_pattern"
       },
       {
         input: { numbers: [1, 2, 3, 4, 5, 6] },
-        expected: "1OX4OX",
+        expected: "1OXO5X",  
         methodId: "create_pattern"
       },
       {
         input: { numbers: [3, 6, 9, 12, 15, 18] },
-        expected: "XXXXXX",
+        expected: "XXXXXX",  
         methodId: "create_pattern"
       }
     ],
