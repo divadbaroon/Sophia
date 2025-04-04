@@ -14,13 +14,33 @@ export function prepareClaudePrompt(fileContext?: FileContextType | null): Claud
     executionOutput = "",
     highlightedText = "",
     lineNumber = null,
-    latestPivotMessage = null,
+    pivotQueue = null,
     conceptMapConfidenceMet = false,
     systemType = "ATLAS" 
   } = fileContext || {};
 
-  console.log("CONCEPT CONFIDENCE MET", conceptMapConfidenceMet)
-  console.log("SYSTEM TYPE", systemType)
+  // Handle pivot queue processing
+  let currentPivotQuestion = null;
+  let updatedPivotQueue = null;
+
+  if (pivotQueue && pivotQueue.length > 0) {
+    // Get the first question
+    currentPivotQuestion = pivotQueue[0];
+    
+    // Create a new queue without the first item
+    updatedPivotQueue = pivotQueue.slice(1);
+    
+    // Update the file context with the new queue
+    if (fileContext && typeof fileContext.updatePivotQueue === 'function') {
+      fileContext.updatePivotQueue(updatedPivotQueue);
+      console.log("Updated pivot queue, removed first item");
+      console.log("Current question:", currentPivotQuestion);
+      console.log("Remaining queue:", updatedPivotQueue);
+    }
+  }
+
+  console.log("CONCEPT CONFIDENCE MET", conceptMapConfidenceMet);
+  console.log("SYSTEM TYPE", systemType);
 
   let systemContent = "";
 
@@ -28,13 +48,13 @@ export function prepareClaudePrompt(fileContext?: FileContextType | null): Claud
     systemContent = `
     You are ATLAS (Adaptive Teaching and Learning Assistant System), designed to efficiently map student understanding through targeted questions.
     
-    ${latestPivotMessage ? 
+    ${currentPivotQuestion ? 
     `⚠️ HIGHEST PRIORITY INSTRUCTION ⚠️
     You only have 3-4 total questions to extract critical information about the student's understanding. Every question must count.
     
     IMPORTANT CONTEXT: The pivot message contains questions about a single concept that needs assessment.
     
-    Ask ONLY the specific questions provided in: "${latestPivotMessage}"
+    Ask ONLY the specific questions provided in: "${currentPivotQuestion}"
     
     Frame questions naturally to create an authentic conversation, but do not deviate from the questions provided. You may briefly acknowledge the student's previous response before asking the next question.
     
