@@ -39,80 +39,67 @@ export const WorkspaceLayout = () => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize timer from localStorage
-  useEffect(() => {
-    if (sessionId) {
-      const timerKey = `knowledgeTimer_${sessionId}_${currentMethodIndex}`;
-      const storedTime = localStorage.getItem(timerKey);
-      const storedStartTime = localStorage.getItem(`${timerKey}_start`);
+useEffect(() => {
+  if (sessionId) {
+    const timerKey = `knowledgeTimer_${sessionId}`;
+    const storedTime = localStorage.getItem(timerKey);
+    
+    if (storedTime) {
+      // Instead of calculating from start time, just use the stored time directly
+      const remainingTime = parseInt(storedTime);
       
-      if (storedTime && storedStartTime) {
-        const elapsedSeconds = Math.floor((Date.now() - parseInt(storedStartTime)) / 1000);
-        const remainingTime = Math.max(0, parseInt(storedTime) - elapsedSeconds);
-        
-        setTimeRemaining(remainingTime);
-        if (remainingTime > 0) {
-          setTimerActive(true);
-        }
+      setTimeRemaining(remainingTime);
+      if (remainingTime > 0) {
+        setTimerActive(true);
       }
+    } else {
+      // Initialize new timer if none exists
+      setTimeRemaining(600); // 10 minutes
+      setTimerActive(true);
+      
+      localStorage.setItem(timerKey, "600");
     }
-  }, [sessionId, currentMethodIndex]);
+  }
+}, [sessionId]);
 
-  // Timer logic
-  useEffect(() => {
-    // Clear any existing timer
+// Timer logic
+useEffect(() => {
+  // Clear any existing timer
+  if (timerRef.current) {
+    clearInterval(timerRef.current);
+    timerRef.current = null;
+  }
+
+  // If timer is active and time remaining, start countdown
+  if (timerActive && timeRemaining > 0) {
+    timerRef.current = setInterval(() => {
+      setTimeRemaining(prev => {
+        const newTime = Math.max(0, prev - 1);
+        
+        // Save to localStorage
+        if (sessionId) {
+          const timerKey = `knowledgeTimer_${sessionId}`;
+          localStorage.setItem(timerKey, newTime.toString());
+        }
+        
+        // Stop timer if we reach zero
+        if (newTime === 0) {
+          clearInterval(timerRef.current!);
+          timerRef.current = null;
+          setTimerActive(false);
+        }
+        
+        return newTime;
+      });
+    }, 1000);
+  }
+
+  return () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
-      timerRef.current = null;
     }
-
-    // If timer is active and time remaining, start countdown
-    if (timerActive && timeRemaining > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeRemaining(prev => {
-          const newTime = Math.max(0, prev - 1);
-          
-          // Save to localStorage
-          if (sessionId) {
-            const timerKey = `knowledgeTimer_${sessionId}_${currentMethodIndex}`;
-            localStorage.setItem(timerKey, newTime.toString());
-          }
-          
-          // Stop timer if we reach zero
-          if (newTime === 0) {
-            clearInterval(timerRef.current!);
-            timerRef.current = null;
-            setTimerActive(false);
-          }
-          
-          return newTime;
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [timerActive, timeRemaining, sessionId, currentMethodIndex]);
-
-  // Start timer when task changes
-  useEffect(() => {
-    if (sessionId && currentMethodIndex >= 0) {
-      const timerKey = `knowledgeTimer_${sessionId}_${currentMethodIndex}`;
-      
-      // Check if timer already exists for this task
-      if (!localStorage.getItem(timerKey)) {
-        // Initialize timer
-        setTimeRemaining(600); // 10 minutes
-        setTimerActive(true);
-        
-        // Save start time
-        localStorage.setItem(timerKey, "600");
-        localStorage.setItem(`${timerKey}_start`, Date.now().toString());
-      }
-    }
-  }, [sessionId, currentMethodIndex]);
+  };
+}, [timerActive, timeRemaining, sessionId]);
 
   useEffect(() => {
     console.log("KnowledgeRadarModal received conceptMap:", conceptMap);
