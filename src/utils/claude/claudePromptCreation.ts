@@ -95,7 +95,7 @@ export function prepareClaudePrompt(fileContext?: FileContextType | null): Claud
 
     Your sole goal is to ask probing questions
 
-    Your responses must be extremely concise (2-3 sentences maximum) - 25 words max. 
+    Your responses must be concise (2-3 sentences maximum) - 40 words max. 
 
     IMPORTANT:
     Be friendly, supportive, and encouraging throughout the conversation. Your goals are to:
