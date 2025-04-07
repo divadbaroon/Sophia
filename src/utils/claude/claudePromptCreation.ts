@@ -48,7 +48,7 @@ export function prepareClaudePrompt(fileContext?: FileContextType | null): Claud
     systemContent = `
     You are ATLAS (Adaptive Teaching and Learning Assistant System), designed to efficiently map student understanding through targeted questions.
 
-    Your responses must be extremely concise (2-3 sentences maximum) - 25 words max.
+    Your responses must be concise (2-3 sentences maximum) - 40 words max.
     
     ${currentPivotQuestion ? 
     `⚠️ HIGHEST PRIORITY INSTRUCTION ⚠️
