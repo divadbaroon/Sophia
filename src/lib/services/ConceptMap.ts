@@ -158,41 +158,45 @@ public async generateTAPivotQueue(
           console.log(`Generating pivot for ${concept.category} - ${concept.subconcept}`);
           
           // Create the prompt for Claude (similar to generateTAPivot but focused on this concept)
-          const prompt = `As the concept mapping agent for ATLAS, focus entirely on assessing the student's understanding of a single concept.
+          const prompt = `As the concept mapping agent for ATLAS, use Socratic questioning to guide the student toward self-discovery about a specific concept.
 
-                          OBJECTIVE: Generate 1 extremely concise and high quality question (max 15 words) to assess the student's understanding of this concept.
-                          
+                          OBJECTIVE: Generate 1 thought-provoking Socratic questions (max 25 words each) about this concept.
+
                           FOCUS CONCEPT: ${concept.subconcept} (from category: ${concept.category})
                           Current understanding level: ${concept.details.knowledgeState.understandingLevel.toFixed(2)}
                           Current confidence in assessment: ${concept.details.knowledgeState.confidenceInAssessment.toFixed(2)}
-                          
+
+                          SOCRATIC QUESTIONING PRINCIPLES:
+                          - Ask questions that lead to deeper thinking, not just assessment
+                          - Force comparison of concepts or approaches
+                          - Challenge assumptions about the concept
+                          - Explore implications of their current understanding
+                          - Guide toward self-discovery of misconceptions
+
                           QUESTION REQUIREMENTS:
                           - EXTREMELY BRIEF AND DIRECT (max 15 words per question)
-                          - Focus on CONCEPTUAL UNDERSTANDING, not syntax
-                          - NEVER ask students to rewrite or implement anything
-                          - Refer to their code with specific line numbers if relevant
-                          - Questions should be simple enough to answer verbally
-                          - Avoid multi-part questions
-                          
-                          GOOD EXAMPLE QUESTIONS:
-                          - "Why did you use append() instead of extend() on line 14?"
-                          - "What does dictionary.items() return in your loop?"
-                          - "Why did the 'item' variable cause a NameError?"
-                          - "How does flattening a nested list work in Python?"
-                          
+                          - Begin with "What", "Why", "How", "When", or "What if"
+                          - Relate to their specific code when possible
+                          - Questions should provoke reflection, not just knowledge recall
+                          - Avoid questions with obvious answers
+
+                          GOOD SOCRATIC EXAMPLES:
+                          - "How would your function behave with empty input?"
+                          - "Why might someone prefer list comprehension over this approach?"
+                          - "What happens when two keys have the same value?"
+                          - "What's the difference between your approach and using recursion?"
+
                           BAD EXAMPLES (DO NOT USE):
-                          - "Can you rewrite this using dictionary comprehension?"
-                          - "How would you implement this differently?"
-                          - "Write a function that would..."
-                          - "Explain in detail how you would..."
-                          
+                          - "What is a dictionary in Python?" (too basic)
+                          - "Can you explain how your code works?" (too vague)
+                          - "How would you implement this differently?" (too open-ended)
+                          - "Why didn't you use X?" (presumptive)
+
                           RESPONSE FORMAT:
                           - CONCEPT: ${concept.subconcept}
                           - QUESTIONS:
-                            1. [First direct question]
-                            2. [Second direct question]
-                            3. [Third direct question]
-                          
+                            1. [First Socratic question]
+
                           CONTEXT:
                           Student Task: ${studentTask}
                           Conversation History: ${conversationText}
