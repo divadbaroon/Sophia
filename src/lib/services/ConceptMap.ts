@@ -35,7 +35,7 @@ export class ConceptMapService {
   private onReadyCallback?: OnReadyCallback;
   private anthropicClient: Anthropic | null = null;
   private fileContext: any = null
-  private taPivotQueue: string[] = [];
+  private taPivotQueue: Array<{concept: string, category: string, confidence: number}> = [];
 
   constructor(initialConceptMap: ConceptMap, anthropicApiKey?: string, onReadyCallback?: OnReadyCallback, fileContext?: any) {
     this.conceptMap = initialConceptMap;
@@ -100,27 +100,23 @@ export class ConceptMapService {
   /**
  * Get the current TA pivot queue
  */
-public getTAPivotQueue(): string[] {
-  return this.taPivotQueue;
-}
+  public getTAPivotQueue(): Array<{concept: string, category: string, confidence: number}> {
+    return this.taPivotQueue;
+  }
 
   /**
- * Generate a queue of TA pivots for the lowest confidence concepts
+ * Generate a simplified TA pivot queue with just concept names and confidence levels
  * @param conversationHistory - Recent conversation messages
  * @param studentTask - The task description for the student
  * @param studentCode - The student's current code
  * @param errorMessage - Any error message from the student's code
  * @param queueSize - Number of concepts to include in the queue (default: 5)
- * @returns An array of pivot messages for the lowest confidence concepts
+ * @returns An array of concept information objects
  */
 public async generateTAPivotQueue(
-  conversationHistory: ClaudeMessage[],
-  studentTask: string,
-  studentCode: string,
-  errorMessage: string,
   queueSize: number = 5
-): Promise<string[]> {
-  console.log(`Generating TA pivot queue for ${queueSize} concepts...`);
+): Promise<Array<{concept: string, category: string, confidence: number}>> {
+  console.log(`Generating simplified TA pivot queue for ${queueSize} concepts...`);
   const startTime = performance.now();
   
   try {
@@ -142,122 +138,22 @@ public async generateTAPivotQueue(
       return [];
     }
     
-    // Generate pivots for each concept in parallel
-    const pivotPromises = conceptsToProcess.map(async (concept) => {
-      
-      // Create a modified version of generateTAPivot that uses our specific concept
-      const pivotForConcept = async (): Promise<string> => {
-        try {
-          // Format conversation for prompt (same as in generateTAPivot)
-          const conversationText = conversationHistory
-            .filter(msg => msg.role !== 'system')
-            .slice(-8)
-            .map(msg => `${msg.role === 'user' ? 'Student' : 'TA'}: ${msg.content}`)
-            .join('\n\n');
-          
-          console.log(`Generating pivot for ${concept.category} - ${concept.subconcept}`);
-          
-          // Create the prompt for Claude (similar to generateTAPivot but focused on this concept)
-          const prompt = `As the concept mapping agent for ATLAS, use Socratic questioning to guide the student toward self-discovery about a specific concept.
-
-                          OBJECTIVE: Generate 1 thought-provoking Socratic questions (max 25 words each) about this concept.
-
-                          FOCUS CONCEPT: ${concept.subconcept} (from category: ${concept.category})
-                          Current understanding level: ${concept.details.knowledgeState.understandingLevel.toFixed(2)}
-                          Current confidence in assessment: ${concept.details.knowledgeState.confidenceInAssessment.toFixed(2)}
-
-                          SOCRATIC QUESTIONING PRINCIPLES:
-                          - Ask questions that lead to deeper thinking, not just assessment
-                          - Force comparison of concepts or approaches
-                          - Challenge assumptions about the concept
-                          - Explore implications of their current understanding
-                          - Guide toward self-discovery of misconceptions
-
-                          QUESTION REQUIREMENTS:
-                          - EXTREMELY BRIEF AND DIRECT (max 15 words per question)
-                          - Begin with "What", "Why", "How", "When", or "What if"
-                          - Relate to their specific code when possible
-                          - Questions should provoke reflection, not just knowledge recall
-                          - Avoid questions with obvious answers
-
-                          GOOD SOCRATIC EXAMPLES:
-                          - "How would your function behave with empty input?"
-                          - "Why might someone prefer list comprehension over this approach?"
-                          - "What happens when two keys have the same value?"
-                          - "What's the difference between your approach and using recursion?"
-
-                          BAD EXAMPLES (DO NOT USE):
-                          - "What is a dictionary in Python?" (too basic)
-                          - "Can you explain how your code works?" (too vague)
-                          - "How would you implement this differently?" (too open-ended)
-                          - "Why didn't you use X?" (presumptive)
-
-                          RESPONSE FORMAT:
-                          - CONCEPT: ${concept.subconcept}
-                          - QUESTIONS:
-                            1. [First Socratic question]
-
-                          CONTEXT:
-                          Student Task: ${studentTask}
-                          Conversation History: ${conversationText}
-                          Student Code: ${studentCode}
-                          Error Message: ${errorMessage}`;
-          
-          // Throw an error if no Anthropic client is available
-          if (!this.anthropicClient) {
-            throw new Error('No Anthropic client available');
-          }
-          
-          // Use non-streaming API
-          const response = await this.anthropicClient.messages.create({
-            system: "You are a teaching assistant conducting a focused assessment of a student's understanding of a specific programming concept.",
-            messages: [
-              {
-                role: 'user',
-                content: prompt
-              }
-            ],
-            model: 'claude-3-7-sonnet-20250219',
-            max_tokens: 512,
-          });
-          
-          // Process response
-          if (!response.content || response.content.length === 0) {
-            throw new Error('Empty response from Claude API');
-          }
-
-          const contentBlock = response.content[0];
-          if (contentBlock.type !== 'text') {
-            throw new Error(`Unexpected content block type: ${contentBlock.type}`);
-          }
-
-          const result = contentBlock.text;
-          
-          console.log(`Successfully generated pivot for ${concept.category} - ${concept.subconcept}`);
-          return result.trim();
-        } catch (error) {
-          console.error(`Error generating pivot for ${concept.category} - ${concept.subconcept}:`, error);
-          return `Questions about ${concept.subconcept}: Could not generate questions due to an error.`;
-        }
-      };
-      
-      // Generate the pivot for this specific concept
-      return await pivotForConcept();
-    });
+    // Create a simplified queue with just concept names and confidence levels
+    const simplifiedQueue = conceptsToProcess.map(concept => ({
+      concept: concept.subconcept,
+      category: concept.category,
+      confidence: concept.details.knowledgeState.confidenceInAssessment
+    }));
     
-    // Wait for all pivots to be generated
-    const pivotQueue = await Promise.all(pivotPromises);
-    
-    // Log completion
     const endTime = performance.now();
-    console.log(`Generated ${pivotQueue.length} TA pivots in ${(endTime - startTime).toFixed(2)}ms`);
+    console.log(`Generated ${simplifiedQueue.length} simplified TA pivots in ${(endTime - startTime).toFixed(2)}ms`);
     
-    return pivotQueue;
+    return simplifiedQueue;
   } catch (error) {
-    console.error('Error generating TA pivot queue:', error);
+    console.error('Error generating simplified TA pivot queue:', error);
     const endTime = performance.now();
     console.log(`Error in TA pivot queue generation (${(endTime - startTime).toFixed(2)}ms)`);
-    return ["Error generating TA pivot queue. Please try again."];
+    return [];
   }
 }
 
@@ -344,10 +240,6 @@ public async initialize(
     // Generate TA pivot queue
     console.log(`Generating initial TA pivot queue (size ${queueSize})`);
     this.taPivotQueue = await this.generateTAPivotQueue(
-      conversationHistory,
-      studentTask,
-      studentCode,
-      errorMessage,
       queueSize
     );
     
@@ -467,6 +359,22 @@ public async processNewMessage(
     }
     const confidenceEndTime = performance.now();
     console.log(`Confidence check completed (${(confidenceEndTime - confidenceStartTime).toFixed(2)}ms)`);
+    
+    // ADD THIS SECTION: Regenerate the pivot queue
+    const queueStartTime = performance.now();
+    console.log("Regenerating TA pivot queue after message processing");
+    
+    // Default queue size (5) or use a configurable value
+    const queueSize = 5;
+    this.taPivotQueue = await this.generateTAPivotQueue(queueSize);
+    
+    // Update file context with new queue if available
+    if (fileContext && typeof fileContext.updatePivotQueue === 'function') {
+      fileContext.updatePivotQueue(this.taPivotQueue);
+    }
+    
+    const queueEndTime = performance.now();
+    console.log(`Pivot queue regeneration completed (${(queueEndTime - queueStartTime).toFixed(2)}ms)`);
     
     // Log total process time
     const totalEndTime = performance.now();
