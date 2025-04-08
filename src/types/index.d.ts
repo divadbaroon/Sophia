@@ -294,8 +294,9 @@ export interface FileContextType {
   systemType: 'ATLAS' | 'Standalone';
   updateSystemType: (type: 'ATLAS' | 'Standalone') => void;
 
-  pivotQueue?: string[];
-  updatePivotQueue?: (queue: string[]) => void;
+  pivotQueue?: Array<{concept: string, category: string, confidence: number}> | null;
+  updatePivotQueue?: (queue: Array<{concept: string, category: string, confidence: number}>) => void;
+
 
   conceptMapInitializing: boolean;
   updateConceptMapInitializing: (isInitializing: boolean) => void;
