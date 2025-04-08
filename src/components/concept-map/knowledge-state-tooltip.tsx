@@ -21,7 +21,7 @@ export default function KnowledgeStateTooltip({ knowledgeState }: KnowledgeState
   return (
     <div className="relative inline-block">
       <span
-        className="ml-1 inline-flex items-center justify-center rounded-full h-4 w-4 text-muted-foreground hover:text-foreground cursor-help"
+        className="ml-1 inline-flex items-center justify-center rounded-full h-4 w-4 text-muted-foreground hover:text-foreground cursor-pointer"
         onMouseEnter={() => setIsVisible(true)}
         onMouseLeave={() => setIsVisible(false)}
       >
