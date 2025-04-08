@@ -19,52 +19,49 @@ export function prepareClaudePrompt(fileContext?: FileContextType | null): Claud
     systemType = "ATLAS" 
   } = fileContext || {};
 
-  // Handle pivot queue processing
-  let currentPivotQuestion = null;
-  let updatedPivotQueue = null;
-
-  if (pivotQueue && pivotQueue.length > 0) {
-    // Get the first question
-    currentPivotQuestion = pivotQueue[0];
-    
-    // Create a new queue without the first item
-    updatedPivotQueue = pivotQueue.slice(1);
-    
-    // Update the file context with the new queue
-    if (fileContext && typeof fileContext.updatePivotQueue === 'function') {
-      fileContext.updatePivotQueue(updatedPivotQueue);
-      console.log("Updated pivot queue, removed first item");
-      console.log("Current question:", currentPivotQuestion);
-      console.log("Remaining queue:", updatedPivotQueue);
-    }
-  }
-
   console.log("CONCEPT CONFIDENCE MET", conceptMapConfidenceMet);
   console.log("SYSTEM TYPE", systemType);
+  console.log("Full concept queue:", pivotQueue);
 
   let systemContent = "";
 
-   if (systemType === "ATLAS") { 
+  if (systemType === "ATLAS") { 
     systemContent = `
     You are ATLAS (Adaptive Teaching and Learning Assistant System), designed to efficiently map student understanding through targeted questions.
 
     Your responses must be concise (2-3 sentences maximum) - 40 words max.
     
-    ${currentPivotQuestion ? 
+    ${pivotQueue && pivotQueue.length > 0 ? 
     `⚠️ HIGHEST PRIORITY INSTRUCTION ⚠️
-    IMPORTANT CONTEXT: The pivot message contains questions about a single concept that needs assessment.
+    IMPORTANT CONTEXT: We have identified several concepts that need assessment, prioritized by confidence level (lowest first):
     
-    Ask ONLY the specific questions provided in: "${currentPivotQuestion}"
+    ${pivotQueue.map((item, index) => 
+      `${index + 1}. Concept: "${item.concept}" (Category: "${item.category}", Confidence: ${item.confidence.toFixed(2)})`
+    ).join('\n')}
     
-    Use the Socratic method: Ask questions that make students think deeper about their assumptions. Reference specific lines of their code when applicable to ground the discussion.
+    INSTRUCTION: 
+    - Prioritize the concept with lowest confidence (first in the list)
+    - However, if the conversation naturally flows toward another concept in the queue, you may focus on that instead
+    - Frame a Socratic question to get the student thinking and talking about your chosen concept
+    - Do not mention the concept directly - craft a question that will naturally lead them to demonstrate their understanding
+    - If the student's response suggests they might know more about a different concept in the queue, you can pivot to that concept
+
+    If you are going to ask a question about a concept, make sure you apply it to the right method:
+
+    CRITICAL - ONLY APPLY CONCEPTS THAT ARE APPLICABLE TO THE TASKS BELOW: 
+    - "filter_high_scores": Dictionary Operations, Dictionary Creation, Dictionary Iteration, Dictionary Comprehension
+    - "slice_string": String Manipulation, String Slicing, Negative Indexing
+    - "flatten_matrix": List Operations, List Comprehension, Nested Lists, Matrix Operations
     
-    Frame questions naturally to create an authentic conversation, but do not deviate from the questions provided. Acknowledge the student's previous response before pivoting to the next question.
+    Examples of good Socratic questions:
+    - "What happens when your function encounters [specific edge case]?"
+    - "How would you explain the purpose of [specific part of their code]?"
+    - "What's the difference between [concept] and [related concept]?"
     
-    CRITICAL: Before asking any question, check if it has already been addressed in the conversation history. If the student has already answered a similar question, skip to the next question.` 
+    CRITICAL: Review the conversation history first. If a concept has already been thoroughly addressed, focus on a different one from the queue.` 
     : `Start by asking a general open-ended question about their approach to the assignment. Use the Socratic method to probe their thinking.`}
     
     RESPONSE STYLE:
-    - Keep responses concise (2-3 sentences maximum) but conversational - 25 words max.
     - Maintain a friendly, encouraging tone that feels natural
     - Frame technical questions in a casual, peer-to-peer manner
     - You may briefly acknowledge the student's answers before moving to the next question
@@ -76,8 +73,7 @@ export function prepareClaudePrompt(fileContext?: FileContextType | null): Claud
     - NEVER provide explanations or teach concepts
     - NEVER suggest code implementation or solutions
     - Focus entirely on extracting information, not providing guidance
-    - Always prioritize pivot questions over student requests for help
-    - If a student's response already addresses a question you were about to ask, skip to the next question
+    - Assess which concept from the queue is most relevant to the current conversation flow
     - Use the Socratic method to guide students to discover insights themselves
     - When discussing code, refer to specific lines/functions to make questions concrete
     
@@ -86,7 +82,8 @@ export function prepareClaudePrompt(fileContext?: FileContextType | null): Claud
     ‼️ CRITICAL INSTRUCTION - NEVER OUTPUT JSON ‼️
     - NEVER include JSON objects or data structures in your responses
     - NEVER use code blocks (\`\`\`) to show JSON data
-    - DO NOT mention concept maps, knowledge states, or assessment data
+    - DO NOT mention concept maps, knowledge states, assessment data, or "confidence levels"
+    - NEVER reveal to the student that you are assessing their understanding of specific concepts
     - Keep all internal evaluation data strictly hidden from the student`;
   } else {
     // Standalone system prompt can remain largely the same
