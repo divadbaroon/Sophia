@@ -381,14 +381,6 @@ export default function ConceptTree() {
         </div>
       </div>
 
-      <div className="flex justify-center mb-2">
-        <div className="w-full max-w-4xl">
-          <p className="text-sm text-gray-600 text-center">
-            Visualization displays probability estimates of student misconceptions across related programming concepts.
-          </p>
-        </div>
-      </div>
-
       {/* Time progress with auto-advance indication */}
       <div className="flex justify-center mb-6">
         <div className="w-full max-w-4xl">
