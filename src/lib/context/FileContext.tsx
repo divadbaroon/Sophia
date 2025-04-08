@@ -249,9 +249,7 @@ const condition1: TaskData = {
         },
       ],
       constraints: [
-        "Create a new dictionary rather than modifying the input",
-        "Use dictionary comprehension or a for loop to filter entries",
-        "The threshold is inclusive (scores >= threshold should be included)"
+        ""
       ]
     },
     {
@@ -273,9 +271,7 @@ const condition1: TaskData = {
         },
       ],
       constraints: [
-        "Use Python's slice notation [start:end:step]",
-        "Negative indices should count from the end of the string",
-        "Step value determines which characters to include in the slice"
+        ""
       ]
     },
     {
@@ -297,9 +293,7 @@ const condition1: TaskData = {
         },
       ],
       constraints: [
-        "Use list comprehension rather than nested loops",
-        "The order of elements should be preserved (row by row)",
-        "Handle matrices with different row lengths"
+        ""
       ]
     }
   ],
@@ -548,7 +542,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
 
   const [showReport, setShowReport] = useState<boolean>(false);
 
-  const [pivotQueue, setPivotQueue] = useState<string[]>([]);
+  const [pivotQueue, setPivotQueue] = useState<Array<{concept: string, category: string, confidence: number}>>([]);
 
   const [conceptMapInitializing, setConceptMapInitializing] = useState<boolean>(false);
 
@@ -621,7 +615,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     console.log('Initial Concept Map:', sessionData.conceptMap);
   }, [systemType, studentTask, fileContent, sessionData]);
 
-  const updatePivotQueue = (queue: string[]) => {
+  const updatePivotQueue = (queue: Array<{concept: string, category: string, confidence: number}>) => {
     setPivotQueue(queue);
   }
 
