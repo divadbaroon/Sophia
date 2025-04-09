@@ -94,7 +94,8 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   const [methodsCode, setMethodsCode] = useState<Record<string, string>>({});
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [localHighlightedText, setLocalHighlightedText] = useState<string>('');
-  const [highlightedLineNumber, setHighlightedLineNumber] = useState<number | null>(null);
+  // Default to highlighting line 13 of the student's code when loaded
+  const [highlightedLineNumber, setHighlightedLineNumber] = useState<number | null>(13);
   const [customExtensions, setCustomExtensions] = useState<Extension[]>([]);
   // Add zoom state
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
