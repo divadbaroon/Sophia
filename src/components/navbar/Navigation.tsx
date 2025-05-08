@@ -47,7 +47,7 @@ export default function Navigation({ user }: NavigationProps) {
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <Link href="/home" className="text-3xl font-bold mr-8 text-black ml-1">
-              ATLAS<span className="text-blue-600">.</span>
+              Sophia<span className="text-blue-600">.</span>
             </Link>
             <div className="hidden md:flex space-x-6 mt-2">
               {navigationItems.map((item) => (
