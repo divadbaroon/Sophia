@@ -31,7 +31,7 @@ export default function StudentSessionDashboard() {
   }
 
   const sessionData = {
-    studentName: "David Barron",
+    studentName: "Student",
     sessionTime: "15:30",
     waitTime: "1 min",
     courseInfo: {
