@@ -8,21 +8,21 @@ export default function FeaturesSection({ isVisible }: FeaturesSectionProps) {
   const features = [
     {
       icon: <Brain className="w-12 h-12 mb-4 text-blue-600" />,
-      title: "Adaptive Interaction",
+      title: "Dynamic Concept Mapping",
       description:
-        "System adapts its communication style based on student-selected roles, maintaining personalized interaction history.",
+        "Continuously refines a comprehensive concept map that tracks student understanding levels, system confidence, reasoning, and recency of information.",
     },
     {
       icon: <Code className="w-12 h-12 mb-4 text-blue-600" />,
-      title: "Conceptual Understanding",
+      title: "Multi-agent Architecture",
       description:
-        "Multi-agent architecture tracks student understanding of concepts and sub-concepts, generating targeted questions to identify knowledge gaps.",
+        "Dedicated concept agents, pivot agent, and orchestrator agent work together to efficiently identify and probe specific knowledge gaps.",
     },
     {
       icon: <Lightbulb className="w-12 h-12 mb-4 text-blue-600" />,
-      title: "Intelligent Assistance",
+      title: "Strategic Information Gain",
       description:
-        "Orchestrator Agent coordinates overall system behavior, providing TAs with valuable insights and suggested teaching approaches.",
+        "Uses a priority-based pivot mechanism to formulate questions that maximize information gain about student misconceptions with each interaction.",
     },
   ]
 
