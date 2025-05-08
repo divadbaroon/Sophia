@@ -68,7 +68,7 @@ export default function ProcessFlow() {
                 fontWeight="bold"
                 fill="#1E40AF"
               >
-                ATLAS: Student Interaction Flow
+                Sophia
               </text>
   
               {/* Process Steps */}

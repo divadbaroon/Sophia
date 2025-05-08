@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ATLAS - AI-Powered Office Hours",
+  title: "Sophia",
   description: "Transform your office hours with AI-driven insights and automation",
 };
 

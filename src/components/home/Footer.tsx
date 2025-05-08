@@ -4,7 +4,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <div className="flex items-center space-x-2">
             <span className="text-2xl font-bold">
-              ATLAS<span className="text-blue-600">.</span>
+              Sophia<span className="text-blue-600">.</span>
             </span>
             <p className="text-gray-600">&copy; 2025 All rights reserved.</p>
           </div>
