@@ -13,55 +13,7 @@ import { usePathname } from 'next/navigation'
 const condition2: TaskData = {
   tasks: [
     {
-      title: "1.) calculate_sum()",
-      difficulty: "Easy",
-      description: "Implement a function that calculates the sum of a range of numbers. Use a for loop to iterate through the range and accumulate the total.",
-      examples: [
-        {
-          input: { start: 1, end: 6 },
-          output: '15'
-        },
-        {
-          input: { start: 5, end: 10 },
-          output: '35',
-        },
-        {
-          input: { start: 1, end: 1 },
-          output: '0',
-        },
-      ],
-      constraints: [
-        "Use a for loop with the range function",
-        "The end parameter is exclusive (like Python's range)",
-        "Return the sum as an integer"
-      ]
-    },
-    {
-      title: "2.) create_pattern()",
-      difficulty: "Medium",
-      description: "Implement a function that processes a list of numbers and creates a pattern string. For each number in the list: if divisible by 3, add 'X' to the result string; if divisible by 2, add 'O' to the result string; otherwise, add the number itself as a string.",
-      examples: [
-        {
-          input: { numbers: [7, 12, 9, 14, 6, 3] },
-          output: '"7OXO6X"'
-        },
-        {
-          input: { numbers: [1, 2, 3, 4, 5, 6] },
-          output: '"1OX4OX"',
-        },
-        {
-          input: { numbers: [3, 6, 9, 12, 15, 18] },
-          output: '"XXXXXX"',
-        },
-      ],
-      constraints: [
-        "Check divisibility by 3 first, then by 2",
-        "Convert non-matching numbers to string before adding to result",
-        "Return the final pattern as a string"
-      ]
-    },
-    {
-      title: "3.) create_multiplier()",
+      title: "1.) create_multiplier()",
       difficulty: "Medium",
       description: "Create a function that generates a multiplier lambda function. The function should return a lambda that multiplies its input by a specified factor.",
       examples: [
@@ -86,12 +38,6 @@ const condition2: TaskData = {
     }
   ],
   methodTemplates: {
-    "calculate_sum": `def calculate_sum(self, start: int, end: int) -> int:
-    pass`,
-    
-    "create_pattern": `def create_pattern(self, numbers: list) -> str:
-    pass`,
-    
     "create_multiplier": `def create_multiplier(self, factor: int):
     pass`
   },
@@ -225,7 +171,7 @@ const condition2: TaskData = {
       }
     }
   },
-  system: "Standalone"
+  system: "ATLAS"
 }
 
 const condition1: TaskData = {
@@ -563,7 +509,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
           setSystemType('ATLAS') 
         } else if (newSessionId === '12') {
           setSessionData(condition2)
-          setSystemType('Standalone') 
+          setSystemType('ATLAS') 
         } else if (newSessionId === '7') {
           setSessionData(condition1)
           setSystemType('Standalone') 
