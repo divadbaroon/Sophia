@@ -11,14 +11,14 @@ import { createClient } from '@/utils/supabase/client';
 
 import { updateStudentSessionData } from "@/lib/actions/studentsActions"
 
-// Get environment variables
 const DEEPGRAM_API_KEY = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY || '';
 const ANTHROPIC_API_KEY = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '';
 const ELEVENLABS_API_KEY = process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY || '';
 const ELEVENLABS_VOICE_ID = process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID || 'iDxgwKogoeR1jrVkJKJv';
 
 export const useConversationManager = () => {
-  // Get file context
+
+  // Get the students context
   const fileContext = useFile();
   
   // Get session and student IDs for storage
@@ -28,7 +28,7 @@ export const useConversationManager = () => {
   // Track user/student ID for storage
   const [studentId, setStudentId] = useState<string | null>(null);
   
-  // Effect to get student ID from Supabase auth
+  // Get student ID from Supabase auth
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -79,11 +79,6 @@ export const useConversationManager = () => {
 
   // Track if confidence was previously met (to detect changes)
   const wasConfidenceMetRef = useRef<boolean>(false);
-
-  const MAX_ATLAS_QUESTIONS = 4;
-  const MAX_STANDALONE_QUESTIONS = 7;
-
-  const claudeQueryCountRef = useRef<number>(0);
 
   const isClaudeGeneratingRef = useRef<boolean>(false);
 
@@ -167,6 +162,7 @@ export const useConversationManager = () => {
     }
   }, [conceptMap, conceptMapReady, taPivot, sessionId, studentId]);
 
+  // Save new conversation histroy
   useEffect(() => {
     // When conversation history changes, update the FileContext's conversation history
     if (state.conversationHistory.length > 0) {
@@ -606,12 +602,10 @@ export const useConversationManager = () => {
       ttsQueueRef.current = [];
       isSpeakingRef.current = false;
 
-      // Check if we've reached the maximum number of queries based on system type
       // or if confidence has been met
-      if ((fileContext?.systemType === "ATLAS" && claudeQueryCountRef.current >= MAX_ATLAS_QUESTIONS) ||
-          (fileContext?.systemType === "Standalone" && claudeQueryCountRef.current >= MAX_STANDALONE_QUESTIONS) ||
+      if (
           wasConfidenceMetRef.current) {
-        console.log('🛑 Maximum questions reached or confidence met. Showing report instead of querying Claude.');
+        console.log('🛑 Showing report instead of querying Claude.');
         
         // Display final message
         if (managerRef.current) {
@@ -656,10 +650,6 @@ export const useConversationManager = () => {
           
           // Set flag to indicate Claude is generating a response
           isClaudeGeneratingRef.current = true;
-          
-          // Increment the Claude query counter
-          claudeQueryCountRef.current += 1;
-          console.log(`🔒 Claude response generation started (Query #${claudeQueryCountRef.current}) - user input will be ignored`);
           
           // Use prepareClaudePrompt to get the initial system and context messages
           const contextMessages = prepareClaudePrompt(fileContext);
