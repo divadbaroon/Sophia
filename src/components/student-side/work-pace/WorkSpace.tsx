@@ -19,7 +19,7 @@ export const WorkspaceLayout = () => {
   const [blinkingState, setBlinkingState] = useState(false);
   const [terminalHeight, setTerminalHeight] = useState(50);
   const [isKnowledgeRadarModalOpen, setIsKnowledgeRadarModalOpen] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(600); // 10 minutes in seconds
+  const [timeRemaining, setTimeRemaining] = useState(0); // 10 minutes in seconds
   const [timerActive, setTimerActive] = useState(false);
 
   // Destructure additional properties from FileContext
@@ -54,10 +54,10 @@ useEffect(() => {
       }
     } else {
       // Initialize new timer if none exists
-      setTimeRemaining(600); // 10 minutes
+      setTimeRemaining(0); // 10 minutes
       setTimerActive(true);
       
-      localStorage.setItem(timerKey, "600");
+      localStorage.setItem(timerKey, "0");
     }
   }
 }, [sessionId]);
