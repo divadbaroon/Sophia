@@ -39,7 +39,7 @@ export default function Navigation({ user }: NavigationProps) {
 
     // Check if URL contains "sessions", "login", or "sign-up" and set isScrolled accordingly
     const shouldShowStyling =
-      pathname.includes("sessions") || pathname.includes("/login") || pathname.includes("/sign-up")
+      pathname.includes("sessions") || pathname.includes("/login") || pathname.includes("/sign-up") 
     if (shouldShowStyling) {
       setIsScrolled(true)
     }
@@ -65,7 +65,7 @@ export default function Navigation({ user }: NavigationProps) {
     e.preventDefault()
     
     // Check if we're on login or signup pages
-    const isAuthPage = pathname.includes("/login") || pathname.includes("/sign-up")
+    const isAuthPage = pathname.includes("/login") || pathname.includes("/sign-up") 
     
     if (isAuthPage) {
       // Redirect to home page with hash
@@ -83,7 +83,7 @@ export default function Navigation({ user }: NavigationProps) {
   }
 
   const shouldShowNavbarStyling =
-    pathname.includes("sessions") || pathname.includes("/login") || pathname.includes("/sign-up")
+    pathname.includes("sessions") || pathname.includes("/login") || pathname.includes("/sign-up") || pathname.includes("/lessons")
 
   return (
     <nav
