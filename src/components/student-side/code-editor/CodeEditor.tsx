@@ -72,8 +72,6 @@ type CodeEditorProps = {
 // Convert to forwardRef to expose the ref interface
 const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '', readOnly = false }, ref) => {
   const { 
-    fileContent,
-    cachedFileContent,
     updateCachedFileContent, 
     setFileContent, 
     updateHighlightedText,
