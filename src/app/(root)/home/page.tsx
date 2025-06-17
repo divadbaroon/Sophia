@@ -33,7 +33,7 @@ export default function SophiaLanding() {
   return (
     <div className="min-h-screen bg-white">
 
-     {/* Hero Section */}
+      {/* Hero Section */}
       <section className="min-h-screen flex items-center justify-center px-6">
         <motion.div
           className="text-center"
@@ -59,8 +59,8 @@ export default function SophiaLanding() {
         </motion.div>
       </section>
 
-      {/* Maps Understanding Section */}
-      <section className="min-h-screen flex items-center px-6 lg:px-8">
+      {/* How It Works Section */}
+      <section id="how-it-works" className="min-h-screen flex items-center px-6 lg:px-8">
         <div className="max-w-7xl mx-auto w-full">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <motion.div initial="initial" whileInView="animate" viewport={{ once: true }} variants={fadeInLeft}>
@@ -68,7 +68,7 @@ export default function SophiaLanding() {
                 Maps unique understanding.
               </h3>
               <p className="text-xl text-gray-500 leading-relaxed">
-                Sophia creates a personalized conceptual map of each student's knowledge and gaps.
+                Sophia creates a personalized conceptual map of each student&apos;s knowledge and gaps.
               </p>
             </motion.div>
             <motion.img
@@ -106,7 +106,7 @@ export default function SophiaLanding() {
             >
               <h3 className="text-4xl lg:text-5xl font-bold text-black mb-6 leading-tight">Empathetic remediation.</h3>
               <p className="text-xl text-gray-500 leading-relaxed">
-                When misconceptions arise, Sophia provides gentle, targeted help tailored to the individual's needs.
+                When misconceptions arise, Sophia provides gentle, targeted help tailored to the individual&apos;s needs.
               </p>
             </motion.div>
           </div>
@@ -114,7 +114,7 @@ export default function SophiaLanding() {
       </section>
 
       {/* Features Grid Section */}
-      <section className="min-h-screen flex items-center px-6 lg:px-8">
+      <section id="features" className="min-h-screen flex items-center px-6 lg:px-8">
         <div className="max-w-7xl mx-auto w-full">
           <motion.div
             className="grid md:grid-cols-3 gap-12"
@@ -176,8 +176,37 @@ export default function SophiaLanding() {
             Experience learning that feels personal. Our AI gets your mind and truly helps you grow.
           </motion.p>
           <motion.div variants={fadeInUp}>
-            <Button className="bg-black text-white hover:bg-gray-800 rounded-full px-8 py-3 text-lg">
+            <Button className="bg-blue-600 text-white hover:bg-blue-700 rounded-full px-10 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 transform">
               Try Sophia Now
+            </Button>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="min-h-screen flex items-center px-6 lg:px-8 bg-gray-50">
+        <motion.div
+          className="max-w-4xl mx-auto text-center w-full"
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true }}
+          variants={staggerContainer}
+        >
+          <motion.h3 className="text-4xl lg:text-5xl font-bold text-black mb-6" variants={fadeInUp}>
+            Ready to Transform Learning?
+          </motion.h3>
+          <motion.p className="text-xl text-gray-500 leading-relaxed mb-12" variants={fadeInUp}>
+            Join thousands of educators and students already using Sophia to personalize their learning experience.
+          </motion.p>
+          <motion.div className="flex flex-col sm:flex-row gap-4 justify-center" variants={fadeInUp}>
+            <Button className="bg-blue-600 text-white hover:bg-blue-700 rounded-full px-10 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 transform">
+              Start Free Trial
+            </Button>
+            <Button
+              variant="outline"
+              className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100 rounded-full px-10 py-4 text-lg font-semibold transition-all duration-300"
+            >
+              Schedule Demo
             </Button>
           </motion.div>
         </motion.div>
