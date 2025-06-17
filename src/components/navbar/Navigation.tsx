@@ -48,10 +48,10 @@ export default function Navigation({ user }: NavigationProps) {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [pathname])
 
-  // Check if the current path matches the session join pattern
-  const isSessionJoinPage = pathname.includes("/join")
+  // Check if the current path matches the session join pattern or contains "session"
+  const isSessionPage = pathname.includes("/join") || pathname.includes("session")
 
-  const navigationItems: (string | NavItem)[] = isSessionJoinPage
+  const navigationItems: (string | NavItem)[] = isSessionPage
     ? []
     : user
       ? [
@@ -156,7 +156,7 @@ export default function Navigation({ user }: NavigationProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              !isSessionJoinPage && (
+              !isSessionPage && (
                 <>
                   <Button variant="ghost" asChild>
                     <Link href="/login">Sign In</Link>
@@ -225,7 +225,7 @@ export default function Navigation({ user }: NavigationProps) {
                 </div>
               </div>
             ) : (
-              !isSessionJoinPage && (
+              !isSessionPage && (
                 <div className="pt-4 pb-3 border-t border-gray-200 px-4 space-y-2">
                   <Link
                     href="/login"
