@@ -260,13 +260,13 @@ const condition1: TaskData = {
     }
   ],
   methodTemplates: {
-    "filter_high_scores": `def filter_high_scores(self, scores: dict, threshold: int) -> dict:
+    "filter_high_scores": `def filter_high_scores(scores: dict, threshold: int) -> dict:
     pass`,
     
-    "slice_string": `def slice_string(self, text: str, start: int, end: int, step: int) -> str:
+    "slice_string": `def slice_string(text: str, start: int, end: int, step: int) -> str:
     pass`,
     
-    "flatten_matrix": `def flatten_matrix(self, matrix: list) -> list:
+    "flatten_matrix": `def flatten_matrix(matrix: list) -> list:
     pass`
   },
   testCases: {
@@ -487,7 +487,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [sessionData, setSessionData] = useState<TaskData>(condition2)
   const [currentMethodIndex, setCurrentMethodIndex] = useState<number>(0)
   const [activeMethodId, setActiveMethodId] = useState<string>('filter_high_scores')
-  const [currentTestCases, setCurrentTestCases] = useState<TestCase[]>(condition1.testCases.filter_high_scores)
+  const [currentTestCases, setCurrentTestCases] = useState<TestCase[]>(condition2.testCases.filter_high_scores)
   
   // System type state
   const [systemType, setSystemType] = useState<'ATLAS' | 'Standalone'>('ATLAS')
@@ -497,7 +497,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [latestPivotMessage, setLatestPivotMessage] = useState<string | null>(null)
 
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
-  const [conceptMap, setConceptMap] = useState<any>(condition1.conceptMap);
+  const [conceptMap, setConceptMap] = useState<any>(condition2.conceptMap);
 
   const [speakTo, setSpeakTo] = useState<'student' | 'ta'>('ta')
   const [scenario, setScenario] = useState<'one-on-one' | 'group'>('one-on-one')
@@ -507,6 +507,55 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [pivotQueue, setPivotQueue] = useState<Array<{concept: string, category: string, confidence: number}>>([]);
 
   const [conceptMapInitializing, setConceptMapInitializing] = useState<boolean>(false);
+
+  // Add simple boolean completion tracking state
+  const [taskCompletionStatus, setTaskCompletionStatus] = useState<Record<string, Record<number, boolean>>>({})
+
+  // Load completion status from localStorage when session changes
+  useEffect(() => {
+    if (sessionId) {
+      const storageKey = `task_completion_${sessionId}`
+      const saved = localStorage.getItem(storageKey)
+      if (saved) {
+        try {
+          const completedData = JSON.parse(saved)
+          setTaskCompletionStatus(prev => ({
+            ...prev,
+            [sessionId]: completedData
+          }))
+        } catch (error) {
+          console.error('Error loading completion status:', error)
+          // Initialize with false for all tasks
+          const initialStatus: Record<number, boolean> = {}
+          sessionData?.tasks.forEach((_, index) => {
+            initialStatus[index] = false
+          })
+          setTaskCompletionStatus(prev => ({
+            ...prev,
+            [sessionId]: initialStatus
+          }))
+        }
+      } else {
+        // Initialize empty status for new session
+        const initialStatus: Record<number, boolean> = {}
+        sessionData?.tasks.forEach((_, index) => {
+          initialStatus[index] = false
+        })
+        setTaskCompletionStatus(prev => ({
+          ...prev,
+          [sessionId]: initialStatus
+        }))
+      }
+    }
+  }, [sessionId, sessionData])
+
+  // Save completion status to localStorage when it changes
+  useEffect(() => {
+    if (sessionId && taskCompletionStatus[sessionId]) {
+      const storageKey = `task_completion_${sessionId}`
+      localStorage.setItem(storageKey, JSON.stringify(taskCompletionStatus[sessionId]))
+    }
+  }, [taskCompletionStatus, sessionId])
 
   // Extract session ID from URL and update session data
   useEffect(() => {
@@ -585,6 +634,49 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     setConceptMapInitializing(isInitializing);
     console.log(`Concept map initialization state updated to: ${isInitializing ? 'initializing' : 'complete'}`);
   };
+
+  // Task completion functions
+  const markTaskCompleted = (taskIndex: number) => {
+    if (!sessionId) return
+    
+    setTaskCompletionStatus(prev => ({
+      ...prev,
+      [sessionId]: {
+        ...prev[sessionId],
+        [taskIndex]: true
+      }
+    }))
+  }
+
+  const isTaskCompleted = (taskIndex: number): boolean => {
+    if (!sessionId) return false
+    return taskCompletionStatus[sessionId]?.[taskIndex] || false
+  }
+
+  const isTaskUnlocked = (taskIndex: number): boolean => {
+    // First task is always unlocked
+    if (taskIndex === 0) return true
+    
+    // Check if previous task is completed
+    return isTaskCompleted(taskIndex - 1)
+  }
+
+  const canGoToNext = (): boolean => {
+    // Can't go to next if we're at the last task
+    if (currentMethodIndex >= (sessionData?.tasks.length || 0) - 1) return false
+    
+    // Can go to next if current task is completed
+    return isTaskCompleted(currentMethodIndex)
+  }
+
+  const getCompletionStats = () => {
+    if (!sessionId || !sessionData) return { completed: 0, total: 0 }
+    
+    const sessionStatus = taskCompletionStatus[sessionId] || {}
+    const completed = Object.values(sessionStatus).filter(Boolean).length
+    const total = sessionData.tasks.length
+    return { completed, total }
+  }
   
   const updateConversationHistory = (newHistory: ConversationMessage[]) => {
     setConversationHistory(newHistory);
@@ -727,6 +819,12 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         updatePivotQueue,
         conceptMapInitializing,
         updateConceptMapInitializing,
+        // Task completion methods
+        markTaskCompleted,
+        isTaskCompleted,
+        isTaskUnlocked,
+        canGoToNext,
+        getCompletionStats,
       }}>
       {children}
     </FileContext.Provider>
