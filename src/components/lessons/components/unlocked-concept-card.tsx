@@ -19,7 +19,6 @@ export function UnlockedConceptCard({
   title,
   description,
   icon: Icon,
-  difficulty,
   xpReward,
   estimatedTime,
   isCompleted,

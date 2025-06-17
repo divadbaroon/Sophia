@@ -30,7 +30,7 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
           
           {/* What to Expect */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-black border-b border-gray-200 pb-2">What's Next:</h4>
+            <h4 className="text-lg font-semibold text-black border-b border-gray-200 pb-2">What&apos;s Next:</h4>
 
             <div className="grid gap-4">
               <Card className="border-2 border-gray-200">
@@ -42,7 +42,7 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
                     <div>
                       <h5 className="font-semibold text-black mb-1">3 Coding Tasks</h5>
                       <p className="text-sm text-gray-600">
-                        You'll receive 3 progressively challenging coding problems related to {conceptTitle}.
+                        You&apos;ll receive 3 progressively challenging coding problems related to {conceptTitle}.
                       </p>
                     </div>
                   </div>
@@ -75,7 +75,7 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
                     <div>
                       <h5 className="font-semibold text-black mb-1">Learn by Doing</h5>
                       <p className="text-sm text-gray-600">
-                        Practice makes perfect! Each task builds on what you've learned and prepares you for real-world
+                        Practice makes perfect! Each task builds on what you&apos;ve learned and prepares you for real-world
                         coding.
                       </p>
                     </div>

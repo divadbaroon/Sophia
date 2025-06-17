@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -135,8 +135,8 @@ export function DemographicForm({ isOpen, onSubmit, classId }: DemographicFormPr
                       <SelectValue placeholder="Select education level" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="bachelors">Bachelor's Degree</SelectItem>
-                      <SelectItem value="masters">Master's Degree</SelectItem>
+                      <SelectItem value="bachelors">Bachelor&apos;s Degree</SelectItem>
+                      <SelectItem value="masters">Master&apos;s Degree</SelectItem>
                       <SelectItem value="doctorate">Doctorate</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
