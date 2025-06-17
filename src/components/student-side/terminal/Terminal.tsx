@@ -42,6 +42,12 @@ if __name__ == "__main__":
     elif "${activeMethodId}" == "create_multiplier":
         multiplier = create_multiplier(8)
         print(f"multiplier(6) = {multiplier(6)}")
+    elif "${activeMethodId}" == "create_calculator":
+        calculator = create_calculator("add")
+        print(f"calculator(10, 5) = {calculator(10, 5)}")
+    elif "${activeMethodId}" == "create_triple_operator":
+        triple_op = create_triple_operator("sum")
+        print(f"triple_op(5, 10, 3) = {triple_op(5, 10, 3)}")
     elif "${activeMethodId}" == "filter_high_scores":
         result = filter_high_scores({'Alice': 92, 'Bob': 75, 'Charlie': 85, 'David': 70}, 80)
         print(f"filter_high_scores result: {result}")
@@ -220,6 +226,139 @@ for i, test in enumerate(test_cases):
         all_passed = False
         print(f"❌ Test {i+1} ERROR")
         print(f"   Input: factor = {factor}, test_value = {test_value}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+    } else if (activeMethodId === "create_calculator") {
+      return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for create_calculator function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    operation = test["input"]["operation"]
+    x = test["input"]["x"]
+    y = test["input"]["y"]
+    expected = test["expected"]
+    
+    try:
+        calculator = create_calculator(operation)
+        
+        # Check if it's a lambda function
+        is_lambda = calculator.__name__ == '<lambda>'
+        if not is_lambda:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Not a lambda function. You returned: {calculator}")
+            continue
+            
+        # Test the calculator
+        result = calculator(x, y)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: operation = '{operation}', x = {x}, y = {y}")
+            print(f"   Expected: calculator({x}, {y}) = {expected}")
+            print(f"   Result: calculator({x}, {y}) = {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: operation = '{operation}', x = {x}, y = {y}")
+            print(f"   Expected: calculator({x}, {y}) = {expected}")
+            print(f"   Result: calculator({x}, {y}) = {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: operation = '{operation}', x = {x}, y = {y}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+    } else if (activeMethodId === "create_triple_operator") {
+      return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for create_triple_operator function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    operation = test["input"]["operation"]
+    a = test["input"]["a"]
+    b = test["input"]["b"]
+    c = test["input"]["c"]
+    expected = test["expected"]
+    
+    try:
+        triple_op = create_triple_operator(operation)
+        
+        # Check if it's a lambda function
+        is_lambda = triple_op.__name__ == '<lambda>'
+        if not is_lambda:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Not a lambda function. You returned: {triple_op}")
+            continue
+            
+        # Test the triple operator
+        result = triple_op(a, b, c)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: operation = '{operation}', a = {a}, b = {b}, c = {c}")
+            print(f"   Expected: triple_op({a}, {b}, {c}) = {expected}")
+            print(f"   Result: triple_op({a}, {b}, {c}) = {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: operation = '{operation}', a = {a}, b = {b}, c = {c}")
+            print(f"   Expected: triple_op({a}, {b}, {c}) = {expected}")
+            print(f"   Result: triple_op({a}, {b}, {c}) = {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: operation = '{operation}', a = {a}, b = {b}, c = {c}")
         print(f"   Error: {str(e)}")
         
     print()
