@@ -27,7 +27,6 @@ export const WorkspaceLayout = () => {
     sessionData,
     sessionId,
     currentMethodIndex,
-    showReport,
     studentTask,
     fileContent,
     conversationHistory,
