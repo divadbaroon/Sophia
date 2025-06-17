@@ -17,7 +17,9 @@ export default function HeroSection() {
           Meet <span className="text-blue-600">Sophia</span>
         </h2>
         <p className="text-xl mb-8 text-gray-600 max-w-2xl mx-auto">
-          Use Sophia to identify individual student knowledge gaps at scale, providing educators with actionable insights and personalized student learning.        </p>
+          The AI-powered education suite that empowers more effective learning 
+          via personalized student understanding and empathetic remediation.
+        </p>
         <div className="space-y-4">
           <button className="bg-blue-600 text-white px-8 py-4 rounded-full text-lg font-semibold inline-flex items-center hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
             Get Started
