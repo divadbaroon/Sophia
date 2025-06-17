@@ -129,13 +129,6 @@ useEffect(() => {
             )} -> Output: ${example.output}`;
           });
         }
-
-        if (currentTask.constraints && currentTask.constraints.length > 0) {
-          taskDescription += "\n\nConstraints:";
-          currentTask.constraints.forEach((constraint) => {
-            taskDescription += `\n- ${constraint}`;
-          });
-        }
       }
 
       updateStudentTask(taskDescription);
@@ -182,7 +175,7 @@ useEffect(() => {
         <Button
           variant="outline"
           size="lg"
-          className={`absolute top-3.5 right-56 mr-6 z-50 gap-2 font-medium ${
+          className={`absolute top-3.5 right-16 mr-6 z-50 gap-2 font-medium ${
             isQuestionPanelVisible ? 'bg-secondary' : 
             timeRemaining === 0 ? 'bg-background hover:bg-secondary/80' : 'bg-secondary/30 cursor-not-allowed'
           }`}
@@ -200,7 +193,7 @@ useEffect(() => {
           {timeRemaining === 0 ? (
             <>
               <HelpCircle className="h-5 w-5" />
-              {isQuestionPanelVisible ? 'End Session' : 'Test My Understanding'}
+              {isQuestionPanelVisible ? 'Close' : 'Get Help'}
             </>
           ) : (
             <>
@@ -208,41 +201,6 @@ useEffect(() => {
               {`Available in ${formatTime(timeRemaining)}`}
             </>
           )}
-        </Button>
-
-        {/* View Report Button */}
-        <Button
-          variant="outline"
-          size="lg"
-          onClick={() => {
-            if (showReport) {
-              // Close the question panel if it's open
-              if (isQuestionPanelVisible) {
-                setIsQuestionPanelVisible(false);
-              }
-              // Close the TA modal if it's open
-              if (isTAModalOpen) {
-                setIsTAModalOpen(false);
-              }
-              // Open the report modal
-              setIsKnowledgeRadarModalOpen(true);
-            }
-          }}
-          title={
-            !showReport
-              ? "System has not reached enough confidence to show report yet"
-              : ""
-          }
-          className={`absolute top-3.5 right-16 mr-3 z-50 gap-2 font-medium ${
-            !showReport
-              ? "bg-amber-100 hover:bg-amber-100 text-amber-800 cursor-not-allowed opacity-70"
-              : `bg-amber-500 hover:bg-amber-600 cursor-pointer ${blinkingState ? "animate-pulse" : ""}`
-          }`}
-        >
-          <>
-            <MessageCircle className="h-5 w-5" />
-            View Report
-          </>
         </Button>
 
         <ResizablePanelGroup direction="horizontal">
