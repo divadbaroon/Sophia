@@ -1,6 +1,6 @@
 import { Code, Brain, MessageCircle, BarChart3 } from "lucide-react"
 
-export default function HowItWorksSection({ isVisible }: { isVisible: boolean }) {
+export default function HowItWorksSection() {
   const steps = [
     {
       icon: <Code className="w-12 h-12 text-blue-600" />,
