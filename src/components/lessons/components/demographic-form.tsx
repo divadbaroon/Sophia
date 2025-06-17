@@ -109,27 +109,22 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="ethnicity">Ethnicity/Race</Label>
-                  <Select value={formData.ethnicity} onValueChange={(value) => handleInputChange("ethnicity", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select ethnicity" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="asian">Asian</SelectItem>
-                      <SelectItem value="black">Black or African American</SelectItem>
-                      <SelectItem value="hispanic">Hispanic or Latino</SelectItem>
-                      <SelectItem value="native-american">Native American</SelectItem>
-                      <SelectItem value="pacific-islander">Pacific Islander</SelectItem>
-                      <SelectItem value="white">White</SelectItem>
-                      <SelectItem value="mixed">Mixed Race</SelectItem>
-                      <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                    <Label htmlFor="major">Major</Label>
+                    <Select value={formData.education} onValueChange={(value) => handleInputChange("education", value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select education level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bachelors">Bachelor&apos;s Degree</SelectItem>
+                        <SelectItem value="masters">Master&apos;s Degree</SelectItem>
+                        <SelectItem value="doctorate">Doctorate</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="education">Education Level</Label>
+                  <Label htmlFor="education">Education Level (Current Year)</Label>
                   <Select value={formData.education} onValueChange={(value) => handleInputChange("education", value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select education level" />
@@ -148,31 +143,6 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
             {/* Programming Experience */}
             <div className="space-y-4">
               <h4 className="text-md font-semibold text-black border-b border-gray-200 pb-2">Programming Experience</h4>
-
-              <div className="space-y-2">
-                <Label>Programming Experience Level</Label>
-                <RadioGroup
-                  value={formData.programmingExperience}
-                  onValueChange={(value) => handleInputChange("programmingExperience", value)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="none" id="none" />
-                    <Label htmlFor="none">No experience</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="beginner" id="beginner" />
-                    <Label htmlFor="beginner">Beginner (some basic concepts)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="intermediate" id="intermediate" />
-                    <Label htmlFor="intermediate">Intermediate (can write simple programs)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="advanced" id="advanced" />
-                    <Label htmlFor="advanced">Advanced (comfortable with multiple languages)</Label>
-                  </div>
-                </RadioGroup>
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="yearsOfExperience">Years of Programming Experience</Label>
