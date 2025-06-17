@@ -14,12 +14,14 @@ const Terminal = () => {
   const [compiler, setCompiler] = useState("python")
   const { pyodide } = usePythonRunner()
   const { 
-    fileContent, 
-    isSaved, 
-    setErrorContent,
-    activeMethodId,
-    currentTestCases
-  } = useFile()
+  fileContent, 
+  isSaved, 
+  setErrorContent,
+  activeMethodId,
+  currentTestCases,
+  currentMethodIndex,     
+  markTaskCompleted       
+} = useFile()
   
   const { toast } = useToast()
 
@@ -614,11 +616,14 @@ syntax_valid, error_message = check_code_syntax()
 
         // Check if all tests passed
         if (testOutput && testOutput.includes("All tests passed")) {
-          toast({
-            title: "Success",
-            description: "All test cases passed! 🎉",
-            variant: "default",
-          })
+        // Mark the current task as completed
+        markTaskCompleted(currentMethodIndex)  // This sets task to true!
+        
+        toast({
+          title: "Success",
+          description: "All test cases passed! 🎉",
+          variant: "default",
+        })
         } else if (testOutput) {
           toast({
             title: "Some tests failed",
