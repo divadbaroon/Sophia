@@ -20,13 +20,13 @@ export interface CodeEditorRef {
   resetZoom: () => void;
 }
 
-const generateFullTemplate = (methodsCode: Record<string, string>): string => {
-  // Convert all method code into a single string 
-  const allMethodsCode = Object.values(methodsCode)
-    .map(code => code.trim())
-    .join('\n\n');
-
-  return allMethodsCode;
+// Generate template for only the current active method
+const generateCurrentMethodTemplate = (methodsCode: Record<string, string>, activeMethodId: string): string => {
+  if (!activeMethodId || !methodsCode[activeMethodId]) {
+    return '';
+  }
+  
+  return methodsCode[activeMethodId].trim();
 };
 
 // Local storage keys for saving code
@@ -89,10 +89,8 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   const [methodsCode, setMethodsCode] = useState<Record<string, string>>({});
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [localHighlightedText, setLocalHighlightedText] = useState<string>('');
-  // Default to highlighting line 1 of the student's code when loaded
   const [highlightedLineNumber, setHighlightedLineNumber] = useState<number | null>();
   const [customExtensions, setCustomExtensions] = useState<Extension[]>([]);
-  // Add zoom state
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
   
   // Function to highlight a specific line by line number
@@ -202,53 +200,35 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
       }
     }
     
-    // Generate and set initial content (standalone functions)
-    const initialFullCode = generateFullTemplate(initialMethodsCode);
+    // Generate and set initial content (only current method)
+    const initialCurrentMethodCode = generateCurrentMethodTemplate(initialMethodsCode, activeMethodId);
     setMethodsCode(initialMethodsCode);
-    setFileContent(initialFullCode);
-    updateCachedFileContent(initialFullCode);
+    setFileContent(initialCurrentMethodCode);
+    updateCachedFileContent(initialCurrentMethodCode);
     
     // Clear any previous results
     updateExecutionOutput('');
     setErrorContent('');
     
-    console.log("CodeEditor initialized with functions for session", sessionId);
+    console.log("CodeEditor initialized with current method for session", sessionId);
     setIsInitialized(true);
-  }, [sessionData, sessionId, isInitialized, updateCachedFileContent, setFileContent, updateExecutionOutput, setErrorContent]);
+  }, [sessionData, sessionId, isInitialized, activeMethodId, updateCachedFileContent, setFileContent, updateExecutionOutput, setErrorContent]);
 
   // Reset initialization when session changes
   useEffect(() => {
     setIsInitialized(false);
   }, [sessionId]);
 
-  // Extract user code from full template if fileContent changes externally
+  // Update fileContent when activeMethodId changes
   useEffect(() => {
-    if (!isInitialized || !fileContent || fileContent === cachedFileContent || !sessionData?.methodTemplates) return;
+    if (!isInitialized || !activeMethodId || !methodsCode[activeMethodId]) return;
     
-    // For each method, try to extract its code
-    const updatedMethods = { ...methodsCode };
-    let codeUpdated = false;
+    const currentMethodCode = generateCurrentMethodTemplate(methodsCode, activeMethodId);
+    setFileContent(currentMethodCode);
+    updateCachedFileContent(currentMethodCode);
     
-    const methodIds = Object.keys(sessionData.methodTemplates);
-    for (const methodId of methodIds) {
-      // Extract the function from the full code (now without class wrapper)
-      const functionRegex = new RegExp(`(def\\s+${methodId}[\\s\\S]*?)(?=\\ndef\\s+|$)`, 'i');
-      const match = fileContent.match(functionRegex);
-      
-      if (match && match[1]) {
-        const extractedCode = match[1].trim();
-        if (extractedCode !== updatedMethods[methodId]?.trim()) {
-          updatedMethods[methodId] = extractedCode;
-          codeUpdated = true;
-        }
-      }
-    }
-    
-    if (codeUpdated) {
-      console.log("Updated functions code from fileContent:", updatedMethods);
-      setMethodsCode(updatedMethods);
-    }
-  }, [isInitialized, fileContent, cachedFileContent, methodsCode, sessionData]);
+    console.log("Switched to method:", activeMethodId);
+  }, [activeMethodId, isInitialized, methodsCode, setFileContent, updateCachedFileContent]);
 
   // Update custom extensions when highlighted line or font size changes
   useEffect(() => {
@@ -309,19 +289,25 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
 
   // Auto-save code changes after a delay
   useEffect(() => {
-    if (!isInitialized || !fileContent) return;
+    if (!isInitialized || !fileContent || !activeMethodId) return;
         
     const autoSaveDelay = 500; // ms
     
     const autoSaveTimer = setTimeout(() => {
       if (fileContent !== cachedFileContent) {
+        // Update the current method's code in methodsCode
+        const updatedMethodsCode = {
+          ...methodsCode,
+          [activeMethodId]: fileContent
+        };
+        setMethodsCode(updatedMethodsCode);
         updateCachedFileContent(fileContent);
-        console.log("Auto-saved code");
+        console.log("Auto-saved current method code");
       }
     }, autoSaveDelay);
     
     return () => clearTimeout(autoSaveTimer);
-  }, [isInitialized, fileContent, cachedFileContent, updateCachedFileContent]);
+  }, [isInitialized, fileContent, cachedFileContent, activeMethodId, methodsCode, updateCachedFileContent]);
 
   // Save methods code to localStorage whenever it changes
   useEffect(() => {
@@ -336,32 +322,6 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
       console.error("Error saving to localStorage:", err);
     }
   }, [isInitialized, methodsCode, sessionId]);
-
-  // Scroll to current method when activeMethodId changes
-  useEffect(() => {
-    if (!activeMethodId || !editorViewRef.current) return;
-    
-    // Find the line number where the function starts
-    const text = editorViewRef.current.state.doc.toString();
-    const lines = text.split('\n');
-    let lineNumber = 0;
-    
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].includes(`def ${activeMethodId}`)) {
-        lineNumber = i + 1;
-        break;
-      }
-    }
-    
-    if (lineNumber > 0) {
-      // Scroll to the function
-      const line = editorViewRef.current.state.doc.line(lineNumber);
-      editorViewRef.current.dispatch({
-        selection: { anchor: line.from, head: line.from },
-        scrollIntoView: true
-      });
-    }
-  }, [activeMethodId]);
 
   // Handle updates from CodeMirror including selection changes
   const handleEditorUpdate = (viewUpdate: ViewUpdate): void => {
@@ -407,8 +367,9 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     setFileContent(value); 
   };
 
-  // Generate the full code for the editor (standalone functions)
-  const fullCode = isInitialized ? generateFullTemplate(methodsCode) : '';
+  // Generate the current method code for the editor
+  const currentMethodCode = isInitialized && activeMethodId ? 
+    generateCurrentMethodTemplate(methodsCode, activeMethodId) : '';
 
   return (
     <div 
@@ -440,9 +401,9 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
       
       <ScrollArea className="flex-1">
         <CodeMirror
-          key={sessionId} // Force re-render when session changes
-          value={fullCode}
-          height="680px"
+          key={`${sessionId}-${activeMethodId}`} // Force re-render when session or method changes
+          value={currentMethodCode}
+          height="640px"
           theme={vscodeLight}
           extensions={[python(), ...customExtensions]}
           onChange={handleCodeChange}
