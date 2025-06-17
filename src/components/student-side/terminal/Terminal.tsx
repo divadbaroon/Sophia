@@ -27,31 +27,29 @@ const Terminal = () => {
     // Exit early if activeMethodId is not available
     if (!activeMethodId) return fileContent;
     
-    // Add test code to the class definition based on the current method
+    // Add test code directly (no class wrapper)
     return `${fileContent}
 
 # Test code
 if __name__ == "__main__":
-    analyzer = TextAnalyzer()
-    
-    # Test the current method
+    # Test the current function
     if "${activeMethodId}" == "calculate_sum":
-        result = analyzer.calculate_sum(1, 6)
+        result = calculate_sum(1, 6)
         print(f"calculate_sum result: {result}")
     elif "${activeMethodId}" == "create_pattern":
-        result = analyzer.create_pattern([7, 12, 9, 14, 6, 3])
+        result = create_pattern([7, 12, 9, 14, 6, 3])
         print(f"create_pattern result: {result}")
     elif "${activeMethodId}" == "create_multiplier":
-        multiplier = analyzer.create_multiplier(8)
+        multiplier = create_multiplier(8)
         print(f"multiplier(6) = {multiplier(6)}")
     elif "${activeMethodId}" == "filter_high_scores":
-        result = analyzer.filter_high_scores({'Alice': 92, 'Bob': 75, 'Charlie': 85, 'David': 70}, 80)
+        result = filter_high_scores({'Alice': 92, 'Bob': 75, 'Charlie': 85, 'David': 70}, 80)
         print(f"filter_high_scores result: {result}")
     elif "${activeMethodId}" == "slice_string":
-        result = analyzer.slice_string("Python Programming", 2, -2, 2)
+        result = slice_string("Python Programming", 2, -2, 2)
         print(f"slice_string result: {result}")
     elif "${activeMethodId}" == "flatten_matrix":
-        result = analyzer.flatten_matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        result = flatten_matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
         print(f"flatten_matrix result: {result}")`;
   };
 
@@ -64,7 +62,7 @@ if __name__ == "__main__":
     // Generate different test runners based on the method
     if (activeMethodId === "calculate_sum") {
       return `
-# First execute the user's code to define the TextAnalyzer class
+# First execute the user's code to define the functions
 ${fullCodeWithTests}
 
 # Define test cases
@@ -76,7 +74,7 @@ from io import StringIO
 output_buffer = StringIO()
 sys.stdout = output_buffer
 
-print("Running test cases for calculate_sum method:")
+print("Running test cases for calculate_sum function:")
 print("=====================================")
 
 all_passed = True
@@ -85,9 +83,8 @@ for i, test in enumerate(test_cases):
     end = test["input"]["end"]
     expected = test["expected"]
     
-    analyzer = TextAnalyzer()
     try:
-        result = analyzer.calculate_sum(start, end)
+        result = calculate_sum(start, end)
         
         if result == expected:
             print(f"✅ Test {i+1} PASSED")
@@ -119,7 +116,7 @@ test_output = output_buffer.getvalue()
 `;
     } else if (activeMethodId === "create_pattern") {
       return `
-# First execute the user's code to define the TextAnalyzer class
+# First execute the user's code to define the functions
 ${fullCodeWithTests}
 
 # Define test cases
@@ -131,7 +128,7 @@ from io import StringIO
 output_buffer = StringIO()
 sys.stdout = output_buffer
 
-print("Running test cases for create_pattern method:")
+print("Running test cases for create_pattern function:")
 print("=====================================")
 
 all_passed = True
@@ -139,9 +136,8 @@ for i, test in enumerate(test_cases):
     numbers = test["input"]["numbers"]
     expected = test["expected"]
     
-    analyzer = TextAnalyzer()
     try:
-        result = analyzer.create_pattern(numbers.copy())  # Pass a copy to prevent modification
+        result = create_pattern(numbers.copy())  # Pass a copy to prevent modification
         
         if result == expected:
             print(f"✅ Test {i+1} PASSED")
@@ -173,7 +169,7 @@ test_output = output_buffer.getvalue()
 `;
     } else if (activeMethodId === "create_multiplier") {
       return `
-# First execute the user's code to define the TextAnalyzer class
+# First execute the user's code to define the functions
 ${fullCodeWithTests}
 
 # Define test cases
@@ -186,7 +182,7 @@ import inspect
 output_buffer = StringIO()
 sys.stdout = output_buffer
 
-print("Running test cases for create_multiplier method:")
+print("Running test cases for create_multiplier function:")
 print("=====================================")
 
 all_passed = True
@@ -195,9 +191,8 @@ for i, test in enumerate(test_cases):
     test_value = test["input"]["test_value"]
     expected = test["expected"]
     
-    analyzer = TextAnalyzer()
     try:
-        multiplier = analyzer.create_multiplier(factor)
+        multiplier = create_multiplier(factor)
         
         # Check if it's a lambda function
         is_lambda = multiplier.__name__ == '<lambda>'
@@ -240,7 +235,7 @@ test_output = output_buffer.getvalue()
 `;
     } else if (activeMethodId === "filter_high_scores") {
       return `
-# First execute the user's code to define the TextAnalyzer class
+# First execute the user's code to define the functions
 ${fullCodeWithTests}
 
 # Define test cases
@@ -252,7 +247,7 @@ from io import StringIO
 output_buffer = StringIO()
 sys.stdout = output_buffer
 
-print("Running test cases for filter_high_scores method:")
+print("Running test cases for filter_high_scores function:")
 print("=====================================")
 
 all_passed = True
@@ -261,10 +256,9 @@ for i, test in enumerate(test_cases):
     threshold = test["input"]["threshold"]
     expected = test["expected"]
     
-    analyzer = TextAnalyzer()
     try:
         # Create a copy of scores to ensure original isn't modified
-        result = analyzer.filter_high_scores(dict(scores), threshold)
+        result = filter_high_scores(dict(scores), threshold)
         
         if result == expected:
             print(f"✅ Test {i+1} PASSED")
@@ -296,7 +290,7 @@ test_output = output_buffer.getvalue()
 `;
     } else if (activeMethodId === "slice_string") {
       return `
-# First execute the user's code to define the TextAnalyzer class
+# First execute the user's code to define the functions
 ${fullCodeWithTests}
 
 # Define test cases
@@ -308,7 +302,7 @@ from io import StringIO
 output_buffer = StringIO()
 sys.stdout = output_buffer
 
-print("Running test cases for slice_string method:")
+print("Running test cases for slice_string function:")
 print("=====================================")
 
 all_passed = True
@@ -319,9 +313,8 @@ for i, test in enumerate(test_cases):
     step = test["input"]["step"]
     expected = test["expected"]
     
-    analyzer = TextAnalyzer()
     try:
-        result = analyzer.slice_string(text, start, end, step)
+        result = slice_string(text, start, end, step)
         
         if result == expected:
             print(f"✅ Test {i+1} PASSED")
@@ -353,7 +346,7 @@ test_output = output_buffer.getvalue()
 `;
     } else if (activeMethodId === "flatten_matrix") {
       return `
-# First execute the user's code to define the TextAnalyzer class
+# First execute the user's code to define the functions
 ${fullCodeWithTests}
 
 # Define test cases
@@ -365,7 +358,7 @@ from io import StringIO
 output_buffer = StringIO()
 sys.stdout = output_buffer
 
-print("Running test cases for flatten_matrix method:")
+print("Running test cases for flatten_matrix function:")
 print("=====================================")
 
 all_passed = True
@@ -373,12 +366,11 @@ for i, test in enumerate(test_cases):
     matrix = test["input"]["matrix"]
     expected = test["expected"]
     
-    analyzer = TextAnalyzer()
     try:
         # Make a deep copy of the matrix to ensure original isn't modified
         import copy
         matrix_copy = copy.deepcopy(matrix)
-        result = analyzer.flatten_matrix(matrix_copy)
+        result = flatten_matrix(matrix_copy)
         
         if result == expected:
             print(f"✅ Test {i+1} PASSED")
@@ -425,8 +417,8 @@ test_output = output_buffer.getvalue()
 
     if (!activeMethodId) {
       toast({
-        title: "No method selected",
-        description: "Please select a method to test",
+        title: "No function selected",
+        description: "Please select a function to test",
         variant: "destructive",
       })
       return
@@ -470,7 +462,7 @@ syntax_valid, error_message = check_code_syntax()
         const testRunnerCode = getTestRunnerCode();
         
         if (!testRunnerCode) {
-          setOutput(`Error: No test cases available for method '${activeMethodId}'`)
+          setOutput(`Error: No test cases available for function '${activeMethodId}'`)
           return;
         }
 
