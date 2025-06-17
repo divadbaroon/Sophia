@@ -33,9 +33,6 @@ export function LessonModal({ isOpen, onClose, concept, onComplete }: LessonModa
         <DialogHeader className="border-b border-gray-200 pb-4">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl font-bold text-black">{concept.title}</DialogTitle>
-            <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-gray-100">
-              <X size={20} />
-            </Button>
           </div>
         </DialogHeader>
 
