@@ -9,7 +9,7 @@ import { FileSystemNode } from '@/utils/FileUtils'
 import { FileContextType, TestCase, TaskData, ConversationMessage } from '@/types'
 import { usePathname } from 'next/navigation'
 
-// Define the session data structure with tasks, method templates, and test cases
+// Define the session data structure with all three lambda tasks
 const condition2: TaskData = {
   tasks: [
     {
@@ -35,10 +35,72 @@ const condition2: TaskData = {
         "The lambda should take exactly one parameter (the number to multiply)",
         "The lambda should capture the factor from the outer function"
       ]
+    },
+    {
+      title: "2.) create_calculator()",
+      difficulty: "Hard",
+      description: "Create a function that generates a calculator lambda function. The function should return a lambda that takes two numbers and performs a specified operation on them.",
+      examples: [
+        {
+          input: { operation: "add" },
+          output: 'calculator(10, 5) → 15'
+        },
+        {
+          input: { operation: "subtract" },
+          output: 'calculator(15, 8) → 7',
+        },
+        {
+          input: { operation: "multiply" },
+          output: 'calculator(4, 7) → 28',
+        },
+        {
+          input: { operation: "divide" },
+          output: 'calculator(20, 4) → 5.0',
+        },
+      ],
+      constraints: [
+        "Must use a lambda function for the calculator",
+        "The lambda should take exactly two parameters (a, b)",
+        "The lambda should capture the operation from the outer function",
+        "Support operations: 'add', 'subtract', 'multiply', 'divide'"
+      ]
+    },
+    {
+      title: "3.) create_triple_operator()",
+      difficulty: "Hard",
+      description: "Create a function that generates a lambda function that takes three numbers and performs a specified operation on them. The operation combines all three numbers according to the given operation type.",
+      examples: [
+        {
+          input: { operation: "sum" },
+          output: 'triple_op(5, 10, 3) → 18'
+        },
+        {
+          input: { operation: "average" },
+          output: 'triple_op(6, 9, 12) → 9.0',
+        },
+        {
+          input: { operation: "product" },
+          output: 'triple_op(2, 4, 5) → 40',
+        },
+        {
+          input: { operation: "max_minus_min" },
+          output: 'triple_op(8, 3, 11) → 8',
+        },
+      ],
+      constraints: [
+        "Must use a lambda function for the triple operator",
+        "The lambda should take exactly three parameters (a, b, c)",
+        "The lambda should capture the operation from the outer function",
+        "Support operations: 'sum', 'average', 'product', 'max_minus_min'"
+      ]
     }
   ],
   methodTemplates: {
     "create_multiplier": `def create_multiplier(factor: int):
+    pass`,
+    "create_calculator": `def create_calculator(operation: str):
+    pass`,
+    "create_triple_operator": `def create_triple_operator(operation: str):
     pass`
   },
   testCases: {
@@ -58,9 +120,55 @@ const condition2: TaskData = {
         expected: 14,
         methodId: "create_multiplier"
       }
+    ],
+    "create_calculator": [
+      {
+        input: { operation: "add", x: 10, y: 5 },
+        expected: 15,
+        methodId: "create_calculator"
+      },
+      {
+        input: { operation: "subtract", x: 15, y: 8 },
+        expected: 7,
+        methodId: "create_calculator"
+      },
+      {
+        input: { operation: "multiply", x: 4, y: 7 },
+        expected: 28,
+        methodId: "create_calculator"
+      },
+      {
+        input: { operation: "divide", x: 20, y: 4 },
+        expected: 5.0,
+        methodId: "create_calculator"
+      }
+    ],
+    "create_triple_operator": [
+      {
+        input: { operation: "sum", a: 5, b: 10, c: 3 },
+        expected: 18,
+        methodId: "create_triple_operator"
+      },
+      {
+        input: { operation: "average", a: 6, b: 9, c: 12 },
+        expected: 9.0,
+        methodId: "create_triple_operator"
+      },
+      {
+        input: { operation: "product", a: 2, b: 4, c: 5 },
+        expected: 40,
+        methodId: "create_triple_operator"
+      },
+      {
+        input: { operation: "max_minus_min", a: 8, b: 3, c: 11 },
+        expected: 8,
+        methodId: "create_triple_operator"
+      }
     ]
   },
   conceptMappings: {
+    0: ["Lambda Functions"],
+    1: ["Lambda Functions"],
     2: ["Lambda Functions"]
   },
   conceptMap: {
@@ -376,10 +484,10 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   
   // Session-related state
   const [sessionId, setSessionId] = useState<string>('5') // Default to session 5
-  const [sessionData, setSessionData] = useState<TaskData>(condition1)
+  const [sessionData, setSessionData] = useState<TaskData>(condition2)
   const [currentMethodIndex, setCurrentMethodIndex] = useState<number>(0)
-  const [activeMethodId, setActiveMethodId] = useState<string>('calculate_sum')
-  const [currentTestCases, setCurrentTestCases] = useState<TestCase[]>(condition1.testCases.calculate_sum)
+  const [activeMethodId, setActiveMethodId] = useState<string>('filter_high_scores')
+  const [currentTestCases, setCurrentTestCases] = useState<TestCase[]>(condition1.testCases.filter_high_scores)
   
   // System type state
   const [systemType, setSystemType] = useState<'ATLAS' | 'Standalone'>('ATLAS')
@@ -413,14 +521,14 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         
         // Set the appropriate session data based on ID
         if (newSessionId === '5') {
-          setSessionData(condition1)
+          setSessionData(condition2)
           setSystemType('ATLAS') 
         } else if (newSessionId === '12') {
           setSessionData(condition2)
           setSystemType('ATLAS') 
         } else if (newSessionId === '7') {
-          setSessionData(condition1)
-          setSystemType('Standalone') 
+          setSessionData(condition2)
+          setSystemType('ATLAS') 
         } else if (newSessionId === '6') {
           setSessionData(condition2)
           setSystemType('ATLAS') 
