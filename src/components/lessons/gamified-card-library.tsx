@@ -4,7 +4,6 @@ import { useState } from "react"
 import { UnlockedConceptCard } from "./components/unlocked-concept-card"
 import { QuizModal } from "./components/quiz-modal"
 import { InstructionsModal } from "./components/instructions-modal"
-import { SimplifiedUserStats } from "./components/simplified-user-stats"
 import { programmingConcepts } from "@/lib/data/concepts"
 import type { UserProgress } from "@/types"
 import { Input } from "@/components/ui/input"
@@ -67,7 +66,7 @@ export default function GamifiedConceptLibrary() {
 
   const handleInstructionsContinue = () => {
     // Redirect to homepage after instructions
-    window.location.href = "/lessons/functions/session/72y852852"
+    window.location.href = "/sessions/12/join"
   }
 
   const isConceptCompleted = (conceptId: string) => {
