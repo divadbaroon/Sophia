@@ -38,44 +38,10 @@ const condition2: TaskData = {
     }
   ],
   methodTemplates: {
-    "create_multiplier": `def create_multiplier(self, factor: int):
+    "create_multiplier": `def create_multiplier(factor: int):
     pass`
   },
   testCases: {
-    "calculate_sum": [
-    {
-      input: { start: 1, end: 6 },
-      expected: 15,  
-      methodId: "calculate_sum"
-    },
-    {
-      input: { start: 5, end: 10 },
-      expected: 35,  
-      methodId: "calculate_sum"
-    },
-    {
-      input: { start: 1, end: 1 },
-      expected: 0,   
-      methodId: "calculate_sum"
-    }
-  ],
-    "create_pattern": [
-      {
-        input: { numbers: [7, 12, 9, 14, 6, 3] },
-        expected: "7XXOXX",  
-        methodId: "create_pattern"
-      },
-      {
-        input: { numbers: [1, 2, 3, 4, 5, 6] },
-        expected: "1OXO5X",  
-        methodId: "create_pattern"
-      },
-      {
-        input: { numbers: [3, 6, 9, 12, 15, 18] },
-        expected: "XXXXXX",  
-        methodId: "create_pattern"
-      }
-    ],
     "create_multiplier": [
       {
         input: { factor: 8, test_value: 6 },
@@ -95,44 +61,10 @@ const condition2: TaskData = {
     ]
   },
   conceptMappings: {
-    0: ["Loops", "Range Function"],
-    1: ["Conditional Logic", "String Manipulation"],
-    2: ["Lambda Functions", "Closures"]
+    2: ["Lambda Functions"]
   },
   conceptMap: {
     categories: {
-      "Basic Programming": {
-        "Conditional Logic": {
-          name: "Conditional Logic",
-          value: 0,
-          knowledgeState: {
-            understandingLevel: 0,
-            confidenceInAssessment: 0,
-            reasoning: "",
-            lastUpdated: "Just now"
-          }
-        },
-        "Loops": {
-          name: "Loops",
-          value: 0,
-          knowledgeState: {
-            understandingLevel: 0,
-            confidenceInAssessment: 0,
-            reasoning: "",
-            lastUpdated: "Just now"
-          }
-        },
-        "Variable Assignment": {
-          name: "Variable Assignment",
-          value: 0,
-          knowledgeState: {
-            understandingLevel: 0,
-            confidenceInAssessment: 0,
-            reasoning: "",
-            lastUpdated: "Just now"
-          }
-        }
-      },
       "Functions": {
         "Lambda Functions": {
           name: "Lambda Functions",
@@ -145,30 +77,6 @@ const condition2: TaskData = {
           }
         }
       },
-      "List Operations": {
-        "Indexing": {
-          name: "Indexing",
-          value: 0,
-          knowledgeState: {
-            understandingLevel: 0,
-            confidenceInAssessment: 0,
-            reasoning: "",
-            lastUpdated: "Just now"
-          }
-        }
-      },
-      "String Manipulation": {
-        "String Concatenation": {
-          name: "String Concatenation",
-          value: 0,
-          knowledgeState: {
-            understandingLevel: 0,
-            confidenceInAssessment: 0,
-            reasoning: "",
-            lastUpdated: "Just now"
-          }
-        }
-      }
     }
   },
   system: "ATLAS"
