@@ -532,3 +532,28 @@ export type NavItem = {
 export type NavigationProps = {
   user: User | null
 }
+
+export interface UserProgress {
+  completedConcepts: string[]
+  totalXP: number
+  currentStreak?: number
+  achievements?: Achievement[]
+  level: number
+}
+
+export interface Achievement {
+  id: string
+  title: string
+  description: string
+  icon: string
+  unlocked: boolean
+  unlockedAt?: Date
+}
+
+export interface ConceptProgress {
+  conceptId: string
+  completed: boolean
+  xpEarned: number
+  completedAt?: Date
+  quizScore?: number
+}
