@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { login, signup } from "./actions"
@@ -98,7 +98,7 @@ export default async function Login({
               </div>
 
               <div className="text-center">
-                <span className="text-gray-600">Don't have an account? </span>
+                <span className="text-gray-600">Don&apos;t have an account? </span>
                 <button
                   formAction={signup}
                   form="login-form"
