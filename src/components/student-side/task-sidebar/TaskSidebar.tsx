@@ -24,10 +24,7 @@ export default function TaskSidebar() {
     goToNextMethod,
     goToPrevMethod,
     isTaskCompleted,
-    isTaskUnlocked,
-    canGoToNext,
     getCompletionStats,
-    setShowReport,
   } = useFile()
 
   // Check if all tasks are completed
@@ -87,6 +84,7 @@ export default function TaskSidebar() {
   }
 
   const handleQuizComplete = (score: number, conceptTitle: string) => {
+    console.log(score)
     setIsQuizModalOpen(false)
     setCurrentConceptTitle(conceptTitle)
     setIsSurveyModalOpen(true)
@@ -285,7 +283,7 @@ export default function TaskSidebar() {
                       <p className="text-base font-bold">🎉 All Tasks Completed!</p>
                     </div>
                     <p className="text-sm text-green-700 mt-2">
-                      Congratulations! You've successfully completed all lambda function tasks. Click "Finished" to take
+                      Congratulations! You&apos;ve successfully completed all lambda function tasks. Click &quotFinished&quot to take
                       a quick quiz and provide feedback.
                     </p>
                   </Card>

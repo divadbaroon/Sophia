@@ -71,6 +71,21 @@ type CodeEditorProps = {
 
 // Convert to forwardRef to expose the ref interface
 const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '', readOnly = false }, ref) => {
+  const fileContext = useFile();
+  
+  // Add safety checks for the file context
+  if (!fileContext) {
+    console.error("CodeEditor: FileContext is not available");
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-sm text-muted-foreground">Loading code editor...</p>
+        </div>
+      </div>
+    );
+  }
+
   const { 
     fileContent,
     cachedFileContent,
@@ -82,7 +97,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     sessionId,
     sessionData,
     activeMethodId,
-  } = useFile();
+  } = fileContext;
   
   const editorViewRef = useRef<EditorView | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
@@ -92,6 +107,13 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   const [highlightedLineNumber, setHighlightedLineNumber] = useState<number | null>();
   const [customExtensions, setCustomExtensions] = useState<Extension[]>([]);
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
+  
+  // Safety check for required functions
+  const safeUpdateCachedFileContent = updateCachedFileContent || (() => {});
+  const safeSetFileContent = setFileContent || (() => {});
+  const safeUpdateHighlightedText = updateHighlightedText || (() => {});
+  const safeUpdateExecutionOutput = updateExecutionOutput || (() => {});
+  const safeSetErrorContent = setErrorContent || (() => {});
   
   // Function to highlight a specific line by line number
   const highlightLineByNumber = (lineNumber: number) => {
@@ -126,7 +148,9 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   const zoomIn = () => {
     setFontSize(prev => {
       const newSize = Math.min(prev + 1, 30); // Cap at 30px
-      localStorage.setItem(LOCAL_STORAGE_ZOOM_KEY, String(newSize));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(LOCAL_STORAGE_ZOOM_KEY, String(newSize));
+      }
       return newSize;
     });
   };
@@ -134,14 +158,18 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   const zoomOut = () => {
     setFontSize(prev => {
       const newSize = Math.max(prev - 1, 8); // Don't go below 8px
-      localStorage.setItem(LOCAL_STORAGE_ZOOM_KEY, String(newSize));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(LOCAL_STORAGE_ZOOM_KEY, String(newSize));
+      }
       return newSize;
     });
   };
 
   const resetZoom = () => {
     setFontSize(DEFAULT_FONT_SIZE);
-    localStorage.setItem(LOCAL_STORAGE_ZOOM_KEY, String(DEFAULT_FONT_SIZE));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LOCAL_STORAGE_ZOOM_KEY, String(DEFAULT_FONT_SIZE));
+    }
   };
   
   // Expose functions via ref
@@ -152,10 +180,22 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     zoomOut,
     resetZoom
   }));
+
+  // Early return if essential data is missing
+  if (!sessionData || !sessionData.methodTemplates || !sessionId || !activeMethodId) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-sm text-muted-foreground">Loading session data...</p>
+        </div>
+      </div>
+    );
+  }
   
   // Load saved code from localStorage or initialize with templates
   useEffect(() => {
-    if (isInitialized || !sessionData || !sessionData.methodTemplates) return;
+    if (isInitialized || !sessionData || !sessionData.methodTemplates || !sessionId || !activeMethodId) return;
     
     console.log("CodeEditor initializing with templates for session", sessionId);
     
@@ -203,16 +243,16 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     // Generate and set initial content (only current method)
     const initialCurrentMethodCode = generateCurrentMethodTemplate(initialMethodsCode, activeMethodId);
     setMethodsCode(initialMethodsCode);
-    setFileContent(initialCurrentMethodCode);
-    updateCachedFileContent(initialCurrentMethodCode);
+    safeSetFileContent(initialCurrentMethodCode);
+    safeUpdateCachedFileContent(initialCurrentMethodCode);
     
     // Clear any previous results
-    updateExecutionOutput('');
-    setErrorContent('');
+    safeUpdateExecutionOutput('');
+    safeSetErrorContent('');
     
     console.log("CodeEditor initialized with current method for session", sessionId);
     setIsInitialized(true);
-  }, [sessionData, sessionId, isInitialized, activeMethodId, updateCachedFileContent, setFileContent, updateExecutionOutput, setErrorContent]);
+  }, [sessionData, sessionId, isInitialized, activeMethodId, safeUpdateCachedFileContent, safeSetFileContent, safeUpdateExecutionOutput, safeSetErrorContent]);
 
   // Reset initialization when session changes
   useEffect(() => {
@@ -224,11 +264,11 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     if (!isInitialized || !activeMethodId || !methodsCode[activeMethodId]) return;
     
     const currentMethodCode = generateCurrentMethodTemplate(methodsCode, activeMethodId);
-    setFileContent(currentMethodCode);
-    updateCachedFileContent(currentMethodCode);
+    safeSetFileContent(currentMethodCode);
+    safeUpdateCachedFileContent(currentMethodCode);
     
     console.log("Switched to method:", activeMethodId);
-  }, [activeMethodId, isInitialized, methodsCode, setFileContent, updateCachedFileContent]);
+  }, [activeMethodId, isInitialized, methodsCode, safeSetFileContent, safeUpdateCachedFileContent]);
 
   // Update custom extensions when highlighted line or font size changes
   useEffect(() => {
@@ -301,25 +341,27 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
           [activeMethodId]: fileContent
         };
         setMethodsCode(updatedMethodsCode);
-        updateCachedFileContent(fileContent);
+        safeUpdateCachedFileContent(fileContent);
         console.log("Auto-saved current method code");
       }
     }, autoSaveDelay);
     
     return () => clearTimeout(autoSaveTimer);
-  }, [isInitialized, fileContent, cachedFileContent, activeMethodId, methodsCode, updateCachedFileContent]);
+  }, [isInitialized, fileContent, cachedFileContent, activeMethodId, methodsCode, safeUpdateCachedFileContent]);
 
   // Save methods code to localStorage whenever it changes
   useEffect(() => {
     if (!isInitialized || !sessionId) return;
     
-    try {
-      // Use session-specific key
-      const storageKey = `${LOCAL_STORAGE_CODE_KEY_PREFIX}${sessionId}`;
-      localStorage.setItem(storageKey, JSON.stringify(methodsCode));
-      console.log(`Saved functions code to localStorage for session ${sessionId}`);
-    } catch (err) {
-      console.error("Error saving to localStorage:", err);
+    if (typeof window !== 'undefined') {
+      try {
+        // Use session-specific key
+        const storageKey = `${LOCAL_STORAGE_CODE_KEY_PREFIX}${sessionId}`;
+        localStorage.setItem(storageKey, JSON.stringify(methodsCode));
+        console.log(`Saved functions code to localStorage for session ${sessionId}`);
+      } catch (err) {
+        console.error("Error saving to localStorage:", err);
+      }
     }
   }, [isInitialized, methodsCode, sessionId]);
 
@@ -348,24 +390,22 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
         // Update local state
         setLocalHighlightedText(selectedText);
         
-        // Update file context
-        if (typeof updateHighlightedText === 'function') {
-          updateHighlightedText(selectedText);
-        }
+        // Update file context with safety check
+        safeUpdateHighlightedText(selectedText);
       }
     } else if (localHighlightedText !== '') {
       // Clear selection if it was previously set
       setLocalHighlightedText('');
-      
-      if (typeof updateHighlightedText === 'function') {
-        updateHighlightedText('');
-      }
+      safeUpdateHighlightedText('');
     }
   };
 
   const handleCodeChange = (value: string): void => {
-    setFileContent(value); 
+    safeSetFileContent(value); 
   };
+
+  // Generate a safe key for CodeMirror
+  const editorKey = `${sessionId || 'default'}-${activeMethodId || 'default'}`;
 
   // Generate the current method code for the editor
   const currentMethodCode = isInitialized && activeMethodId ? 
@@ -401,7 +441,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
       
       <ScrollArea className="flex-1">
         <CodeMirror
-          key={`${sessionId}-${activeMethodId}`} // Force re-render when session or method changes
+          key={editorKey} // Use safe key
           value={currentMethodCode}
           height="640px"
           theme={vscodeLight}
