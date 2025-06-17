@@ -1,7 +1,7 @@
 "use client"
 
 import { Menu, UserIcon } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -27,22 +27,35 @@ type NavigationProps = {
 export default function Navigation({ user }: NavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const pathname = usePathname()
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50)
+    }
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
 
   // Check if the current path matches the session join pattern
-  const isSessionJoinPage = pathname.includes("/join");
+  const isSessionJoinPage = pathname.includes("/join")
 
-  const navigationItems: (string | NavItem)[] =
-    isSessionJoinPage
-      ? [] 
-      : user
-        ? [
-            { name: "Dashboard", href: "/dashboard" },
-            { name: "Calendar", href: "/calendar" },
-          ]
-        : ["About", "Features", "Documentation"];
+  const navigationItems: (string | NavItem)[] = isSessionJoinPage
+    ? []
+    : user
+      ? [
+          { name: "Dashboard", href: "/dashboard" },
+          { name: "Lessons", href: "/lessons" },
+          { name: "Progress", href: "/progress" },
+        ]
+      : ["About", "Features", "Documentation"]
 
   return (
-    <nav className="fixed w-full bg-white/80 shadow-lg z-50">
+    <nav
+      className={`fixed w-full z-50 transition-all duration-300 ${
+        isScrolled ? "bg-white/80 backdrop-blur-md shadow-lg" : "bg-transparent"
+      }`}
+    >
       <div className="px-6 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
@@ -80,7 +93,7 @@ export default function Navigation({ user }: NavigationProps) {
                     className="rounded-full focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                   >
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="/assets/Icons/accountIcon.png" />
+                      <AvatarImage src="/assets/Icons/accountIcon.png" alt="Account" />
                       <AvatarFallback>
                         <UserIcon className="h-4 w-4 text-black" />
                       </AvatarFallback>
@@ -102,18 +115,20 @@ export default function Navigation({ user }: NavigationProps) {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : !isSessionJoinPage && (
-              <>
-                <Button variant="ghost" asChild>
-                  <Link href="/login">Sign In</Link>
-                </Button>
-                <Link
-                  href="/sign-up"
-                  className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                >
-                  Get Started
-                </Link>
-              </>
+            ) : (
+              !isSessionJoinPage && (
+                <>
+                  <Button variant="ghost" asChild>
+                    <Link href="/login">Sign In</Link>
+                  </Button>
+                  <Link
+                    href="/sign-up"
+                    className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )
             )}
           </div>
           <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Toggle menu">
@@ -131,6 +146,7 @@ export default function Navigation({ user }: NavigationProps) {
                 className={`block px-4 py-2 text-gray-900 hover:text-blue-600 transition-colors duration-200 ${
                   typeof item !== "string" && pathname === item.href ? "text-blue-600 bg-blue-50" : ""
                 }`}
+                onClick={() => setIsMenuOpen(false)}
               >
                 {typeof item === "string" ? item : item.name}
               </Link>
@@ -140,7 +156,7 @@ export default function Navigation({ user }: NavigationProps) {
                 <div className="flex items-center px-4">
                   <div className="flex-shrink-0">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="/assets/Icons/accountIcon.png" />
+                      <AvatarImage src="/assets/Icons/accountIcon.png" alt="Account" />
                       <AvatarFallback>
                         <UserIcon className="h-4 w-4 text-black" />
                       </AvatarFallback>
@@ -161,23 +177,25 @@ export default function Navigation({ user }: NavigationProps) {
                   </form>
                 </div>
               </div>
-            ) : !isSessionJoinPage && (
-              <div className="pt-4 pb-3 border-t border-gray-200 px-4 space-y-2">
-                <Link
-                  href="/login"
-                  className="block w-full text-center py-2 text-gray-900 hover:bg-blue-50 rounded"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/sign-up"
-                  className="block w-full text-center py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Get Started
-                </Link>
-              </div>
+            ) : (
+              !isSessionJoinPage && (
+                <div className="pt-4 pb-3 border-t border-gray-200 px-4 space-y-2">
+                  <Link
+                    href="/login"
+                    className="block w-full text-center py-2 text-gray-900 hover:bg-blue-50 rounded"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/sign-up"
+                    className="block w-full text-center py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              )
             )}
           </div>
         )}
