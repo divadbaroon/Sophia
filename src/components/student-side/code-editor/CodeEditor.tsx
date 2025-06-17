@@ -21,21 +21,16 @@ export interface CodeEditorRef {
 }
 
 const generateFullTemplate = (methodsCode: Record<string, string>): string => {
-  // Convert all method code into a single string with proper indentation
+  // Convert all method code into a single string 
   const allMethodsCode = Object.values(methodsCode)
-    .map(code => code.replace(/\n/g, '\n    '))
-    .join('\n\n    ');
+    .map(code => code.trim())
+    .join('\n\n');
 
-  // Only show the class definition, not the test code
-  return `class TextAnalyzer:
-    def __init__(self, text=""):
-        self.text = text
-        
-    ${allMethodsCode}`;
+  return allMethodsCode;
 };
 
 // Local storage keys for saving code
-const LOCAL_STORAGE_CODE_KEY_PREFIX = 'textanalyzer_methods_'; // Will append session ID
+const LOCAL_STORAGE_CODE_KEY_PREFIX = 'functions_code_'; 
 const LOCAL_STORAGE_ZOOM_KEY = 'code_editor_zoom_level';
 
 // Default base font size in pixels
@@ -94,7 +89,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   const [methodsCode, setMethodsCode] = useState<Record<string, string>>({});
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [localHighlightedText, setLocalHighlightedText] = useState<string>('');
-  // Default to highlighting line 13 of the student's code when loaded
+  // Default to highlighting line 1 of the student's code when loaded
   const [highlightedLineNumber, setHighlightedLineNumber] = useState<number | null>();
   const [customExtensions, setCustomExtensions] = useState<Extension[]>([]);
   // Add zoom state
@@ -207,7 +202,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
       }
     }
     
-    // Generate and set initial content with proper indentation
+    // Generate and set initial content (standalone functions)
     const initialFullCode = generateFullTemplate(initialMethodsCode);
     setMethodsCode(initialMethodsCode);
     setFileContent(initialFullCode);
@@ -217,7 +212,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     updateExecutionOutput('');
     setErrorContent('');
     
-    console.log("CodeEditor initialized with methods for session", sessionId);
+    console.log("CodeEditor initialized with functions for session", sessionId);
     setIsInitialized(true);
   }, [sessionData, sessionId, isInitialized, updateCachedFileContent, setFileContent, updateExecutionOutput, setErrorContent]);
 
@@ -236,22 +231,13 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     
     const methodIds = Object.keys(sessionData.methodTemplates);
     for (const methodId of methodIds) {
-      // Adjust regex pattern based on method name and type
-      let methodPattern;
-      if (methodId === 'word_stats' || methodId.includes('property')) {
-        methodPattern = `@property\\s+def\\s+${methodId.replace('_property', '')}`;
-      } else {
-        methodPattern = `def\\s+${methodId}`;
-      }
-      
-      // Extract the method function from the full code
-      const methodRegex = new RegExp(`class TextAnalyzer:[\\s\\S]*?(${methodPattern}[\\s\\S]*?)(?=\\n\\s*(?:def|@property|$|if __name__))`, 'i');
-      const match = fileContent.match(methodRegex);
+      // Extract the function from the full code (now without class wrapper)
+      const functionRegex = new RegExp(`(def\\s+${methodId}[\\s\\S]*?)(?=\\ndef\\s+|$)`, 'i');
+      const match = fileContent.match(functionRegex);
       
       if (match && match[1]) {
-        // Remove the indentation that comes from the class
-        const extractedCode = match[1].replace(/\n\s{4}/g, '\n');
-        if (extractedCode.trim() !== updatedMethods[methodId]?.trim()) {
+        const extractedCode = match[1].trim();
+        if (extractedCode !== updatedMethods[methodId]?.trim()) {
           updatedMethods[methodId] = extractedCode;
           codeUpdated = true;
         }
@@ -259,7 +245,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     }
     
     if (codeUpdated) {
-      console.log("Updated methods code from fileContent:", updatedMethods);
+      console.log("Updated functions code from fileContent:", updatedMethods);
       setMethodsCode(updatedMethods);
     }
   }, [isInitialized, fileContent, cachedFileContent, methodsCode, sessionData]);
@@ -345,7 +331,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
       // Use session-specific key
       const storageKey = `${LOCAL_STORAGE_CODE_KEY_PREFIX}${sessionId}`;
       localStorage.setItem(storageKey, JSON.stringify(methodsCode));
-      console.log(`Saved methods code to localStorage for session ${sessionId}`);
+      console.log(`Saved functions code to localStorage for session ${sessionId}`);
     } catch (err) {
       console.error("Error saving to localStorage:", err);
     }
@@ -355,23 +341,20 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   useEffect(() => {
     if (!activeMethodId || !editorViewRef.current) return;
     
-    // Find the line number where the method starts
+    // Find the line number where the function starts
     const text = editorViewRef.current.state.doc.toString();
     const lines = text.split('\n');
     let lineNumber = 0;
     
     for (let i = 0; i < lines.length; i++) {
-      if ((activeMethodId === 'word_stats' || activeMethodId.includes('property')) && lines[i].includes('@property')) {
-        lineNumber = i + 1;
-        break;
-      } else if (lines[i].includes(`def ${activeMethodId}`)) {
+      if (lines[i].includes(`def ${activeMethodId}`)) {
         lineNumber = i + 1;
         break;
       }
     }
     
     if (lineNumber > 0) {
-      // Scroll to the method
+      // Scroll to the function
       const line = editorViewRef.current.state.doc.line(lineNumber);
       editorViewRef.current.dispatch({
         selection: { anchor: line.from, head: line.from },
@@ -424,8 +407,8 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     setFileContent(value); 
   };
 
-  // Generate the full class code for the editor
-  const fullClassCode = isInitialized ? generateFullTemplate(methodsCode) : '';
+  // Generate the full code for the editor (standalone functions)
+  const fullCode = isInitialized ? generateFullTemplate(methodsCode) : '';
 
   return (
     <div 
@@ -458,7 +441,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
       <ScrollArea className="flex-1">
         <CodeMirror
           key={sessionId} // Force re-render when session changes
-          value={fullClassCode}
+          value={fullCode}
           height="680px"
           theme={vscodeLight}
           extensions={[python(), ...customExtensions]}
