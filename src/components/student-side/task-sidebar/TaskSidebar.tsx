@@ -18,7 +18,7 @@ export default function TaskSidebar() {
   if (!sessionData || !sessionData.tasks) {
     return (
       <div
-        className={`h-full flex items-center justify-center transition-all duration-300 ${isCollapsed ? "w-12" : "w-full"}`}
+        className={`h-screen flex items-center justify-center transition-all duration-300 ${isCollapsed ? "w-12" : "w-full"}`}
       >
         {isCollapsed ? (
           <Button variant="ghost" size="sm" onClick={() => setIsCollapsed(false)} className="p-2">
@@ -69,7 +69,7 @@ export default function TaskSidebar() {
 
   if (isCollapsed) {
     return (
-      <div className="h-full w-12 bg-gradient-to-b from-background to-muted/20 border-r flex flex-col items-center py-4 transition-all duration-300">
+      <div className="h-screen w-12 bg-gradient-to-b from-background to-muted/20 border-r flex flex-col items-center py-4 transition-all duration-300 relative">
         <Button variant="ghost" size="sm" onClick={() => setIsCollapsed(false)} className="p-2 mb-4">
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -80,7 +80,8 @@ export default function TaskSidebar() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        {/* Fixed navigation at bottom for collapsed state */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col gap-2">
           <Button
             variant="ghost"
             size="sm"
@@ -105,14 +106,11 @@ export default function TaskSidebar() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-b from-background to-muted/20 transition-all duration-300">
+    <div className="h-screen flex flex-col bg-gradient-to-b from-background to-muted/20 transition-all duration-300 relative">
       {/* Header with collapse button - Fixed height */}
-      <div className="flex-shrink-0 p-4 pt-3 pb-3 border-b bg-background/80 backdrop-blur-sm -mt-3">
+      <div className="flex-shrink-0 p-4 pt-12 mt-11 pb-3 border-b bg-background/80 backdrop-blur-sm">
         <div className="flex items-start justify-between mb-2">
-          <h2 className="text-xl font-bold text-foreground flex-1">{currentTask.title}</h2>
-          <Button variant="ghost" size="sm" onClick={() => setIsCollapsed(true)} className="p-1 ml-2 shrink-0">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+          <h2 className="text-xl font-bold text-foreground flex-1">{currentTask.title}</h2> 
         </div>
 
         {/* Difficulty and Concept badges inline */}
@@ -145,8 +143,8 @@ export default function TaskSidebar() {
         </div>
       </div>
 
-      {/* Scrollable content area - Takes remaining space */}
-      <div className="flex-1 min-h-0">
+      {/* Scrollable content area - Takes remaining space but leaves room for fixed navigation */}
+      <div className="flex-1 min-h-0 pb-28">
         <ScrollArea className="h-full">
           <div className="p-4 space-y-6">
             {/* Description */}
@@ -155,7 +153,7 @@ export default function TaskSidebar() {
                 <Target className="h-4 w-4 text-primary" />
                 Task Description
               </h3>
-              <Card className="p-4 bg-muted/30 border-l-4 border-l-primary">
+              <Card className="p-4 bg-muted/30">
                 <p className="text-sm text-foreground leading-relaxed">{currentTask.description}</p>
               </Card>
             </div>
@@ -191,8 +189,8 @@ export default function TaskSidebar() {
         </ScrollArea>
       </div>
 
-      {/* Footer - Fixed at bottom */}
-      <div className="flex-shrink-0 p-4 border-t bg-background/95 backdrop-blur-sm space-y-3">
+      {/* Fixed navigation at bottom of screen */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-background/95 backdrop-blur-sm space-y-3">
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>Task Progress</span>
