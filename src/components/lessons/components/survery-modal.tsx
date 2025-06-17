@@ -311,6 +311,32 @@ export function SurveyModal({ isOpen, onClose, conceptTitle, onSubmit }: SurveyM
           <Card className="border-2 border-gray-200">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
+                Interview Opportunity
+              </h3>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="improvements" className="text-sm font-medium text-gray-700">
+                    Please contact us if you would like an interview
+                  </Label>
+                  <Textarea
+                    id="improvements"
+                    placeholder="Please share any suggestions for improvement..."
+                    value={formData.improvements}
+                    onChange={(e) => handleInputChange("improvements", e.target.value)}
+                    className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
+                    rows={3}
+                  />
+                </div>
+
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Open-ended Feedback Section */}
+          <Card className="border-2 border-gray-200">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
                 Additional Feedback
               </h3>
 
