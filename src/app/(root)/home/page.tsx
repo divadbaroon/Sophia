@@ -1,52 +1,299 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import HeroSection from "@/components/home/Hero"
-import MetricsSection from "@/components/home/Metrics"
-import FeaturesSection from "@/components/home/Features"
-import ProcessFlow from "@/components/home/ProcessFlow"
-import CallToAction from "@/components/home/CallToAction"
-import Footer from "@/components/home/Footer"
+import { Button } from "@/components/ui/button"
+import { motion } from "framer-motion"
 
-export default function LandingPage() {
-  const [visibleSections, setVisibleSections] = useState({
-    metrics: false,
-    features: false,
-    impact: false,
-  })
+const fadeInUp = {
+  initial: { opacity: 0, y: 60 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.6, ease: "easeOut" },
+}
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setVisibleSections((prev) => ({
-              ...prev,
-              [entry.target.id]: true,
-            }))
-          }
-        })
-      },
-      { threshold: 0.1 }
-    )
+const fadeInLeft = {
+  initial: { opacity: 0, x: -60 },
+  animate: { opacity: 1, x: 0 },
+  transition: { duration: 0.6, ease: "easeOut" },
+}
 
-    const sections = ["metrics", "features", "impact"]
-    sections.forEach((section) => {
-      const element = document.getElementById(section)
-      if (element) observer.observe(element)
-    })
+const fadeInRight = {
+  initial: { opacity: 0, x: 60 },
+  animate: { opacity: 1, x: 0 },
+  transition: { duration: 0.6, ease: "easeOut" },
+}
 
-    return () => observer.disconnect()
-  }, [])
+const staggerContainer = {
+  animate: {
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+}
 
+export default function SophiaLanding() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-black">
-      <HeroSection />
-      <MetricsSection isVisible={visibleSections.metrics} />
-      <FeaturesSection isVisible={visibleSections.features} />
-      <ProcessFlow />
-      <CallToAction />
-      <Footer />
+    <div className="min-h-screen bg-white">
+
+     {/* Hero Section */}
+      <section className="min-h-screen flex items-center justify-center px-6">
+        <motion.div
+          className="text-center"
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true }}
+          variants={staggerContainer}
+        >
+          <motion.h1 className="text-6xl lg:text-7xl font-bold text-black mb-6" variants={fadeInUp}>
+            Sophia<span className="text-blue-600">.</span>
+          </motion.h1>
+          <motion.h2
+            className="text-4xl lg:text-5xl font-normal text-gray-500 mb-12 max-w-4xl mx-auto leading-tight"
+            variants={fadeInUp}
+          >
+            AI that understands how each student thinks
+          </motion.h2>
+          <motion.div variants={fadeInUp}>
+            <Button className="bg-blue-600 text-white hover:bg-blue-700 rounded-full px-12 py-4 text-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 transform">
+              Get Started
+            </Button>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* Maps Understanding Section */}
+      <section className="min-h-screen flex items-center px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <motion.div initial="initial" whileInView="animate" viewport={{ once: true }} variants={fadeInLeft}>
+              <h3 className="text-4xl lg:text-5xl font-bold text-black mb-6 leading-tight">
+                Maps unique understanding.
+              </h3>
+              <p className="text-xl text-gray-500 leading-relaxed">
+                Sophia creates a personalized conceptual map of each student's knowledge and gaps.
+              </p>
+            </motion.div>
+            <motion.img
+              src="/placeholder.svg?height=400&width=600"
+              alt="Personalized conceptual map showing student knowledge and learning gaps"
+              className="rounded-lg w-full h-80 lg:h-96 object-cover"
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              variants={fadeInRight}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Empathetic Remediation Section */}
+      <section className="min-h-screen flex items-center px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <motion.img
+              src="/placeholder.svg?height=400&width=600"
+              alt="AI providing gentle, targeted help tailored to individual student needs"
+              className="rounded-lg w-full h-80 lg:h-96 object-cover order-2 lg:order-1"
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              variants={fadeInLeft}
+            />
+            <motion.div
+              className="order-1 lg:order-2"
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              variants={fadeInRight}
+            >
+              <h3 className="text-4xl lg:text-5xl font-bold text-black mb-6 leading-tight">Empathetic remediation.</h3>
+              <p className="text-xl text-gray-500 leading-relaxed">
+                When misconceptions arise, Sophia provides gentle, targeted help tailored to the individual's needs.
+              </p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Grid Section */}
+      <section className="min-h-screen flex items-center px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto w-full">
+          <motion.div
+            className="grid md:grid-cols-3 gap-12"
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+          >
+            <motion.div variants={fadeInUp}>
+              <img
+                src="/placeholder.svg?height=300&width=400"
+                alt="Feature illustration"
+                className="rounded-lg w-full h-64 mb-6 object-cover"
+              />
+              <h4 className="text-2xl font-bold text-black mb-4">Personal mapping.</h4>
+              <p className="text-lg text-gray-500 leading-relaxed">
+                Sophia visualizes your mental model and adapts help just for you.
+              </p>
+            </motion.div>
+            <motion.div variants={fadeInUp}>
+              <img
+                src="/placeholder.svg?height=300&width=400"
+                alt="Feature illustration"
+                className="rounded-lg w-full h-64 mb-6 object-cover"
+              />
+              <h4 className="text-2xl font-bold text-black mb-4">Not just mistakes.</h4>
+              <p className="text-lg text-gray-500 leading-relaxed">
+                Identifies true misconceptions—not random errors—and tailors explanations accordingly.
+              </p>
+            </motion.div>
+            <motion.div variants={fadeInUp}>
+              <img
+                src="/placeholder.svg?height=300&width=400"
+                alt="Feature illustration"
+                className="rounded-lg w-full h-64 mb-6 object-cover"
+              />
+              <h4 className="text-2xl font-bold text-black mb-4">Meets you where you are.</h4>
+              <p className="text-lg text-gray-500 leading-relaxed">
+                Provides empathetic support exactly at your conceptual level.
+              </p>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* See Sophia in Action Section */}
+      <section className="min-h-screen flex items-center px-6 lg:px-8">
+        <motion.div
+          className="max-w-4xl mx-auto text-center w-full"
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true }}
+          variants={staggerContainer}
+        >
+          <motion.h3 className="text-4xl lg:text-5xl font-bold text-black mb-6" variants={fadeInUp}>
+            See Sophia in Action
+          </motion.h3>
+          <motion.p className="text-xl text-gray-500 leading-relaxed mb-12" variants={fadeInUp}>
+            Experience learning that feels personal. Our AI gets your mind and truly helps you grow.
+          </motion.p>
+          <motion.div variants={fadeInUp}>
+            <Button className="bg-black text-white hover:bg-gray-800 rounded-full px-8 py-3 text-lg">
+              Try Sophia Now
+            </Button>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* Footer */}
+      <motion.footer
+        className="bg-white py-24 px-6 lg:px-8 border-t border-gray-200"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            className="grid md:grid-cols-5 gap-8"
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+          >
+            <motion.div variants={fadeInUp}>
+              <div className="flex items-center space-x-2 mb-6">
+                <div className="flex space-x-1">
+                  <div className="w-3 h-3 bg-gray-400 rounded-sm"></div>
+                  <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                  <div
+                    className="w-3 h-3 bg-gray-400"
+                    style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}
+                  ></div>
+                </div>
+              </div>
+            </motion.div>
+            <motion.div variants={fadeInUp}>
+              <h5 className="font-bold text-black mb-4">Sophia</h5>
+              <ul className="space-y-3 text-gray-500">
+                <li>
+                  <a href="#" className="hover:text-black transition-colors">
+                    How It Works
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-black transition-colors">
+                    Benefits
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-black transition-colors">
+                    Get Started
+                  </a>
+                </li>
+              </ul>
+            </motion.div>
+            <motion.div variants={fadeInUp}>
+              <h5 className="font-bold text-black mb-4">Platform</h5>
+              <ul className="space-y-3 text-gray-500">
+                <li>
+                  <a href="#" className="hover:text-black transition-colors">
+                    For Educators
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-black transition-colors">
+                    For Students
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-black transition-colors">
+                    Integrations
+                  </a>
+                </li>
+              </ul>
+            </motion.div>
+            <motion.div variants={fadeInUp}>
+              <h5 className="font-bold text-black mb-4">Company</h5>
+              <ul className="space-y-3 text-gray-500">
+                <li>
+                  <a href="#" className="hover:text-black transition-colors">
+                    About
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-black transition-colors">
+                    Careers
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-black transition-colors">
+                    Blog
+                  </a>
+                </li>
+              </ul>
+            </motion.div>
+            <motion.div variants={fadeInUp}>
+              <h5 className="font-bold text-black mb-4">Support</h5>
+              <ul className="space-y-3 text-gray-500">
+                <li>
+                  <a href="#" className="hover:text-black transition-colors">
+                    Help Center
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-black transition-colors">
+                    Contact
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-black transition-colors">
+                    Privacy Policy
+                  </a>
+                </li>
+              </ul>
+            </motion.div>
+          </motion.div>
+        </div>
+      </motion.footer>
     </div>
   )
 }
