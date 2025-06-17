@@ -517,3 +517,18 @@ export interface ReasoningByKey {
 export interface CustomReasoningMap {
   [timeIndex: number]: ReasoningByKey;
 }
+
+export interface User {
+  email?: string
+  id: string
+  name?: string
+}
+
+export type NavItem = {
+  name: string
+  href: string
+}
+
+export type NavigationProps = {
+  user: User | null
+}
