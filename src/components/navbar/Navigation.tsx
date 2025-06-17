@@ -5,7 +5,7 @@ import type React from "react"
 import { Menu, UserIcon } from "lucide-react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -29,6 +29,7 @@ type NavigationProps = {
 export default function Navigation({ user }: NavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
   const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
@@ -62,12 +63,22 @@ export default function Navigation({ user }: NavigationProps) {
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault()
-    const element = document.getElementById(targetId)
-    if (element) {
-      element.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      })
+    
+    // Check if we're on login or signup pages
+    const isAuthPage = pathname.includes("/login") || pathname.includes("/sign-up")
+    
+    if (isAuthPage) {
+      // Redirect to home page with hash
+      router.push(`/home#${targetId}`)
+    } else {
+      // Normal smooth scroll behavior
+      const element = document.getElementById(targetId)
+      if (element) {
+        element.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        })
+      }
     }
   }
 
