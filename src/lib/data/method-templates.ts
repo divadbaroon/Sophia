@@ -7,7 +7,7 @@ export const methodTemplatesSet1 = {
     "create_pattern": `def create_pattern(self, numbers: list) -> str:
       pass`,
     
-    "create_multiplier": `def create_multiplier(self, factor: int):
+    "create_multiplier": `def create_multiplier(factor: int):
       pass`
   };
   
