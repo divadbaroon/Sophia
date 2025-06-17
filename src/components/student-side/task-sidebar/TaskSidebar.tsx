@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { ArrowLeft, ArrowRight, Target, BookOpen, Zap, ChevronLeft, ChevronRight } from "lucide-react"
 import { useFile } from "@/lib/context/FileContext"
 import { conceptIcons } from "@/lib/data/student_tasks"
@@ -37,7 +36,6 @@ export default function TaskSidebar() {
 
   const currentTask = sessionData.tasks[currentMethodIndex]
   const concepts = sessionData.conceptMappings[currentMethodIndex] || []
-  const progress = ((currentMethodIndex + 1) / sessionData.tasks.length) * 100
 
   // Mock difficulty level - you can replace this with actual data from your task
   const difficultyLevel = currentTask.difficulty || "Beginner"
