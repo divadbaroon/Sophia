@@ -182,10 +182,11 @@ useEffect(() => {
         </Button>
 
         <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel defaultSize={28} minSize={20} maxSize={40}>
-            <PanelWithHeader>
+          <ResizablePanel defaultSize={28} minSize={20} maxSize={40} className="flex flex-col">
+            {/* Remove PanelWithHeader wrapper and give TaskSidebar full height */}
+            <div className="h-full">
               <TaskSidebar />
-            </PanelWithHeader>
+            </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={70}>
