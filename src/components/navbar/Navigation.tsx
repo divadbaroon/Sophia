@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { Menu, UserIcon } from "lucide-react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
@@ -33,9 +35,17 @@ export default function Navigation({ user }: NavigationProps) {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50)
     }
+
+    // Check if URL contains "sessions", "login", or "sign-up" and set isScrolled accordingly
+    const shouldShowStyling =
+      pathname.includes("sessions") || pathname.includes("/login") || pathname.includes("/sign-up")
+    if (shouldShowStyling) {
+      setIsScrolled(true)
+    }
+
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+  }, [pathname])
 
   // Check if the current path matches the session join pattern
   const isSessionJoinPage = pathname.includes("/join")
@@ -48,12 +58,26 @@ export default function Navigation({ user }: NavigationProps) {
           { name: "Lessons", href: "/lessons" },
           { name: "Progress", href: "/progress" },
         ]
-      : ["About", "Features", "Documentation"]
+      : ["How It Works", "Features", "Contact"]
+
+  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    e.preventDefault()
+    const element = document.getElementById(targetId)
+    if (element) {
+      element.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      })
+    }
+  }
+
+  const shouldShowNavbarStyling =
+    pathname.includes("sessions") || pathname.includes("/login") || pathname.includes("/sign-up")
 
   return (
     <nav
       className={`fixed w-full z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white/80 backdrop-blur-md shadow-lg" : "bg-transparent"
+        isScrolled || shouldShowNavbarStyling ? "bg-white/80 backdrop-blur-md shadow-lg" : "bg-transparent"
       }`}
     >
       <div className="px-6 py-4">
@@ -64,10 +88,15 @@ export default function Navigation({ user }: NavigationProps) {
             </Link>
             <div className="hidden md:flex space-x-6 mt-2">
               {navigationItems.map((item) => (
-                <Link
+                <a
                   key={typeof item === "string" ? item : item.name}
                   href={typeof item === "string" ? `#${item.toLowerCase().replace(/\s+/g, "-")}` : item.href}
-                  className={`text-gray-900 hover:text-blue-600 transition-colors duration-200 relative group ${
+                  onClick={
+                    typeof item === "string"
+                      ? (e) => handleSmoothScroll(e, item.toLowerCase().replace(/\s+/g, "-"))
+                      : undefined
+                  }
+                  className={`text-gray-900 hover:text-blue-600 transition-colors duration-200 relative group cursor-pointer ${
                     typeof item !== "string" && pathname === item.href ? "text-blue-600" : ""
                   }`}
                 >
@@ -79,7 +108,7 @@ export default function Navigation({ user }: NavigationProps) {
                         : "scale-x-0 group-hover:scale-x-100"
                     }`}
                   />
-                </Link>
+                </a>
               ))}
             </div>
           </div>
@@ -140,16 +169,23 @@ export default function Navigation({ user }: NavigationProps) {
         {isMenuOpen && (
           <div className="md:hidden mt-4 pb-4 backdrop-blur-md bg-white/90">
             {navigationItems.map((item) => (
-              <Link
+              <a
                 key={typeof item === "string" ? item : item.name}
                 href={typeof item === "string" ? `#${item.toLowerCase().replace(/\s+/g, "-")}` : item.href}
-                className={`block px-4 py-2 text-gray-900 hover:text-blue-600 transition-colors duration-200 ${
+                onClick={
+                  typeof item === "string"
+                    ? (e) => {
+                        handleSmoothScroll(e, item.toLowerCase().replace(/\s+/g, "-"))
+                        setIsMenuOpen(false)
+                      }
+                    : () => setIsMenuOpen(false)
+                }
+                className={`block px-4 py-2 text-gray-900 hover:text-blue-600 transition-colors duration-200 cursor-pointer ${
                   typeof item !== "string" && pathname === item.href ? "text-blue-600 bg-blue-50" : ""
                 }`}
-                onClick={() => setIsMenuOpen(false)}
               >
                 {typeof item === "string" ? item : item.name}
-              </Link>
+              </a>
             ))}
             {user ? (
               <div className="pt-4 pb-3 border-t border-gray-200">
