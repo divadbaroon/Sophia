@@ -28,7 +28,7 @@ interface DemographicFormProps {
   classId: string
 }
 
-export function DemographicForm({ isOpen, onSubmit, classId }: DemographicFormProps) {
+export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
   const [formData, setFormData] = useState<DemographicData>({
     age: "",
     gender: "",
