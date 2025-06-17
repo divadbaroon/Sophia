@@ -200,9 +200,11 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
       }
     }
     
+    // Set methodsCode first
+    setMethodsCode(initialMethodsCode);
+    
     // Generate and set initial content (only current method)
     const initialCurrentMethodCode = generateCurrentMethodTemplate(initialMethodsCode, activeMethodId);
-    setMethodsCode(initialMethodsCode);
     setFileContent(initialCurrentMethodCode);
     updateCachedFileContent(initialCurrentMethodCode);
     
@@ -287,42 +289,6 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     };
   }, []);
 
-  // Auto-save code changes after a delay
-  useEffect(() => {
-    if (!isInitialized || !fileContent || !activeMethodId) return;
-        
-    const autoSaveDelay = 500; // ms
-    
-    const autoSaveTimer = setTimeout(() => {
-      if (fileContent !== cachedFileContent) {
-        // Update the current method's code in methodsCode
-        const updatedMethodsCode = {
-          ...methodsCode,
-          [activeMethodId]: fileContent
-        };
-        setMethodsCode(updatedMethodsCode);
-        updateCachedFileContent(fileContent);
-        console.log("Auto-saved current method code");
-      }
-    }, autoSaveDelay);
-    
-    return () => clearTimeout(autoSaveTimer);
-  }, [isInitialized, fileContent, cachedFileContent, activeMethodId, methodsCode, updateCachedFileContent]);
-
-  // Save methods code to localStorage whenever it changes
-  useEffect(() => {
-    if (!isInitialized || !sessionId) return;
-    
-    try {
-      // Use session-specific key
-      const storageKey = `${LOCAL_STORAGE_CODE_KEY_PREFIX}${sessionId}`;
-      localStorage.setItem(storageKey, JSON.stringify(methodsCode));
-      console.log(`Saved functions code to localStorage for session ${sessionId}`);
-    } catch (err) {
-      console.error("Error saving to localStorage:", err);
-    }
-  }, [isInitialized, methodsCode, sessionId]);
-
   // Handle updates from CodeMirror including selection changes
   const handleEditorUpdate = (viewUpdate: ViewUpdate): void => {
     // Only store the editor view reference if it has actually changed
@@ -363,9 +329,42 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     }
   };
 
+  // FIXED: Handle code changes with immediate local updates
   const handleCodeChange = (value: string): void => {
+    // 1. Update fileContent immediately for the editor
     setFileContent(value); 
+    
+    // 2. Update methodsCode immediately for local consistency
+    if (activeMethodId) {
+      setMethodsCode(prevMethodsCode => ({
+        ...prevMethodsCode,
+        [activeMethodId]: value
+      }));
+    }
+    
+    // 3. Update cached content immediately
+    updateCachedFileContent(value);
   };
+
+  // Save methods code to localStorage whenever it changes (debounced)
+  useEffect(() => {
+    if (!isInitialized || !sessionId) return;
+    
+    const saveDelay = 500; // ms
+    
+    const saveTimer = setTimeout(() => {
+      try {
+        // Use session-specific key
+        const storageKey = `${LOCAL_STORAGE_CODE_KEY_PREFIX}${sessionId}`;
+        localStorage.setItem(storageKey, JSON.stringify(methodsCode));
+        console.log(`Saved functions code to localStorage for session ${sessionId}`);
+      } catch (err) {
+        console.error("Error saving to localStorage:", err);
+      }
+    }, saveDelay);
+    
+    return () => clearTimeout(saveTimer);
+  }, [isInitialized, methodsCode, sessionId]);
 
   // Generate the current method code for the editor
   const currentMethodCode = isInitialized && activeMethodId ? 
