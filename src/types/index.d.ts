@@ -300,6 +300,12 @@ export interface FileContextType {
 
   conceptMapInitializing: boolean;
   updateConceptMapInitializing: (isInitializing: boolean) => void;
+
+   markTaskCompleted: (taskIndex: number) => void;
+  isTaskCompleted: (taskIndex: number) => boolean;
+  isTaskUnlocked: (taskIndex: number) => boolean;
+  canGoToNext: () => boolean;
+  getCompletionStats: () => { completed: number; total: number };
 }
 
 export type FolderContextType = {
