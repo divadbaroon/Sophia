@@ -9,14 +9,13 @@ import { Card } from "@/components/ui/card";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar";
-import { HelpCircle, X, MessageCircle, Clock } from "lucide-react";
+import { HelpCircle, X, Clock } from "lucide-react";
 import { useFile } from "@/lib/context/FileContext";
 import KnowledgeRadarModal from "@/components/student-side/student-report/studentReport"; 
 
 export const WorkspaceLayout = () => {
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false);
   const [isTAModalOpen, setIsTAModalOpen] = useState(false);
-  const [blinkingState, setBlinkingState] = useState(false);
   const [terminalHeight, setTerminalHeight] = useState(50);
   const [isKnowledgeRadarModalOpen, setIsKnowledgeRadarModalOpen] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0); // 10 minutes in seconds
@@ -134,26 +133,6 @@ useEffect(() => {
       updateStudentTask(taskDescription);
     }
   }, [sessionData, currentMethodIndex, updateStudentTask, sessionId]);
-
-  // Set up blinking effect when confidence threshold is met
-  useEffect(() => {
-    if (showReport) {
-      setBlinkingState(true);
-      const blinkInterval = setInterval(() => {
-        setBlinkingState((prev) => !prev);
-      }, 500);
-  
-      const stopBlinkTimeout = setTimeout(() => {
-        clearInterval(blinkInterval);
-        setBlinkingState(false);
-      }, 5000);
-  
-      return () => {
-        clearInterval(blinkInterval);
-        clearTimeout(stopBlinkTimeout);
-      };
-    }
-  }, [showReport]);
 
   // Function to update terminal height
   const updateTerminalHeight = (newHeight: number) => {
