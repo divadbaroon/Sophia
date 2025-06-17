@@ -47,7 +47,7 @@ export function UnlockedConceptCard({
         <div className="flex items-start justify-center">
           <div
             className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
-              isCompleted ? "bg-gray-200 text-gray-600" : "bg-gray-100 group-hover:bg-black group-hover:text-white"
+              isCompleted ? "bg-gray-200 text-gray-600" : "bg-gray-100 text-gray-600"
             }`}
           >
             <Icon size={32} />
