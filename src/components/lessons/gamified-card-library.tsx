@@ -66,7 +66,7 @@ export default function GamifiedConceptLibrary() {
 
   const handleInstructionsContinue = () => {
     // Redirect to homepage after instructions
-    window.location.href = "/sessions/12/join"
+    window.location.href = "/lessons/functions/session/72y852852"
   }
 
   const isConceptCompleted = (conceptId: string) => {
