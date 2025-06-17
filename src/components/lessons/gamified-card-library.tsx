@@ -152,9 +152,6 @@ export default function GamifiedConceptLibrary() {
         {/* Separator Line */}
         <div className="border-t border-gray-300 mb-8"></div>
 
-        {/* User Stats */}
-        <SimplifiedUserStats userProgress={userProgress} />
-
         {/* Search and Filter Section */}
         <div className="mb-6">
           <div className="flex gap-3 items-center">
