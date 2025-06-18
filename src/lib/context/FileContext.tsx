@@ -14,7 +14,7 @@ const condition2: TaskData = {
   tasks: [
     {
       title: "1.) create_multiplier()",
-      difficulty: "Medium",
+      difficulty: "Easy",
       description: "Create a function that generates a multiplier lambda function. The function should return a lambda that multiplies its input by a specified factor.",
       examples: [
         {
@@ -38,7 +38,7 @@ const condition2: TaskData = {
     },
     {
       title: "2.) create_calculator()",
-      difficulty: "Hard",
+      difficulty: "Medium",
       description: "Create a function that generates a calculator lambda function. The function should return a lambda that takes two numbers and performs a specified operation on them.",
       examples: [
         {
