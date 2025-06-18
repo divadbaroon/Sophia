@@ -24,7 +24,6 @@ export default function TaskSidebar() {
     goToNextMethod,
     goToPrevMethod,
     isTaskCompleted,
-    getCompletionStats,
   } = useFile()
 
   // Check if all tasks are completed
@@ -72,9 +71,9 @@ export default function TaskSidebar() {
     ],
   }
 
-  const handleFinishedClick = () => {
-    if (allTasksCompleted) {
-      // Get the current concept title from the task or use a default
+   const handleFinishedClick = () => {
+    if (currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex)) {
+      // Only show quiz on the last task when it's completed
       const conceptTitle = sessionData?.tasks[currentMethodIndex]?.title || "Lambda Functions"
       setCurrentConceptTitle(conceptTitle)
       setIsQuizModalOpen(true)
@@ -84,7 +83,6 @@ export default function TaskSidebar() {
   }
 
   const handleQuizComplete = (score: number, conceptTitle: string) => {
-    console.log(score)
     setIsQuizModalOpen(false)
     setCurrentConceptTitle(conceptTitle)
     setIsSurveyModalOpen(true)
@@ -94,7 +92,7 @@ export default function TaskSidebar() {
     console.log("Survey data submitted:", surveyData)
     setIsSurveyModalOpen(false)
     // Redirect to homepage after survey
-    window.location.href = "/lessons"
+    window.location.href = "/"
   }
 
   // Show loading state if sessionData not ready
@@ -202,7 +200,10 @@ export default function TaskSidebar() {
 
           {/* Difficulty and Concept badges inline */}
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className={`${getDifficultyColor(difficultyLevel)} flex items-center gap-1`}>
+            <Badge
+              variant="outline"
+              className={`${getDifficultyColor(difficultyLevel)} text-xs font-medium flex items-center gap-1.5 px-3 py-1.5`}
+            >
               {getDifficultyIcon(difficultyLevel)}
               {difficultyLevel}
             </Badge>
@@ -283,7 +284,7 @@ export default function TaskSidebar() {
                       <p className="text-base font-bold">🎉 All Tasks Completed!</p>
                     </div>
                     <p className="text-sm text-green-700 mt-2">
-                      Congratulations! You&apos;ve successfully completed all lambda function tasks. Click &quotFinished&quot to take
+                      Congratulations! You&apos;ve successfully completed all lambda function tasks. Click "Finished" to take
                       a quick quiz and provide feedback.
                     </p>
                   </Card>
@@ -318,11 +319,6 @@ export default function TaskSidebar() {
                 {currentMethodIndex + 1} of {sessionData.tasks.length}
               </span>
             </div>
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>
-                Completed: {getCompletionStats().completed}/{getCompletionStats().total}
-              </span>
-            </div>
           </div>
 
           <div className="flex items-center justify-between gap-4">
@@ -341,21 +337,21 @@ export default function TaskSidebar() {
               variant="default"
               size="sm"
               onClick={handleFinishedClick}
-              disabled={!allTasksCompleted && !isTaskCompleted(currentMethodIndex)}
+              disabled={!isTaskCompleted(currentMethodIndex)}
               className={`flex items-center gap-2 ${
-                !allTasksCompleted && !isTaskCompleted(currentMethodIndex) ? "opacity-50 cursor-not-allowed" : ""
-              } ${allTasksCompleted ? "bg-green-600 hover:bg-green-700" : ""}`}
+                !isTaskCompleted(currentMethodIndex) ? "opacity-50 cursor-not-allowed" : ""
+              } ${currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex) ? "bg-green-600 hover:bg-green-700" : ""}`}
               title={
-                allTasksCompleted
+                currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex)
                   ? "Take quiz and complete survey"
                   : !isTaskCompleted(currentMethodIndex)
                     ? "Complete all test cases to unlock the next task"
                     : currentMethodIndex === sessionData.tasks.length - 1
-                      ? "You've completed all tasks!"
+                      ? "Complete this task to finish"
                       : "Proceed to next task"
               }
             >
-              {allTasksCompleted ? (
+              {currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex) ? (
                 <>
                   Finished
                   <CheckCircle className="h-4 w-4" />
