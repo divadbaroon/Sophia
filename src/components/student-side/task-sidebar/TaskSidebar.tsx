@@ -284,7 +284,7 @@ export default function TaskSidebar() {
                       <p className="text-base font-bold">🎉 All Tasks Completed!</p>
                     </div>
                     <p className="text-sm text-green-700 mt-2">
-                      Congratulations! You&apos;ve successfully completed all lambda function tasks. Click "Finished" to take
+                      Congratulations! You&apos;ve successfully completed all lambda function tasks. Click &quot;Finished&quot; to take
                       a quick quiz and provide feedback.
                     </p>
                   </Card>

@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar";
-import { HelpCircle, X } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { useFile } from "@/lib/context/FileContext";
 import ConsentModal from "@/components/student-side/consent/ConsentModal"; 
 
