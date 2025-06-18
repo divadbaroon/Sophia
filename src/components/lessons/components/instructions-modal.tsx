@@ -29,7 +29,7 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
         <div className="space-y-6 pt-4">
           
           {/* What to Expect */}
-          <div className="space-y-4">
+          <div className="space-y-4 -mt-5">
             <h4 className="text-lg font-semibold text-black border-b border-gray-200 pb-2">What&apos;s Next:</h4>
 
             <div className="grid gap-4">
