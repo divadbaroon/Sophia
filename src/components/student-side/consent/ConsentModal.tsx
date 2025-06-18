@@ -97,7 +97,7 @@ const ConsentModal = ({
                   {isExampleOpen && (
                     <div className="mt-4 p-4 bg-muted rounded-lg">
                       <p className="text-sm text-muted-foreground mb-4">
-                        Here's how we protect your voice data:
+                        Here&apos;s how we protect your voice data:
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
