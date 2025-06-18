@@ -12,10 +12,20 @@ import { conceptIcons } from "@/lib/data/student_tasks"
 import { QuizModal } from "@/components/lessons/components/quiz-modal"
 import { SurveyModal } from "@/components/lessons/components/survery-modal"
 
-export default function TaskSidebar() {
+interface TaskSidebarProps {
+  isQuizModalOpen: boolean;
+  setIsQuizModalOpen: (open: boolean) => void;
+  isSurveyModalOpen: boolean;
+  setIsSurveyModalOpen: (open: boolean) => void;
+}
+
+export default function TaskSidebar({ 
+  isQuizModalOpen, 
+  setIsQuizModalOpen, 
+  isSurveyModalOpen, 
+  setIsSurveyModalOpen 
+}: TaskSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false)
-  const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false)
   const [currentConceptTitle, setCurrentConceptTitle] = useState("")
 
   const {

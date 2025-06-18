@@ -25,6 +25,10 @@ export const WorkspaceLayout = () => {
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [consentProcessing, setConsentProcessing] = useState(false);
 
+  // Quiz/Survey state - Lift these states up from TaskSidebar
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+  const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false);
+
   // Destructure additional properties from FileContext
   const {
     updateStudentTask,
@@ -128,6 +132,9 @@ export const WorkspaceLayout = () => {
     setTerminalHeight(limitedHeight);
   };
 
+  // Determine if Get Help button should be hidden
+  const shouldHideGetHelpButton = isQuizModalOpen || isSurveyModalOpen;
+
   return (
     <>
       {/* Consent Modal */}
@@ -143,31 +150,38 @@ export const WorkspaceLayout = () => {
       {/* Main Workspace */}
       <main className={`flex flex-col h-screen ${showConsentModal ? 'pointer-events-none opacity-50' : ''}`}>
         <div className="flex-1 flex relative">
-          {/* Knowledge Gap Discovery Button */}
-          <Button
-            variant="outline"
-            size="lg"
-            className={`absolute top-3.5 right-16 mr-6 z-40 gap-2 font-medium ${
-              isQuestionPanelVisible ? 'bg-secondary' : 'bg-background hover:bg-secondary/80'
-            }`}
-            onClick={() => {
-              setIsQuestionPanelVisible(!isQuestionPanelVisible);
-              if (isTAModalOpen) {
-                setIsTAModalOpen(false);
-              }
-            }}
-            disabled={showConsentModal}
-            title="Start conversation with ATLAS"
-          >
-            <HelpCircle className="h-5 w-5" />
-            {isQuestionPanelVisible ? 'Close' : 'Get Help'}
-          </Button>
+          {/* Knowledge Gap Discovery Button - Hide when quiz or survey is open */}
+          {!shouldHideGetHelpButton && (
+            <Button
+              variant="outline"
+              size="lg"
+              className={`absolute top-3.5 right-16 mr-6 z-[9999] gap-2 font-medium ${
+                isQuestionPanelVisible ? 'bg-secondary' : 'bg-background hover:bg-secondary/80'
+              }`}
+              onClick={() => {
+                setIsQuestionPanelVisible(!isQuestionPanelVisible);
+                if (isTAModalOpen) {
+                  setIsTAModalOpen(false);
+                }
+              }}
+              disabled={showConsentModal}
+              title="Start conversation with ATLAS"
+            >
+              <HelpCircle className="h-5 w-5" />
+              {isQuestionPanelVisible ? 'Close' : 'Get Help'}
+            </Button>
+          )}
 
           <ResizablePanelGroup direction="horizontal">
             <ResizablePanel defaultSize={28} minSize={20} maxSize={40} className="flex flex-col">
-              {/* TaskSidebar*/}
+              {/* TaskSidebar - Pass quiz/survey modal state setters */}
               <div className="h-full">
-                <TaskSidebar />
+                <TaskSidebar 
+                  isQuizModalOpen={isQuizModalOpen}
+                  setIsQuizModalOpen={setIsQuizModalOpen}
+                  isSurveyModalOpen={isSurveyModalOpen}
+                  setIsSurveyModalOpen={setIsSurveyModalOpen}
+                />
               </div>
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -218,8 +232,8 @@ export const WorkspaceLayout = () => {
                   <Terminal />
                 </div>
 
-                {/* Question Panel Popup */}
-                {isQuestionPanelVisible && !showConsentModal && (
+                {/* Question Panel Popup - Also hide when quiz or survey is open */}
+                {isQuestionPanelVisible && !showConsentModal && !shouldHideGetHelpButton && (
                   <Card className="absolute top-14 right-4 w-[400px] z-40 shadow-lg mt-6 mr-1">
                     <QuestionPanelWrapper editorRef={codeEditorRef} />
                   </Card>
