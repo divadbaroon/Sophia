@@ -65,7 +65,7 @@ export default function SophiaLanding() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <motion.div initial="initial" whileInView="animate" viewport={{ once: true }} variants={fadeInLeft}>
               <h3 className="text-4xl lg:text-5xl font-bold text-black mb-6 leading-tight">
-                Maps unique understanding.
+                Personalized understanding.
               </h3>
               <p className="text-xl text-gray-500 leading-relaxed">
                 Sophia creates a personalized conceptual map of each student&apos;s knowledge and gaps.
