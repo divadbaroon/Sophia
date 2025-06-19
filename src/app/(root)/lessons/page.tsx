@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { ClassIdEntry } from "@/components/lessons/components/class-id-entry"
 import { DemographicForm } from "@/components/lessons/components/demographic-form"
-import GamifiedConceptLibrary from "@/components/lessons/gamified-card-library"
+import ConceptLibrary from "@/components/lessons/card-library"
 
 export default function Page() {
   const [classId, setClassId] = useState<string | null>(null)
@@ -21,12 +21,10 @@ export default function Page() {
     console.log("Demographic data submitted:", data)
   }
 
-  // Show class ID entry first
   if (!classId) {
     return <ClassIdEntry onClassIdSubmit={handleClassIdSubmit} />
   }
 
-  // Show demographic form after class ID is entered, but before joining class
   if (!demographicData) {
     return (
       <>
@@ -36,6 +34,5 @@ export default function Page() {
     )
   }
 
-  // Finally show the lesson library after demographic form is completed
-  return <GamifiedConceptLibrary />
+  return <ConceptLibrary />
 }
