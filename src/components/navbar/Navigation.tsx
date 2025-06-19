@@ -2,12 +2,12 @@
 
 import type React from "react"
 
-import { Menu, UserIcon } from "lucide-react"
+import { Menu } from "lucide-react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { signOut } from "@/app/(auth)/login/actions"
 
@@ -134,9 +134,6 @@ export default function Navigation({ user }: NavigationProps) {
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src="/assets/Icons/accountIcon.png" alt="Account" />
-                      <AvatarFallback>
-                        <UserIcon className="h-4 w-4 text-black" />
-                      </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
@@ -204,9 +201,6 @@ export default function Navigation({ user }: NavigationProps) {
                   <div className="flex-shrink-0">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src="/assets/Icons/accountIcon.png" alt="Account" />
-                      <AvatarFallback>
-                        <UserIcon className="h-4 w-4 text-black" />
-                      </AvatarFallback>
                     </Avatar>
                   </div>
                   <div className="ml-3">
