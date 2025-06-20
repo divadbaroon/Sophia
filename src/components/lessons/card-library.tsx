@@ -1,21 +1,26 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { UnlockedConceptCard } from "@/components/lessons/components/unlocked-concept-card"
-import { QuizModal } from "@/components/lessons/components/quiz-modal"
-import { InstructionsModal } from "@/components/lessons/components/instructions-modal"
-import { getUserClasses } from "@/lib/actions/class-actions"
-import { getClassLessons } from "@/lib/actions/lessons-actions"
-import { enrollInClass } from "@/lib/actions/class-actions"
-import { getQuizQuestions } from "@/lib/actions/quiz-actions"
-import { createLearningSession } from "@/lib/actions/learning-session-actions"
-import type { UserProgress } from "@/types"
+
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+
+import { UnlockedConceptCard } from "@/components/lessons/components/unlocked-concept-card"
+import { QuizModal } from "@/components/lessons/components/quiz-modal"
+import { InstructionsModal } from "@/components/lessons/components/instructions-modal"
+
+import { getUserClasses } from "@/lib/actions/class-actions"
+import { getClassLessons } from "@/lib/actions/lessons-actions"
+import { enrollInClass } from "@/lib/actions/class-actions"
+import { getQuizQuestions } from "@/lib/actions/quiz-actions"
+import { createLearningSession } from "@/lib/actions/learning-session-actions"
+
 import { Search, Filter, GraduationCap, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box, Plus } from "lucide-react"
+
+import type { UserProgress } from "@/types"
 
 export default function GamifiedConceptLibrary() {
   // Icon mapping for database icon names to Lucide components

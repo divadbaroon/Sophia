@@ -1,15 +1,17 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+
+import { DemographicForm } from "@/components/lessons/components/demographic-form"
+
 import { Users, ArrowRight, AlertCircle, CheckCircle } from "lucide-react"
+
 import { enrollInClass } from "@/lib/actions/class-actions"
-import { DemographicForm } from "./demographic-form"
 
 export function ClassIdEntry() {
   const [classId, setClassId] = useState("")

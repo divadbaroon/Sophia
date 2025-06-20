@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
+
 import { ClassIdEntry } from "@/components/lessons/components/class-id-entry"
 import ConceptLibrary from "@/components/lessons/card-library"
+
 import { getUserClasses } from "@/lib/actions/class-actions"
 
 export default function Page() {
