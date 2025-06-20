@@ -6,11 +6,14 @@ import { QuizModal } from "@/components/lessons/components/quiz-modal"
 import { InstructionsModal } from "@/components/lessons/components/instructions-modal"
 import { getUserClasses } from "@/lib/actions/class-actions"
 import { getClassLessons } from "@/lib/actions/lessons-actions"
+import { enrollInClass } from "@/lib/actions/class-actions"
 import type { UserProgress } from "@/types"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Filter, GraduationCap, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Search, Filter, GraduationCap, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box, Plus, X } from "lucide-react"
 
 export default function GamifiedConceptLibrary() {
   // Icon mapping for database icon names to Lucide components
@@ -37,6 +40,12 @@ export default function GamifiedConceptLibrary() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFilter, setSelectedFilter] = useState("All")
   const [showFilters, setShowFilters] = useState(false)
+
+  // Join class modal state
+  const [showJoinModal, setShowJoinModal] = useState(false)
+  const [classCode, setClassCode] = useState("")
+  const [isJoining, setIsJoining] = useState(false)
+  const [joinError, setJoinError] = useState<string | null>(null)
 
   const [userProgress, setUserProgress] = useState<UserProgress>({
     completedConcepts: [],
@@ -72,6 +81,36 @@ export default function GamifiedConceptLibrary() {
       setSelectedClass(newClass)
       const { data: classLessons } = await getClassLessons(newClass.id)
       setLessons(classLessons || [])
+    }
+  }
+
+  // Handle joining a class
+  const handleJoinClass = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!classCode.trim()) return
+
+    setIsJoining(true)
+    setJoinError(null)
+
+    try {
+      const result = await enrollInClass(classCode.trim())
+      
+      if (!result.success) {
+        setJoinError(result.error || "Failed to join class")
+        setIsJoining(false)
+        return
+      }
+
+      // Success! Refresh classes and close modal
+      await loadData()
+      setShowJoinModal(false)
+      setClassCode("")
+      setIsJoining(false)
+
+    } catch (error) {
+      console.error('Class join error:', error)
+      setJoinError('An unexpected error occurred. Please try again.')
+      setIsJoining(false)
     }
   }
 
@@ -157,7 +196,7 @@ export default function GamifiedConceptLibrary() {
 
         {/* Class Selection */}
         <div className="mb-6">
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center gap-4">
             <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
               <GraduationCap className="w-5 h-5 text-gray-600" />
               <span className="text-sm font-medium text-gray-700">Class:</span>
@@ -174,6 +213,15 @@ export default function GamifiedConceptLibrary() {
                 </SelectContent>
               </Select>
             </div>
+            
+            <Button
+              variant="outline"
+              onClick={() => setShowJoinModal(true)}
+              className="border-2 border-gray-200 hover:border-black transition-colors flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Join Class
+            </Button>
           </div>
         </div>
 
@@ -256,6 +304,77 @@ export default function GamifiedConceptLibrary() {
           </p>
         </div>
       </div>
+
+      {/* Join Class Modal */}
+      <Dialog open={showJoinModal} onOpenChange={setShowJoinModal}>
+        <DialogContent className="max-w-md bg-white border-2 border-black">
+          <DialogHeader className="border-b border-gray-200 pb-4">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-xl font-bold text-black">Join Class</DialogTitle>
+            </div>
+          </DialogHeader>
+
+          <form onSubmit={handleJoinClass} className="space-y-4 pt-4">
+            <div className="space-y-2 -mt-3">
+              <Label htmlFor="classCode">Class Code *</Label>
+              <Input
+                id="classCode"
+                type="text"
+                placeholder="e.g., CS101-2024"
+                value={classCode}
+                onChange={(e) => {
+                  setClassCode(e.target.value)
+                  setJoinError(null)
+                }}
+                className={`border-2 transition-colors ${
+                  joinError 
+                    ? 'border-red-300 focus:border-red-500'
+                    : 'border-gray-200 focus:border-black'
+                }`}
+                disabled={isJoining}
+                required
+              />
+              {joinError && (
+                <div className="text-sm text-red-600">
+                  {joinError}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-gray-200">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowJoinModal(false)
+                  setClassCode("")
+                  setJoinError(null)
+                }}
+                className="flex-1 border-2 border-gray-200 hover:border-black transition-colors"
+                disabled={isJoining}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!classCode.trim() || isJoining}
+                className="flex-1 bg-black text-white hover:bg-gray-800 transition-colors"
+              >
+                {isJoining ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Joining...
+                  </>
+                ) : (
+                  <>
+                    <Plus size={16} className="mr-2" />
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Modals */}
       <QuizModal
