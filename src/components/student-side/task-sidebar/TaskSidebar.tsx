@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -11,6 +11,8 @@ import { useFile } from "@/lib/context/FileContext"
 import { conceptIcons } from "@/lib/data/student_tasks"
 import { QuizModal } from "@/components/lessons/components/quiz-modal"
 import { SurveyModal } from "@/components/lessons/components/survery-modal"
+import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
+import { getQuizQuestions } from "@/lib/actions/quiz-actions" // ADD THIS IMPORT
 
 interface TaskSidebarProps {
   isQuizModalOpen: boolean;
@@ -27,6 +29,8 @@ export default function TaskSidebar({
 }: TaskSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [currentConceptTitle, setCurrentConceptTitle] = useState("")
+  const [quizData, setQuizData] = useState<any>(null) // ADD THIS STATE
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState(false) // ADD THIS STATE
 
   const {
     sessionData,
@@ -34,67 +38,122 @@ export default function TaskSidebar({
     goToNextMethod,
     goToPrevMethod,
     isTaskCompleted,
+    lessonId,
   } = useFile()
 
   // Check if all tasks are completed
   const allTasksCompleted = sessionData?.tasks.every((_, index) => isTaskCompleted(index)) || false
 
-  // Mock quiz data - replace with actual quiz data based on current task/concept
-  const mockQuizData = {
-    title: "Lambda Functions",
-    questions: [
-      {
-        question: "What is a lambda function in Python?",
-        options: [
-          "A named function defined with def",
-          "An anonymous function defined with lambda",
-          "A built-in Python function",
-          "A class method",
-        ],
-        correctAnswer: 1,
-        explanation:
-          "Lambda functions are anonymous functions defined using the lambda keyword, allowing you to create small functions inline.",
-      },
-      {
-        question: "Which of the following is the correct syntax for a lambda function?",
-        options: [
-          "lambda x: x * 2",
-          "def lambda(x): return x * 2",
-          "lambda(x) => x * 2",
-          "function lambda(x) { return x * 2 }",
-        ],
-        correctAnswer: 0,
-        explanation:
-          "The correct syntax is 'lambda arguments: expression', where the expression is automatically returned.",
-      },
-      {
-        question: "What is the main limitation of lambda functions?",
-        options: [
-          "They can't use variables",
-          "They can only contain a single expression",
-          "They can't be assigned to variables",
-          "They can't take parameters",
-        ],
-        correctAnswer: 1,
-        explanation: "Lambda functions can only contain a single expression, not statements or multiple lines of code.",
-      },
-    ],
-  }
+  // LOAD QUIZ QUESTIONS WHEN LESSON ID IS AVAILABLE
+  useEffect(() => {
+    const loadQuizQuestions = async () => {
+      if (!lessonId) return
+      
+      setIsLoadingQuiz(true)
+      try {
+        const { data: quizQuestions } = await getQuizQuestions(lessonId)
+        
+        if (quizQuestions && quizQuestions.length > 0) {
+          // Format quiz data to match QuizModal expectations
+          const formattedQuiz = {
+            title: sessionData?.tasks[0]?.title || "Lesson Quiz", // Use first task title or fallback
+            questions: quizQuestions.map((question, index) => ({
+              ...question,
+              id: question.id || `question-${lessonId}-${index}` // Ensure ID is present
+            }))
+          }
+          setQuizData(formattedQuiz)
+        } else {
+          // Fallback to mock data if no quiz questions found
+          console.warn('No quiz questions found for lesson:', lessonId)
+          setQuizData({
+            title: "Lesson Quiz",
+            questions: [
+              {
+                id: "mock-1",
+                question: "How would you rate your understanding of this lesson?",
+                options: [
+                  "I need more practice",
+                  "I understand the basics",
+                  "I feel confident",
+                  "I could teach this to someone else"
+                ],
+                correctAnswer: 2,
+                explanation: "Great job completing this lesson! Continue practicing to build confidence."
+              }
+            ]
+          })
+        }
+      } catch (error) {
+        console.error('Error loading quiz questions:', error)
+        // Fallback to mock data on error
+        setQuizData({
+          title: "Lesson Quiz",
+          questions: [
+            {
+              id: "fallback-1",
+              question: "You've completed all the tasks! How do you feel?",
+              options: [
+                "Ready for more challenges",
+                "Need to review the concepts",
+                "Confident in my understanding",
+                "Excited to continue learning"
+              ],
+              correctAnswer: 0,
+              explanation: "Excellent work! Keep up the great progress."
+            }
+          ]
+        })
+      } finally {
+        setIsLoadingQuiz(false)
+      }
+    }
 
-   const handleFinishedClick = () => {
+    loadQuizQuestions()
+  }, [lessonId, sessionData])
+
+  const handleFinishedClick = () => {
+    // Add null check for sessionData
+    if (!sessionData || !sessionData.tasks) {
+      console.warn('Session data not available')
+      return
+    }
+
     if (currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex)) {
       // Only show quiz on the last task when it's completed
-      const conceptTitle = sessionData?.tasks[currentMethodIndex]?.title || "Lambda Functions"
+      const conceptTitle = sessionData.tasks[currentMethodIndex]?.title || "Lesson Complete"
       setCurrentConceptTitle(conceptTitle)
       setIsQuizModalOpen(true)
     } else {
       goToNextMethod()
     }
   }
-
-  const handleQuizComplete = (score: number, conceptTitle: string) => {
+  // UPDATE THIS FUNCTION - Add lesson completion logic
+  const handleQuizComplete = async (score: number, conceptTitle: string) => {
     setIsQuizModalOpen(false)
     setCurrentConceptTitle(conceptTitle)
+    
+    // 🎯 UPDATE LESSON PROGRESS IN DATABASE
+    if (lessonId) {
+      try {
+        console.log('📝 Updating lesson progress...', { lessonId, score })
+        const result = await completeLessonProgress(lessonId, score)
+        
+        if (result.success) {
+          console.log('✅ Lesson completed successfully!', result.data)
+          // Optionally show a success toast/notification here
+        } else {
+          console.error('❌ Failed to update lesson progress:', result.error)
+          // Optionally show an error message to user
+        }
+      } catch (error) {
+        console.error('❌ Error updating lesson progress:', error)
+      }
+    } else {
+      console.warn('⚠️ No lessonId available to update progress')
+    }
+    
+    // Continue with survey modal (optional for user)
     setIsSurveyModalOpen(true)
   }
 
@@ -294,7 +353,7 @@ export default function TaskSidebar({
                       <p className="text-base font-bold">🎉 All Tasks Completed!</p>
                     </div>
                     <p className="text-sm text-green-700 mt-2">
-                      Congratulations! You&apos;ve successfully completed all lambda function tasks. Click &quot;Finished&quot; to take
+                      Congratulations! You&apos;ve successfully completed all tasks. Click &quot;Finished&quot; to take
                       a quick quiz and provide feedback.
                     </p>
                   </Card>
@@ -347,7 +406,7 @@ export default function TaskSidebar({
               variant="default"
               size="sm"
               onClick={handleFinishedClick}
-              disabled={!isTaskCompleted(currentMethodIndex)}
+              disabled={!isTaskCompleted(currentMethodIndex) || isLoadingQuiz}
               className={`flex items-center gap-2 ${
                 !isTaskCompleted(currentMethodIndex) ? "opacity-50 cursor-not-allowed" : ""
               } ${currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex) ? "bg-green-600 hover:bg-green-700" : ""}`}
@@ -361,7 +420,12 @@ export default function TaskSidebar({
                       : "Proceed to next task"
               }
             >
-              {currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex) ? (
+              {isLoadingQuiz ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Loading...
+                </>
+              ) : currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex) ? (
                 <>
                   Finished
                   <CheckCircle className="h-4 w-4" />
@@ -385,7 +449,7 @@ export default function TaskSidebar({
       <QuizModal
         isOpen={isQuizModalOpen}
         onClose={() => setIsQuizModalOpen(false)}
-        concept={mockQuizData}
+        concept={quizData} // ✅ USE REAL QUIZ DATA FROM DATABASE
         onComplete={handleQuizComplete}
       />
 
