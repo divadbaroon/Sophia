@@ -15,6 +15,7 @@ interface DemographicData {
   gender: string
   ethnicity: string
   education: string
+  major: string
 
   // Programming Experience
   programmingExperience: string
@@ -33,6 +34,7 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
     gender: "",
     ethnicity: "",
     education: "",
+    major: "",
     programmingExperience: "",
     yearsOfExperience: "",
   })
@@ -57,15 +59,16 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-2 border-black">
-          <DialogTitle className="text-2xl font-bold text-black"></DialogTitle>
-     
+        <DialogTitle className="text-2xl font-bold text-black"></DialogTitle>
 
         <div className="pt-4">
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-black mb-2 -mt-9">Demographic Information</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 mb-4">
               All information is collected for research purposes and will be kept confidential.
             </p>
+            {/* Separator line */}
+            <div className="border-b border-gray-300"></div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -108,19 +111,23 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="major">Major</Label>
-                    <Select value={formData.education} onValueChange={(value) => handleInputChange("education", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select education level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bachelors">Bachelor&apos;s Degree</SelectItem>
-                        <SelectItem value="masters">Master&apos;s Degree</SelectItem>
-                        <SelectItem value="doctorate">Doctorate</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Label htmlFor="major">Major</Label>
+                  <Select value={formData.major} onValueChange={(value) => handleInputChange("major", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your major" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="computer-science">Computer Science</SelectItem>
+                      <SelectItem value="computer-engineering">Computer Engineering</SelectItem>
+                      <SelectItem value="mathematics">Mathematics</SelectItem>
+                      <SelectItem value="mathematics">Physics</SelectItem>
+                      <SelectItem value="information-technology">Information Technology</SelectItem>
+                      <SelectItem value="data-science">Data Science</SelectItem>
+                      <SelectItem value="electrical-engineering">Electrical Engineering</SelectItem>
+                      <SelectItem value="other-non-stem">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="education">Education Level (Current Year)</Label>
@@ -129,9 +136,9 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
                       <SelectValue placeholder="Select education level" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="bachelors">Bachelor&apos;s Degree</SelectItem>
-                      <SelectItem value="masters">Master&apos;s Degree</SelectItem>
-                      <SelectItem value="doctorate">Doctorate</SelectItem>
+                      <SelectItem value="freshman">Undergraduat Student</SelectItem>
+                      <SelectItem value="graduate">Masters Student</SelectItem>
+                      <SelectItem value="post-grad">PHD Student</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
@@ -153,8 +160,8 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
                     <SelectValue placeholder="Select years of experience" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0">0 years</SelectItem>
-                    <SelectItem value="1">Less than 1 year</SelectItem>
+                    <SelectItem value="0">0 years (Complete beginner)</SelectItem>
+                    <SelectItem value="less-than-1">Less than 1 year</SelectItem>
                     <SelectItem value="1-2">1-2 years</SelectItem>
                     <SelectItem value="3-5">3-5 years</SelectItem>
                     <SelectItem value="6-10">6-10 years</SelectItem>
