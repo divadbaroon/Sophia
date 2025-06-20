@@ -563,3 +563,19 @@ export interface ConceptProgress {
   completedAt?: Date
   quizScore?: number
 }
+
+export interface DemographicData {
+  age: string
+  gender: string
+  ethnicity: string
+  education: string
+  major: string
+  programmingExperience: string
+  yearsOfExperience: string
+}
+
+export interface DemographicFormProps {
+  isOpen: boolean
+  onSubmit: (data: DemographicData) => void
+  classId: string
+}
