@@ -7,28 +7,12 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, AlertCircle } from "lucide-react"
+import { saveDemographicData } from "@/lib/actions/demographic-actions" 
 
-interface DemographicData {
-  // Basic Information
-  age: string
-  gender: string
-  ethnicity: string
-  education: string
-  major: string
+import { DemographicData, DemographicFormProps } from "@/types"
 
-  // Programming Experience
-  programmingExperience: string
-  yearsOfExperience: string
-}
-
-interface DemographicFormProps {
-  isOpen: boolean
-  onSubmit: (data: DemographicData) => void
-  classId: string | null
-}
-
-export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
+export function DemographicForm({ isOpen, onSubmit, classId }: DemographicFormProps) {
   const [formData, setFormData] = useState<DemographicData>({
     age: "",
     gender: "",
@@ -40,20 +24,35 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleInputChange = (field: keyof DemographicData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+    setError(null) // Clear error when user makes changes
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
     setIsSubmitting(true)
+    setError(null)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    try {
+      const result = await saveDemographicData(classId, formData)
+      
+      if (!result.success) {
+        setError(result.error || 'Failed to save demographic information')
+        setIsSubmitting(false)
+        return
+      }
 
-    onSubmit(formData)
-    setIsSubmitting(false)
+      // Success! Call onSubmit to trigger the success flow
+      onSubmit(formData)
+    } catch (error) {
+      console.error('Demographic submission error:', error)
+      setError('An unexpected error occurred. Please try again.')
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -71,6 +70,15 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
             <div className="border-b border-gray-300"></div>
           </div>
 
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <div className="flex items-center gap-2 text-sm text-red-600">
+                <AlertCircle size={16} />
+                <span>{error}</span>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
             <div className="space-y-4">
@@ -78,7 +86,7 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="age">Age Range</Label>
+                  <Label htmlFor="age">Age Range *</Label>
                   <Select value={formData.age} onValueChange={(value) => handleInputChange("age", value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select age range" />
@@ -95,7 +103,7 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="gender">Gender Identity</Label>
+                  <Label htmlFor="gender">Gender Identity *</Label>
                   <Select value={formData.gender} onValueChange={(value) => handleInputChange("gender", value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select gender identity" />
@@ -111,7 +119,7 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="major">Major</Label>
+                  <Label htmlFor="major">Major *</Label>
                   <Select value={formData.major} onValueChange={(value) => handleInputChange("major", value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select your major" />
@@ -120,25 +128,25 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
                       <SelectItem value="computer-science">Computer Science</SelectItem>
                       <SelectItem value="computer-engineering">Computer Engineering</SelectItem>
                       <SelectItem value="mathematics">Mathematics</SelectItem>
-                      <SelectItem value="mathematics">Physics</SelectItem>
+                      <SelectItem value="physics">Physics</SelectItem>
                       <SelectItem value="information-technology">Information Technology</SelectItem>
                       <SelectItem value="data-science">Data Science</SelectItem>
                       <SelectItem value="electrical-engineering">Electrical Engineering</SelectItem>
-                      <SelectItem value="other-non-stem">Other</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="education">Education Level (Current Year)</Label>
+                  <Label htmlFor="education">Education Level (Current Year) *</Label>
                   <Select value={formData.education} onValueChange={(value) => handleInputChange("education", value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select education level" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="freshman">Undergraduat Student</SelectItem>
-                      <SelectItem value="graduate">Masters Student</SelectItem>
-                      <SelectItem value="post-grad">PHD Student</SelectItem>
+                      <SelectItem value="undergraduate">Undergraduate Student</SelectItem>
+                      <SelectItem value="masters">Masters Student</SelectItem>
+                      <SelectItem value="phd">PhD Student</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
@@ -151,7 +159,7 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
               <h4 className="text-md font-semibold text-black border-b border-gray-200 pb-2">Programming Experience</h4>
 
               <div className="space-y-2">
-                <Label htmlFor="yearsOfExperience">Years of Programming Experience</Label>
+                <Label htmlFor="yearsOfExperience">Years of Programming Experience *</Label>
                 <Select
                   value={formData.yearsOfExperience}
                   onValueChange={(value) => handleInputChange("yearsOfExperience", value)}
@@ -176,16 +184,16 @@ export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-black text-white hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-black text-white hover:bg-gray-800 disabled:bg-gray-400 transition-colors flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Joining Class...
+                    Saving Information...
                   </>
                 ) : (
                   <>
-                    Join Class
+                    Continue to Class
                     <ArrowRight size={16} />
                   </>
                 )}
