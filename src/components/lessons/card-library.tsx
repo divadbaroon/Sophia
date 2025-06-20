@@ -213,14 +213,13 @@ export default function GamifiedConceptLibrary() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <Button
               variant="outline"
               onClick={() => setShowJoinModal(true)}
               className="border-2 border-gray-200 hover:border-black transition-colors flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              Join Class
             </Button>
           </div>
         </div>
