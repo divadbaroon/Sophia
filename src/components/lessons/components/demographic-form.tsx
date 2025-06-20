@@ -24,7 +24,7 @@ interface DemographicData {
 interface DemographicFormProps {
   isOpen: boolean
   onSubmit: (data: DemographicData) => void
-  classId: string
+  classId: string | null
 }
 
 export function DemographicForm({ isOpen, onSubmit }: DemographicFormProps) {
