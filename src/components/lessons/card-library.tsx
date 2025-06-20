@@ -8,6 +8,7 @@ import { getUserClasses } from "@/lib/actions/class-actions"
 import { getClassLessons } from "@/lib/actions/lessons-actions"
 import { enrollInClass } from "@/lib/actions/class-actions"
 import { getQuizQuestions } from "@/lib/actions/quiz-actions"
+import { createLearningSession } from "@/lib/actions/learning-session-actions"
 import type { UserProgress } from "@/types"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -47,6 +48,10 @@ export default function GamifiedConceptLibrary() {
   const [classCode, setClassCode] = useState("")
   const [isJoining, setIsJoining] = useState(false)
   const [joinError, setJoinError] = useState<string | null>(null)
+
+  // Session state
+  const [isCreatingSession, setIsCreatingSession] = useState(false)
+  const [sessionError, setSessionError] = useState<string | null>(null)
 
   const [userProgress, setUserProgress] = useState<UserProgress>({
     completedConcepts: [],
@@ -145,17 +150,43 @@ export default function GamifiedConceptLibrary() {
     }
   }
 
-  const handleCardClick = (lesson: any) => {
-    setSelectedConcept({
-      id: lesson.id,
-      title: lesson.title,
-      description: lesson.description,
-      difficulty: lesson.difficulty,
-      estimatedTime: `${lesson.estimated_time_mins} min`,
-      xpReward: 100,
-      quiz: lesson.quiz 
-    })
-    setIsQuizModalOpen(true)
+  const handleCardClick = async (lesson: any) => {
+    // Prevent multiple clicks while creating session
+    if (isCreatingSession) return
+
+    setIsCreatingSession(true)
+    setSessionError(null)
+
+    try {
+      // Create learning session first
+      const sessionResult = await createLearningSession(lesson.id, selectedClass.id)
+      
+      if (!sessionResult.success) {
+        setSessionError(sessionResult.error || "Failed to create learning session")
+        setIsCreatingSession(false)
+        return
+      }
+
+      setSelectedConcept({
+        id: lesson.id,
+        title: lesson.title,
+        description: lesson.description,
+        difficulty: lesson.difficulty,
+        estimatedTime: `${lesson.estimated_time_mins} min`,
+        xpReward: 100,
+        quiz: lesson.quiz,
+        sessionId: sessionResult.data.id 
+      })
+
+      // Open quiz modal
+      setIsQuizModalOpen(true)
+      setIsCreatingSession(false)
+
+    } catch (error) {
+      console.error('Error starting lesson:', error)
+      setSessionError('An unexpected error occurred. Please try again.')
+      setIsCreatingSession(false)
+    }
   }
 
   const handleQuizComplete = (score: number, conceptTitle: string) => {
@@ -177,7 +208,9 @@ export default function GamifiedConceptLibrary() {
   }
 
   const handleInstructionsContinue = () => {
-    window.location.href = `/lessons/${selectedConcept?.id}/session`
+    // Navigate to session page with session ID
+    const sessionParam = selectedConcept?.sessionId ? `?sessionId=${selectedConcept.sessionId}` : ''
+    window.location.href = `/lessons/${selectedConcept?.id}/session${sessionParam}`
   }
 
   const isConceptCompleted = (lessonId: string) => {
@@ -259,6 +292,19 @@ export default function GamifiedConceptLibrary() {
         {/* Separator Line */}
         <div className="border-t border-gray-300 mb-8"></div>
 
+        {/* Error Display */}
+        {sessionError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{sessionError}</p>
+            <button 
+              onClick={() => setSessionError(null)}
+              className="text-red-600 hover:text-red-800 text-sm underline mt-1"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* Search and Filter Section */}
         <div className="mb-6">
           <div className="flex gap-3 items-center">
@@ -327,6 +373,18 @@ export default function GamifiedConceptLibrary() {
             </div>
           )}
         </div>
+
+        {/* Loading overlay when creating session */}
+        {isCreatingSession && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-6 h-6 border-2 border-gray-300 border-t-black rounded-full animate-spin"></div>
+                <p className="text-gray-700">Starting your lesson...</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="text-center border-t border-gray-200 pt-8">
