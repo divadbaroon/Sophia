@@ -61,7 +61,7 @@ export async function enrollInClass(classCode: string) {
     }
 
     // Check if user is already enrolled
-    const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
+    const { data: existingEnrollment } = await supabase
       .from('class_enrollments')
       .select('id')
       .eq('user_id', user.id)
