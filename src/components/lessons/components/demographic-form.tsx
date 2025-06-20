@@ -47,7 +47,7 @@ export function DemographicForm({ isOpen, onSubmit, classId }: DemographicFormPr
       }
 
       // Success! Call onSubmit to trigger the success flow
-      onSubmit(formData)
+      onSubmit()
     } catch (error) {
       console.error('Demographic submission error:', error)
       setError('An unexpected error occurred. Please try again.')
