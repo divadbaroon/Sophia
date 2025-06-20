@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Users, ArrowRight } from "lucide-react"
+import { Users, ArrowRight, AlertCircle, CheckCircle } from "lucide-react"
+import { enrollInClass } from "@/lib/actions/class-actions"
 
 interface ClassIdEntryProps {
   onClassIdSubmit: (classId: string) => void
@@ -16,16 +17,52 @@ interface ClassIdEntryProps {
 export function ClassIdEntry({ onClassIdSubmit }: ClassIdEntryProps) {
   const [classId, setClassId] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!classId.trim()) return
 
     setIsLoading(true)
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    onClassIdSubmit(classId.trim())
-    setIsLoading(false)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const trimmedClassId = classId.trim()
+      
+      // Basic validation
+      if (trimmedClassId.length < 3) {
+        setError("Class ID must be at least 3 characters long")
+        setIsLoading(false)
+        return
+      }
+
+      // Try to enroll in class via server action
+      const result = await enrollInClass(trimmedClassId)
+      
+      if (!result.success) {
+        setError(result.error || "Failed to join class")
+        setIsLoading(false)
+        return
+      }
+
+      // Success! Show success message briefly then refresh
+      setSuccess(result.message || "Successfully joined class!")
+      setIsLoading(false)
+      setShowSuccess(true)
+      
+      // Show success for 1 second, then refresh
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
+
+    } catch (error) {
+      console.error('Class enrollment error:', error)
+      setError('An unexpected error occurred. Please try again.')
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -51,21 +88,46 @@ export function ClassIdEntry({ onClassIdSubmit }: ClassIdEntryProps) {
                   type="text"
                   placeholder="e.g., CS101-2024"
                   value={classId}
-                  onChange={(e) => setClassId(e.target.value)}
-                  className="border-2 border-gray-200 focus:border-black transition-colors"
+                  onChange={(e) => {
+                    setClassId(e.target.value)
+                    setError(null) // Clear error when user types
+                    setSuccess(null) // Clear success when user types
+                  }}
+                  className={`border-2 transition-colors ${
+                    error 
+                      ? 'border-red-300 focus:border-red-500'
+                      : 'border-gray-200 focus:border-black'
+                  }`}
+                  disabled={isLoading || !!showSuccess}
                   required
                 />
+                {error && (
+                  <div className="flex items-center gap-2 text-sm text-red-600">
+                    <AlertCircle size={16} />
+                    <span>{error}</span>
+                  </div>
+                )}
+
               </div>
 
               <Button
                 type="submit"
-                disabled={!classId.trim() || isLoading}
-                className="w-full bg-black text-white hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                disabled={!classId.trim() || isLoading || !!showSuccess}
+                className={`w-full transition-colors flex items-center justify-center gap-2 ${
+                  showSuccess && !isLoading
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-black text-white hover:bg-gray-800 disabled:bg-gray-400'
+                }`}
               >
                 {isLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Joining Class...
+                  </>
+                ) : showSuccess ? (
+                  <>
+                    <CheckCircle size={16} />
+                    Success!
                   </>
                 ) : (
                   <>
@@ -82,6 +144,7 @@ export function ClassIdEntry({ onClassIdSubmit }: ClassIdEntryProps) {
               <ul className="text-xs text-gray-600 space-y-1">
                 <li>• Ask your instructor for your class ID</li>
                 <li>• Class IDs are usually in format: COURSE-YEAR</li>
+                <li>• Example: CS101-2024, PYTHON-101, etc.</li>
               </ul>
             </div>
           </CardContent>
