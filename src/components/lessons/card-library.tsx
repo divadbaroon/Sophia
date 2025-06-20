@@ -79,6 +79,7 @@ export default function GamifiedConceptLibrary() {
       const lessonsWithQuiz = await Promise.all(
         (classLessons || []).map(async (lesson) => {
           const { data: quizQuestions } = await getQuizQuestions(lesson.id)
+
           return {
             ...lesson,
             quiz: {
@@ -208,9 +209,7 @@ export default function GamifiedConceptLibrary() {
   }
 
   const handleInstructionsContinue = () => {
-    // Navigate to session page with session ID
-    const sessionParam = selectedConcept?.sessionId ? `?sessionId=${selectedConcept.sessionId}` : ''
-    window.location.href = `/lessons/${selectedConcept?.id}/session${sessionParam}`
+    window.location.href = `/lessons/${selectedConcept.id}/session/${selectedConcept.sessionId}`
   }
 
   const isConceptCompleted = (lessonId: string) => {
@@ -468,11 +467,13 @@ export default function GamifiedConceptLibrary() {
 
       {/* Modals */}
       <QuizModal
-        isOpen={isQuizModalOpen}
-        onClose={() => setIsQuizModalOpen(false)}
-        concept={selectedConcept?.quiz || null}
-        onComplete={handleQuizComplete}
-      />
+          isOpen={isQuizModalOpen}
+          onClose={() => setIsQuizModalOpen(false)}
+          concept={selectedConcept?.quiz || null}
+          sessionId={selectedConcept?.sessionId} 
+          quizType="pre" 
+          onComplete={handleQuizComplete}
+        />
 
       <InstructionsModal
         isOpen={isInstructionsModalOpen}
