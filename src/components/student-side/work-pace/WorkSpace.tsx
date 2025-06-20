@@ -1,17 +1,21 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+
+import { Card } from "@/components/ui/card";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { Button } from "@/components/ui/button";
+
 import QuestionPanelWrapper from "@/components/student-side/question-panel/QuestionPanelWrapper";
 import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader";
 import CodeEditor, { CodeEditorRef } from "@/components/student-side/code-editor/CodeEditor";
 import Terminal from "@/components/student-side/terminal/Terminal";
-import { Card } from "@/components/ui/card";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Button } from "@/components/ui/button";
-import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar";
-import { HelpCircle } from "lucide-react";
-import { useFile } from "@/lib/context/FileContext";
 import ConsentModal from "@/components/student-side/consent/ConsentModal"; 
+import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar";
+
+import { HelpCircle } from "lucide-react";
+
+import { useFile } from "@/lib/context/FileContext";
 
 // Local storage key for consent
 const CONSENT_STORAGE_KEY = 'sophia_user_consent';
