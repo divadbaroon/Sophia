@@ -66,8 +66,8 @@ export default function GamifiedConceptLibrary() {
   }
 
   // Handle class change
-  const handleClassChange = async (className: string) => {
-    const newClass = userClasses.find(cls => cls.name === className)
+  const handleClassChange = async (classCode: string) => {
+    const newClass = userClasses.find(cls => cls.class_code === classCode)
     if (newClass) {
       setSelectedClass(newClass)
       const { data: classLessons } = await getClassLessons(newClass.id)
@@ -161,14 +161,14 @@ export default function GamifiedConceptLibrary() {
             <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
               <GraduationCap className="w-5 h-5 text-gray-600" />
               <span className="text-sm font-medium text-gray-700">Class:</span>
-              <Select value={selectedClass?.name || ""} onValueChange={handleClassChange}>
+              <Select value={selectedClass?.class_code || ""} onValueChange={handleClassChange}>
                 <SelectTrigger className="w-40 border-2 border-gray-200 focus:border-black">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {userClasses.map((cls) => (
-                    <SelectItem key={cls.id} value={cls.name}>
-                      {cls.name}
+                    <SelectItem key={cls.id} value={cls.class_code}>
+                      {cls.class_code}
                     </SelectItem>
                   ))}
                 </SelectContent>
