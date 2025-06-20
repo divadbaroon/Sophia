@@ -273,7 +273,9 @@ export interface FileContextType {
   
   // Task-related properties
   sessionId: string
-  sessionData: TaskData
+  lessonId: string 
+  sessionData: TaskData | null
+  isLoadingTasks: boolean 
   currentMethodIndex: number
   activeMethodId: string
   currentTestCases: TestCase[]
@@ -297,11 +299,10 @@ export interface FileContextType {
   pivotQueue?: Array<{concept: string, category: string, confidence: number}> | null;
   updatePivotQueue?: (queue: Array<{concept: string, category: string, confidence: number}>) => void;
 
-
   conceptMapInitializing: boolean;
   updateConceptMapInitializing: (isInitializing: boolean) => void;
 
-   markTaskCompleted: (taskIndex: number) => void;
+  markTaskCompleted: (taskIndex: number) => void;
   isTaskCompleted: (taskIndex: number) => boolean;
   isTaskUnlocked: (taskIndex: number) => boolean;
   canGoToNext: () => boolean;
