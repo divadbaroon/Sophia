@@ -61,7 +61,7 @@ export default function GamifiedConceptLibrary() {
   const [isCreatingSession, setIsCreatingSession] = useState(false)
   const [sessionError, setSessionError] = useState<string | null>(null)
 
-  // UPDATED: Calculate XP and progress dynamically
+  // Calculate XP and progress dynamically
   const userProgress: UserProgress = {
     completedConcepts: Array.from(completedLessons), // Convert Set to Array
     totalXP: completedLessons.size * 100, // 100 XP per completed lesson
@@ -249,7 +249,6 @@ export default function GamifiedConceptLibrary() {
   }
 
   const handleConceptComplete = () => {
-    // This function can be simplified since we're using database state
     console.log('Concept completed!')
   }
 
@@ -329,7 +328,6 @@ export default function GamifiedConceptLibrary() {
               className="border-2 border-gray-200 hover:border-black transition-colors flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              Join Class
             </Button>
           </div>
         </div>
@@ -350,8 +348,37 @@ export default function GamifiedConceptLibrary() {
           </div>
         )}
 
-        {/* ✅ LEARNING STATS - Added above search bar */}
+        {/* User stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {/* Progress */}
+          <Card className="border-2 border-gray-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Target size={16} />
+                Learning Progress
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-black">{completedLessons.size}</span>
+                  <span className="text-sm text-gray-500">/ {lessons.length} lessons</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-black h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${lessons.length > 0 ? (completedLessons.size / lessons.length) * 100 : 0}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-600">
+                  {completedLessons.size === lessons.length && lessons.length > 0
+                    ? "🎉 All lessons completed!"
+                    : `${lessons.length - completedLessons.size} lessons remaining`}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Level & XP */}
           <Card className="border-2 border-gray-200">
             <CardHeader className="pb-2">
@@ -378,35 +405,6 @@ export default function GamifiedConceptLibrary() {
                   {getXPForNextLevel(userProgress.totalXP) === 0
                     ? "🎉 Level up! Complete another concept to advance"
                     : `${getXPForNextLevel(userProgress.totalXP)} XP to next level`}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Progress */}
-          <Card className="border-2 border-gray-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <Target size={16} />
-                Learning Progress
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-black">{completedLessons.size}</span>
-                  <span className="text-sm text-gray-500">/ {lessons.length} lessons</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-black h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${lessons.length > 0 ? (completedLessons.size / lessons.length) * 100 : 0}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-600">
-                  {completedLessons.size === lessons.length && lessons.length > 0
-                    ? "🎉 All lessons completed!"
-                    : `${lessons.length - completedLessons.size} lessons remaining`}
                 </p>
               </div>
             </CardContent>
