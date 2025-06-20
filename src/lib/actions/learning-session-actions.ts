@@ -37,6 +37,58 @@ export async function createLearningSession(lessonId: string, classId: string) {
   }
 }
 
+export async function completeLessonProgress(lessonId: string, quizScore: number) {
+  const supabase = await createClient()
+  
+  try {
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { success: false, error: "Not authenticated" }
+    }
+
+    // Find the most recent learning session for this lesson
+    const { data: session, error: sessionError } = await supabase
+      .from('learning_sessions')
+      .select('id')
+      .eq('profile_id', user.id)
+      .eq('lesson_id', lessonId)
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (sessionError || !session) {
+      console.error('Error finding learning session:', sessionError)
+      return { success: false, error: "Learning session not found" }
+    }
+
+    // Update the learning session with completion data
+    const { data, error } = await supabase
+      .from('learning_sessions')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        post_quiz_score: quizScore,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', session.id)
+      .eq('profile_id', user.id)
+      .select()
+
+    if (error) {
+      console.error('Error completing lesson:', error)
+      return { success: false, error: error.message }
+    }
+
+    console.log('✅ Lesson completed successfully:', data)
+    return { success: true, data }
+
+  } catch (error) {
+    console.error('Unexpected error completing lesson:', error)
+    return { success: false, error: 'Failed to complete lesson' }
+  }
+}
+
 // Update learning session status and timestamps
 export async function updateLearningSession(
   sessionId: string, 
