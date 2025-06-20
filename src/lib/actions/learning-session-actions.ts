@@ -193,11 +193,10 @@ export async function getUserLearningSessions(classId?: string) {
         ),
         classes (
           id,
-          class_code,
-          class_name
+          class_code
         )
       `)
-      .eq('user_id', user.id)
+      .eq('profile_id', user.id)
       .order('started_at', { ascending: false })
 
     if (classId) {
