@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 import { UnlockedConceptCard } from "@/components/lessons/components/unlocked-concept-card"
 import { QuizModal } from "@/components/lessons/components/quiz-modal"
@@ -16,9 +18,9 @@ import { getUserClasses } from "@/lib/actions/class-actions"
 import { getClassLessons } from "@/lib/actions/lessons-actions"
 import { enrollInClass } from "@/lib/actions/class-actions"
 import { getQuizQuestions } from "@/lib/actions/quiz-actions"
-import { createLearningSession } from "@/lib/actions/learning-session-actions"
+import { createLearningSession, getUserLearningSessions } from "@/lib/actions/learning-session-actions"
 
-import { Search, Filter, GraduationCap, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box, Plus } from "lucide-react"
+import { Search, Filter, GraduationCap, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box, Plus, Zap, Target } from "lucide-react"
 
 import type { UserProgress } from "@/types"
 
@@ -38,6 +40,7 @@ export default function GamifiedConceptLibrary() {
   const [lessons, setLessons] = useState<any[]>([])
   const [selectedClass, setSelectedClass] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set())
 
   // Existing UI state
   const [selectedConcept, setSelectedConcept] = useState<any | null>(null)
@@ -58,11 +61,36 @@ export default function GamifiedConceptLibrary() {
   const [isCreatingSession, setIsCreatingSession] = useState(false)
   const [sessionError, setSessionError] = useState<string | null>(null)
 
-  const [userProgress, setUserProgress] = useState<UserProgress>({
-    completedConcepts: [],
-    totalXP: 0,
-    level: 1,
-  })
+  // UPDATED: Calculate XP and progress dynamically
+  const userProgress: UserProgress = {
+    completedConcepts: Array.from(completedLessons), // Convert Set to Array
+    totalXP: completedLessons.size * 100, // 100 XP per completed lesson
+    level: Math.floor((completedLessons.size * 100) / 500) + 1,
+  }
+
+  // Helper functions for XP calculations
+  const getLevel = (xp: number) => Math.floor(xp / 500) + 1
+  const getXPForNextLevel = (xp: number) => getLevel(xp) * 500 - xp
+  const getLevelProgress = (xp: number) => ((xp % 500) / 500) * 100
+
+  // Load completed lessons from database
+  const loadCompletedLessons = async (classId?: string) => {
+    try {
+      const { data: sessions } = await getUserLearningSessions(classId)
+      
+      if (sessions) {
+        // Get lesson IDs for sessions with status 'completed'
+        const completedLessonIds = sessions
+          .filter(session => session.status === 'completed')
+          .map(session => session.lesson_id)
+        
+        setCompletedLessons(new Set(completedLessonIds))
+        console.log('✅ Loaded completed lessons:', completedLessonIds)
+      }
+    } catch (error) {
+      console.error('Error loading completed lessons:', error)
+    }
+  }
 
   // Load data on mount
   useEffect(() => {
@@ -89,13 +117,19 @@ export default function GamifiedConceptLibrary() {
             ...lesson,
             quiz: {
               title: lesson.title,
-              questions: quizQuestions || []
+              questions: (quizQuestions || []).map((question, index) => ({
+                ...question,
+                id: question.id || `question-${lesson.id}-${index}`
+              }))
             }
           }
         })
       )
       
       setLessons(lessonsWithQuiz)
+      
+      // Load completed lessons for the first class
+      await loadCompletedLessons((classes[0] as any).id)
     }
     
     setLoading(false)
@@ -116,13 +150,19 @@ export default function GamifiedConceptLibrary() {
             ...lesson,
             quiz: {
               title: lesson.title,
-              questions: quizQuestions || []
+              questions: (quizQuestions || []).map((question, index) => ({
+                ...question,
+                id: question.id || `question-${lesson.id}-${index}`
+              }))
             }
           }
         })
       )
       
       setLessons(lessonsWithQuiz)
+      
+      // Load completed lessons for the new class
+      await loadCompletedLessons(newClass.id)
     }
   }
 
@@ -195,30 +235,31 @@ export default function GamifiedConceptLibrary() {
     }
   }
 
-  const handleQuizComplete = (score: number, conceptTitle: string) => {
+  const handleQuizComplete = async (score: number, conceptTitle: string) => {
     setIsQuizModalOpen(false)
     setCurrentConceptTitle(conceptTitle)
     setIsInstructionsModalOpen(true)
+    
+    // Update local completed lessons state (optimistic update)
+    if (selectedConcept) {
+      setCompletedLessons(prev => new Set([...prev, selectedConcept.id]))
+    }
+    
     handleConceptComplete()
   }
 
   const handleConceptComplete = () => {
-    if (!selectedConcept || userProgress.completedConcepts.includes(selectedConcept.id)) {
-      return
-    }
-
-    const newProgress = { ...userProgress }
-    newProgress.completedConcepts.push(selectedConcept.id)
-    newProgress.totalXP += 100
-    setUserProgress(newProgress)
+    // This function can be simplified since we're using database state
+    console.log('Concept completed!')
   }
 
   const handleInstructionsContinue = () => {
     window.location.href = `/lessons/${selectedConcept.id}/session/${selectedConcept.sessionId}`
   }
 
+  // Use real completion status from database
   const isConceptCompleted = (lessonId: string) => {
-    return userProgress.completedConcepts.includes(lessonId)
+    return completedLessons.has(lessonId)
   }
 
   const filterOptions = ["All", "Beginner", "Intermediate", "Advanced", "Completed", "Not Completed"]
@@ -308,6 +349,69 @@ export default function GamifiedConceptLibrary() {
             </button>
           </div>
         )}
+
+        {/* ✅ LEARNING STATS - Added above search bar */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {/* Level & XP */}
+          <Card className="border-2 border-gray-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Zap size={16} />
+                Level & XP
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-black">Level {getLevel(userProgress.totalXP)}</span>
+                  <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200 text-xs">
+                    {userProgress.totalXP} XP
+                  </Badge>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-black h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${getLevelProgress(userProgress.totalXP)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-600">
+                  {getXPForNextLevel(userProgress.totalXP) === 0
+                    ? "🎉 Level up! Complete another concept to advance"
+                    : `${getXPForNextLevel(userProgress.totalXP)} XP to next level`}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Progress */}
+          <Card className="border-2 border-gray-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Target size={16} />
+                Learning Progress
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-black">{completedLessons.size}</span>
+                  <span className="text-sm text-gray-500">/ {lessons.length} lessons</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-black h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${lessons.length > 0 ? (completedLessons.size / lessons.length) * 100 : 0}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-600">
+                  {completedLessons.size === lessons.length && lessons.length > 0
+                    ? "🎉 All lessons completed!"
+                    : `${lessons.length - completedLessons.size} lessons remaining`}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Search and Filter Section */}
         <div className="mb-6">
