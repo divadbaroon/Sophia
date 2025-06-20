@@ -576,6 +576,6 @@ export interface DemographicData {
 
 export interface DemographicFormProps {
   isOpen: boolean
-  onSubmit: (data: DemographicData) => void
+  onSubmit: () => void
   classId: string
 }
