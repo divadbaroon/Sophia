@@ -15,7 +15,6 @@ export function ClassIdEntry() {
   const [classId, setClassId] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
   const [showDemographicForm, setShowDemographicForm] = useState(false)
 
@@ -25,7 +24,6 @@ export function ClassIdEntry() {
 
     setIsLoading(true)
     setError(null)
-    setSuccess(null)
 
     try {
       const trimmedClassId = classId.trim()
@@ -57,11 +55,9 @@ export function ClassIdEntry() {
     }
   }
 
-  const handleDemographicSubmit = async (data: any) => {
-
+  const handleDemographicSubmit = async () => {
     // Show success state
     setShowDemographicForm(false)
-    setSuccess("Successfully joined class!")
     setShowSuccess(true)
     
     // Show success for 1 second, then refresh
@@ -107,7 +103,6 @@ export function ClassIdEntry() {
                   onChange={(e) => {
                     setClassId(e.target.value)
                     setError(null) // Clear error when user types
-                    setSuccess(null) // Clear success when user types
                   }}
                   className={`border-2 transition-colors ${
                     error 
