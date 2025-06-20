@@ -7,13 +7,14 @@ import { InstructionsModal } from "@/components/lessons/components/instructions-
 import { getUserClasses } from "@/lib/actions/class-actions"
 import { getClassLessons } from "@/lib/actions/lessons-actions"
 import { enrollInClass } from "@/lib/actions/class-actions"
+import { getQuizQuestions } from "@/lib/actions/quiz-actions"
 import type { UserProgress } from "@/types"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Search, Filter, GraduationCap, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box, Plus } from "lucide-react"
+import { Search, Filter, GraduationCap, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box, Plus, X } from "lucide-react"
 
 export default function GamifiedConceptLibrary() {
   // Icon mapping for database icon names to Lucide components
@@ -68,7 +69,22 @@ export default function GamifiedConceptLibrary() {
       
       // Get lessons for first class
       const { data: classLessons } = await getClassLessons((classes[0] as any).id)
-      setLessons(classLessons || [])
+      
+      // Fetch quiz questions for all lessons
+      const lessonsWithQuiz = await Promise.all(
+        (classLessons || []).map(async (lesson) => {
+          const { data: quizQuestions } = await getQuizQuestions(lesson.id)
+          return {
+            ...lesson,
+            quiz: {
+              title: lesson.title,
+              questions: quizQuestions || []
+            }
+          }
+        })
+      )
+      
+      setLessons(lessonsWithQuiz)
     }
     
     setLoading(false)
@@ -80,7 +96,22 @@ export default function GamifiedConceptLibrary() {
     if (newClass) {
       setSelectedClass(newClass)
       const { data: classLessons } = await getClassLessons(newClass.id)
-      setLessons(classLessons || [])
+      
+      // Fetch quiz questions for all lessons in the new class
+      const lessonsWithQuiz = await Promise.all(
+        (classLessons || []).map(async (lesson) => {
+          const { data: quizQuestions } = await getQuizQuestions(lesson.id)
+          return {
+            ...lesson,
+            quiz: {
+              title: lesson.title,
+              questions: quizQuestions || []
+            }
+          }
+        })
+      )
+      
+      setLessons(lessonsWithQuiz)
     }
   }
 
@@ -122,7 +153,7 @@ export default function GamifiedConceptLibrary() {
       difficulty: lesson.difficulty,
       estimatedTime: `${lesson.estimated_time_mins} min`,
       xpReward: 100,
-      quiz: null
+      quiz: lesson.quiz 
     })
     setIsQuizModalOpen(true)
   }
@@ -213,13 +244,14 @@ export default function GamifiedConceptLibrary() {
                 </SelectContent>
               </Select>
             </div>
-
+            
             <Button
               variant="outline"
               onClick={() => setShowJoinModal(true)}
               className="border-2 border-gray-200 hover:border-black transition-colors flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
+              Join Class
             </Button>
           </div>
         </div>
@@ -367,6 +399,7 @@ export default function GamifiedConceptLibrary() {
                 ) : (
                   <>
                     <Plus size={16} className="mr-2" />
+                    Join Class
                   </>
                 )}
               </Button>
