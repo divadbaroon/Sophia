@@ -16,7 +16,7 @@ export async function createLearningSession(lessonId: string, classId: string) {
     const { data, error } = await supabase
       .from('learning_sessions')
       .insert({
-        user_id: user.id,
+        profile_id: user.id,
         lesson_id: lessonId,
         class_id: classId,
         started_at: new Date().toISOString(),
