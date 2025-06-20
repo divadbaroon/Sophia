@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Users, ArrowRight, AlertCircle, CheckCircle } from "lucide-react"
 import { enrollInClass } from "@/lib/actions/class-actions"
+import { DemographicForm } from "./demographic-form"
 
 interface ClassIdEntryProps {
   onClassIdSubmit: (classId: string) => void
@@ -20,6 +21,7 @@ export function ClassIdEntry({ onClassIdSubmit }: ClassIdEntryProps) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [showDemographicForm, setShowDemographicForm] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,21 +50,41 @@ export function ClassIdEntry({ onClassIdSubmit }: ClassIdEntryProps) {
         return
       }
 
-      // Success! Show success message briefly then refresh
-      setSuccess(result.message || "Successfully joined class!")
+      // Show demographic form if class is valid
       setIsLoading(false)
-      setShowSuccess(true)
-      
-      // Show success for 1 second, then refresh
-      setTimeout(() => {
-        window.location.reload()
-      }, 1000)
+      setShowDemographicForm(true)
 
     } catch (error) {
       console.error('Class enrollment error:', error)
       setError('An unexpected error occurred. Please try again.')
       setIsLoading(false)
     }
+  }
+
+  const handleDemographicSubmit = async (data: any) => {
+    // TODO: Save demographic data to database
+    console.log("Demographic data:", data)
+    
+    // Show success state
+    setShowDemographicForm(false)
+    setSuccess("Successfully joined class!")
+    setShowSuccess(true)
+    
+    // Show success for 1 second, then refresh
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
+  }
+
+  // Show demographic form
+  if (showDemographicForm) {
+    return (
+      <DemographicForm
+        isOpen={true}
+        onSubmit={handleDemographicSubmit}
+        classId={classId.trim()}
+      />
+    )
   }
 
   return (
