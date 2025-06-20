@@ -11,11 +11,7 @@ import { Users, ArrowRight, AlertCircle, CheckCircle } from "lucide-react"
 import { enrollInClass } from "@/lib/actions/class-actions"
 import { DemographicForm } from "./demographic-form"
 
-interface ClassIdEntryProps {
-  onClassIdSubmit: (classId: string) => void
-}
-
-export function ClassIdEntry({ onClassIdSubmit }: ClassIdEntryProps) {
+export function ClassIdEntry() {
   const [classId, setClassId] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -41,7 +37,7 @@ export function ClassIdEntry({ onClassIdSubmit }: ClassIdEntryProps) {
         return
       }
 
-      // Try to enroll in class via server action
+      // Try to enroll in class
       const result = await enrollInClass(trimmedClassId)
       
       if (!result.success) {
@@ -50,21 +46,19 @@ export function ClassIdEntry({ onClassIdSubmit }: ClassIdEntryProps) {
         return
       }
 
-      // Show demographic form if class is valid
+      // Class is valid! Show demographic form
       setIsLoading(false)
       setShowDemographicForm(true)
 
     } catch (error) {
-      console.error('Class enrollment error:', error)
+      console.error('Class validation error:', error)
       setError('An unexpected error occurred. Please try again.')
       setIsLoading(false)
     }
   }
 
   const handleDemographicSubmit = async (data: any) => {
-    // TODO: Save demographic data to database
-    console.log("Demographic data:", data)
-    
+
     // Show success state
     setShowDemographicForm(false)
     setSuccess("Successfully joined class!")
@@ -144,7 +138,7 @@ export function ClassIdEntry({ onClassIdSubmit }: ClassIdEntryProps) {
                 {isLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Joining Class...
+                    Validating Class...
                   </>
                 ) : showSuccess ? (
                   <>
@@ -153,7 +147,7 @@ export function ClassIdEntry({ onClassIdSubmit }: ClassIdEntryProps) {
                   </>
                 ) : (
                   <>
-                    Join Class
+                    Continue
                     <ArrowRight size={16} />
                   </>
                 )}
