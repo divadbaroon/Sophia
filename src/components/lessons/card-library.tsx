@@ -1,41 +1,90 @@
 "use client"
 
-import { useState } from "react"
-import { UnlockedConceptCard } from "./components/unlocked-concept-card"
-import { QuizModal } from "./components/quiz-modal"
-import { InstructionsModal } from "./components/instructions-modal"
-import { programmingConcepts } from "@/lib/data/concepts"
+import { useState, useEffect } from "react"
+import { UnlockedConceptCard } from "@/components/lessons/components/unlocked-concept-card"
+import { QuizModal } from "@/components/lessons/components/quiz-modal"
+import { InstructionsModal } from "@/components/lessons/components/instructions-modal"
+import { getUserClasses } from "@/lib/actions/class-actions"
+import { getClassLessons } from "@/lib/actions/lessons-actions"
 import type { UserProgress } from "@/types"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Filter, GraduationCap, Plus } from "lucide-react"
-import { AddClassModal } from "@/components/lessons/components/add-class-module"
+import { Search, Filter, GraduationCap, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box } from "lucide-react"
 
 export default function GamifiedConceptLibrary() {
-  const [selectedConcept, setSelectedConcept] = useState<(typeof programmingConcepts)[0] | null>(null)
+  // Icon mapping for database icon names to Lucide components
+  const iconMap: { [key: string]: any } = {
+    'Variable': Variable,
+    'ActivityIcon': Function,
+    'RotateCcw': RotateCcw,
+    'GitBranch': GitBranch,
+    'Database': Database,
+    'Box': Box
+  }
+
+  // Database state
+  const [userClasses, setUserClasses] = useState<any[]>([])
+  const [lessons, setLessons] = useState<any[]>([])
+  const [selectedClass, setSelectedClass] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  // Existing UI state
+  const [selectedConcept, setSelectedConcept] = useState<any | null>(null)
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false)
   const [isInstructionsModalOpen, setIsInstructionsModalOpen] = useState(false)
   const [currentConceptTitle, setCurrentConceptTitle] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFilter, setSelectedFilter] = useState("All")
   const [showFilters, setShowFilters] = useState(false)
-  const [selectedClass, setSelectedClass] = useState("Python 101")
-
-  const [classes, setClasses] = useState([
-    { name: "Python 101", code: "PY101", subject: "Programming" },
-    { name: "CS 1114", code: "CS1114", subject: "Computer Science" },
-  ])
-  const [showAddClassModal, setShowAddClassModal] = useState(false)
 
   const [userProgress, setUserProgress] = useState<UserProgress>({
-    completedConcepts: ["variables", "conditionals"],
-    totalXP: 220,
+    completedConcepts: [],
+    totalXP: 0,
     level: 1,
   })
 
-  const handleCardClick = (concept: (typeof programmingConcepts)[0]) => {
-    setSelectedConcept(concept)
+  // Load data on mount
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  const loadData = async () => {
+    // Get user's classes
+    const { data: classes } = await getUserClasses()
+    
+    if (classes && classes.length > 0) {
+      setUserClasses(classes)
+      setSelectedClass(classes[0])
+      
+      // Get lessons for first class
+      const { data: classLessons } = await getClassLessons((classes[0] as any).id)
+      setLessons(classLessons || [])
+    }
+    
+    setLoading(false)
+  }
+
+  // Handle class change
+  const handleClassChange = async (className: string) => {
+    const newClass = userClasses.find(cls => cls.name === className)
+    if (newClass) {
+      setSelectedClass(newClass)
+      const { data: classLessons } = await getClassLessons(newClass.id)
+      setLessons(classLessons || [])
+    }
+  }
+
+  const handleCardClick = (lesson: any) => {
+    setSelectedConcept({
+      id: lesson.id,
+      title: lesson.title,
+      description: lesson.description,
+      difficulty: lesson.difficulty,
+      estimatedTime: `${lesson.estimated_time_mins} min`,
+      xpReward: 100,
+      quiz: null
+    })
     setIsQuizModalOpen(true)
   }
 
@@ -52,98 +101,78 @@ export default function GamifiedConceptLibrary() {
     }
 
     const newProgress = { ...userProgress }
-
-    // Add to completed concepts
     newProgress.completedConcepts.push(selectedConcept.id)
-
-    // Add XP based on quiz score
-    const xpEarned = Math.round((selectedConcept.xpReward * score) / 100)
-    newProgress.totalXP += xpEarned
-
+    newProgress.totalXP += 100
     setUserProgress(newProgress)
-
   }
 
   const handleInstructionsContinue = () => {
-    // Redirect to homepage after instructions
-    window.location.href = "/lessons/functions/session/72y852852"
+    window.location.href = `/lessons/${selectedConcept?.id}/session`
   }
 
-  const isConceptCompleted = (conceptId: string) => {
-    return userProgress.completedConcepts.includes(conceptId)
-  }
-
-  const handleAddClass = (classData: any) => {
-    const newClass = {
-      name: `${classData.code} - ${classData.name}`,
-      code: classData.code,
-      subject: classData.subject,
-    }
-    setClasses((prev) => [...prev, newClass])
-    setSelectedClass(newClass.name)
+  const isConceptCompleted = (lessonId: string) => {
+    return userProgress.completedConcepts.includes(lessonId)
   }
 
   const filterOptions = ["All", "Beginner", "Intermediate", "Advanced", "Completed", "Not Completed"]
-  const classOptions = classes.map((cls) => cls.name)
 
-  const filteredConcepts = programmingConcepts.filter((concept) => {
-    // Search filter
+  const filteredLessons = lessons.filter((lesson) => {
     const matchesSearch =
-      concept.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      concept.description.toLowerCase().includes(searchQuery.toLowerCase())
+      lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lesson.description?.toLowerCase().includes(searchQuery.toLowerCase())
 
-    // Difficulty filter
     let matchesFilter = true
     if (selectedFilter === "Completed") {
-      matchesFilter = isConceptCompleted(concept.id)
+      matchesFilter = isConceptCompleted(lesson.id)
     } else if (selectedFilter === "Not Completed") {
-      matchesFilter = !isConceptCompleted(concept.id)
+      matchesFilter = !isConceptCompleted(lesson.id)
     } else if (selectedFilter !== "All") {
-      matchesFilter = concept.difficulty === selectedFilter
+      matchesFilter = lesson.difficulty === selectedFilter
     }
 
     return matchesSearch && matchesFilter
   })
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-12 h-12 border-4 border-gray-200 border-t-black rounded-full animate-spin"></div>
+          <p className="text-gray-600">Loading your lessons...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-white py-12 px-4 relative">
-
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-6 mt-14">
           <h1 className="text-4xl font-bold text-black mb-4">Lessons</h1>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Explore our comprehensive collection of programming lessons. Each lesson is designed to build your skills
-            step by step.
+            Explore your programming lessons. Each lesson is designed to build your skills step by step.
           </p>
         </div>
 
-        {/* Class Selection - Moved above separator line */}
+        {/* Class Selection */}
         <div className="mb-6">
           <div className="flex items-center justify-center">
             <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
               <GraduationCap className="w-5 h-5 text-gray-600" />
               <span className="text-sm font-medium text-gray-700">Class:</span>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <Select value={selectedClass?.name || ""} onValueChange={handleClassChange}>
                 <SelectTrigger className="w-40 border-2 border-gray-200 focus:border-black">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {classOptions.map((classOption) => (
-                    <SelectItem key={classOption} value={classOption}>
-                      {classOption}
+                  {userClasses.map((cls) => (
+                    <SelectItem key={cls.id} value={cls.name}>
+                      {cls.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAddClassModal(true)}
-                className="border-2 border-gray-200 hover:border-black transition-colors flex items-center gap-1"
-              >
-                <Plus size={14} />
-              </Button>
             </div>
           </div>
         </div>
@@ -154,7 +183,6 @@ export default function GamifiedConceptLibrary() {
         {/* Search and Filter Section */}
         <div className="mb-6">
           <div className="flex gap-3 items-center">
-            {/* Search Bar */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
@@ -166,7 +194,6 @@ export default function GamifiedConceptLibrary() {
               />
             </div>
 
-            {/* Filter Button */}
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
@@ -177,7 +204,6 @@ export default function GamifiedConceptLibrary() {
             </Button>
           </div>
 
-          {/* Filter Options */}
           {showFilters && (
             <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div className="flex flex-wrap gap-2">
@@ -199,20 +225,20 @@ export default function GamifiedConceptLibrary() {
           )}
         </div>
 
-        {/* Concept Cards Grid - 3 per row */}
+        {/* Lesson Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {filteredConcepts.length > 0 ? (
-            filteredConcepts.map((concept) => (
+          {filteredLessons.length > 0 ? (
+            filteredLessons.map((lesson) => (
               <UnlockedConceptCard
-                key={concept.id}
-                title={concept.title}
-                description={concept.description}
-                icon={concept.icon}
-                difficulty={concept.difficulty}
-                xpReward={concept.xpReward}
-                estimatedTime={concept.estimatedTime}
-                isCompleted={isConceptCompleted(concept.id)}
-                onClick={() => handleCardClick(concept)}
+                key={lesson.id}
+                title={lesson.title}
+                description={lesson.description || ""}
+                icon={iconMap[lesson.icon_name] || Variable} 
+                difficulty={lesson.difficulty || "Beginner"}
+                xpReward={100}
+                estimatedTime={`${lesson.estimated_time_mins || 10} min`}
+                isCompleted={isConceptCompleted(lesson.id)}
+                onClick={() => handleCardClick(lesson)}
               />
             ))
           ) : (
@@ -226,8 +252,7 @@ export default function GamifiedConceptLibrary() {
         {/* Footer */}
         <div className="text-center border-t border-gray-200 pt-8">
           <p className="text-gray-500 text-sm">
-            Powered by <span className="font-semibold text-black">Sophia</span> - AI that understands how each student
-            thinks
+            Powered by <span className="font-semibold text-black">Sophia</span> - AI that understands how each student thinks
           </p>
         </div>
       </div>
@@ -245,13 +270,6 @@ export default function GamifiedConceptLibrary() {
         onClose={() => setIsInstructionsModalOpen(false)}
         conceptTitle={currentConceptTitle}
         onContinue={handleInstructionsContinue}
-      />
-
-      {/* Add Class Modal */}
-      <AddClassModal
-        isOpen={showAddClassModal}
-        onClose={() => setShowAddClassModal(false)}
-        onAddClass={handleAddClass}
       />
     </div>
   )
