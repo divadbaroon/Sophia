@@ -19,6 +19,7 @@ export async function getQuizQuestions(lessonId: string) {
 
     // Transform database format to match QuizModal expectations
     const formattedQuestions = questions?.map(q => ({
+      id: q.id, 
       question: q.question_text,
       options: [q.option_a, q.option_b, q.option_c, q.option_d],
       correctAnswer: q.correct_answer,
@@ -49,14 +50,18 @@ export async function saveQuizResponses(
       return { success: false, error: "Not authenticated" }
     }
 
+    // Calculate score
+    const correctAnswers = responses.filter(r => r.isCorrect).length
+    const score = Math.round((correctAnswers / responses.length) * 100)
+
     // Prepare the response data
     const quizResponses = responses.map(response => ({
       session_id: sessionId,
       question_id: response.questionId,
-      selected_answer: response.selectedAnswer,
+      selected_answer: parseInt(response.selectedAnswer), // Convert to integer for database
       is_correct: response.isCorrect,
       quiz_type: quizType,
-      answered_at: new Date().toISOString()
+      response_time_seconds: null // You can add timing later if needed
     }))
 
     // Insert all responses
@@ -69,12 +74,12 @@ export async function saveQuizResponses(
       return { success: false, error: insertError.message }
     }
 
-    // Update the learning session with quiz completion
-    const updateField = quizType === 'pre' ? 'pre_quiz_completed_at' : 'post_quiz_completed_at'
+    // Update the learning session with quiz score
+    const scoreField = quizType === 'pre' ? 'pre_quiz_score' : 'post_quiz_score'
     const { error: updateError } = await supabase
       .from('learning_sessions')
       .update({
-        [updateField]: new Date().toISOString()
+        [scoreField]: score
       })
       .eq('id', sessionId)
 
