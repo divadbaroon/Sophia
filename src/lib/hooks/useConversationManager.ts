@@ -601,41 +601,6 @@ export const useConversationManager = () => {
       // Clear any previous TTS queue
       ttsQueueRef.current = [];
       isSpeakingRef.current = false;
-
-      // or if confidence has been met
-      if (
-          wasConfidenceMetRef.current) {
-        console.log('🛑 Showing report instead of querying Claude.');
-        
-        // Display final message
-        if (managerRef.current) {
-          const finalMessage = "Thank you! I have collected all of the information I need. To view your report, please click view report above.";
-          
-          // Add the final message to conversation history
-          const updatedHistory = [
-            ...state.conversationHistory,
-            {
-              role: 'assistant' as const,
-              content: finalMessage,
-              timestamp: Date.now()
-            }
-          ];
-          
-          managerRef.current.updateState({
-            conversationHistory: updatedHistory
-          });
-          
-          // Speak the final message
-          queueOrSpeakText(finalMessage, true);
-          
-          // Show the report
-          if (fileContext?.setShowReport) {
-            fileContext.setShowReport(true);
-          }
-          
-          return;
-        }
-      }
       
       // Check if Anthropic client is available
       if (!anthropicClientRef.current) {
