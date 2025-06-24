@@ -45,6 +45,21 @@ export async function signup(formData: FormData) {
   redirect('/login')
 }
 
+export async function signInAsGuest() {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase.auth.signInAnonymously()
+
+  if (error) {
+    console.error('Guest sign-in error:', error)
+    redirect('/login?message=Could not sign in as guest')
+  }
+
+  console.log('Guest user created:', data.user?.id)
+
+  revalidatePath('/', 'layout')
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
