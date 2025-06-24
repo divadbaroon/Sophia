@@ -172,7 +172,7 @@ export const WorkspaceLayout = () => {
               title="Start conversation with ATLAS"
             >
               <HelpCircle className="h-5 w-5" />
-              {isQuestionPanelVisible ? 'Close' : 'Get Help'}
+              {isQuestionPanelVisible ? 'Close' : 'Ask Sophia'}
             </Button>
           )}
 
