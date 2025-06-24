@@ -101,7 +101,7 @@ export default function InvitationLogin({ classCode, initialMessage }: Props) {
               <div className="text-center mb-2">
                 <div className="mb-4">
                   <p className="text-sm text-gray-600 mb-2">
-                    You've been invited to join:
+                    You&apos;ve been invited to join:
                   </p>
                   <div className="inline-block px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-lg rounded-lg shadow-md">
                     {className}
