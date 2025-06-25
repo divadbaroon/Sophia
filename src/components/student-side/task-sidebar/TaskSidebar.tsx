@@ -317,6 +317,7 @@ export default function TaskSidebar({
 
               <Separator />
 
+              
               {/* Examples */}
               <div className="space-y-4">
                 <h3 className="font-semibold text-foreground">Examples</h3>
@@ -327,8 +328,8 @@ export default function TaskSidebar({
                         <h4 className="text-sm font-medium text-foreground">Example {index + 1}</h4>
                       </div>
                       <div className="p-4">
-                        <pre className="text-xs bg-muted/30 p-3 rounded-lg overflow-x-auto font-mono border">
-                          <code className="text-foreground">
+                        <pre className="text-xs bg-muted/30 p-3 rounded-lg font-mono border whitespace-pre-wrap break-words overflow-hidden">
+                          <code className="text-foreground block">
                             {Object.entries(example.input).map(([key, value]) => {
                               return typeof value === "string"
                                 ? `Input: ${key} = "${value}"\n`
