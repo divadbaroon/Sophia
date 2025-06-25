@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
+import Image from 'next/image'
 
 const fadeInUp = {
   initial: { opacity: 0, y: 60 },
@@ -71,15 +72,21 @@ export default function SophiaLanding() {
                 Sophia creates a personalized conceptual map of each student&apos;s knowledge and gaps.
               </p>
             </motion.div>
-            <motion.img
-              src="/placeholder.svg?height=400&width=600"
-              alt="Personalized conceptual map showing student knowledge and learning gaps"
-              className="rounded-lg w-full h-80 lg:h-96 object-cover"
+            <motion.div
+              className="relative w-full h-80 lg:h-96"
               initial="initial"
               whileInView="animate"
               viewport={{ once: true }}
               variants={fadeInRight}
-            />
+            >
+              <Image
+                src="/placeholder.svg?height=400&width=600"
+                alt="Personalized conceptual map showing student knowledge and learning gaps"
+                fill
+                className="rounded-lg object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+            </motion.div>
           </div>
         </div>
       </section>
@@ -88,15 +95,21 @@ export default function SophiaLanding() {
       <section className="min-h-screen flex items-center px-6 lg:px-8">
         <div className="max-w-7xl mx-auto w-full">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <motion.img
-              src="/placeholder.svg?height=400&width=600"
-              alt="AI providing gentle, targeted help tailored to individual student needs"
-              className="rounded-lg w-full h-80 lg:h-96 object-cover order-2 lg:order-1"
+            <motion.div
+              className="relative w-full h-80 lg:h-96 order-2 lg:order-1"
               initial="initial"
               whileInView="animate"
               viewport={{ once: true }}
               variants={fadeInLeft}
-            />
+            >
+              <Image
+                src="/placeholder.svg?height=400&width=600"
+                alt="AI providing gentle, targeted help tailored to individual student needs"
+                fill
+                className="rounded-lg object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+            </motion.div>
             <motion.div
               className="order-1 lg:order-2"
               initial="initial"
@@ -124,33 +137,45 @@ export default function SophiaLanding() {
             variants={staggerContainer}
           >
             <motion.div variants={fadeInUp}>
-              <img
-                src="/placeholder.svg?height=300&width=400"
-                alt="Feature illustration"
-                className="rounded-lg w-full h-64 mb-6 object-cover"
-              />
+              <div className="relative w-full h-64 mb-6">
+                <Image
+                  src="/placeholder.svg?height=300&width=400"
+                  alt="Feature illustration"
+                  fill
+                  className="rounded-lg object-cover"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+              </div>
               <h4 className="text-2xl font-bold text-black mb-4">Personal mapping.</h4>
               <p className="text-lg text-gray-500 leading-relaxed">
                 Sophia visualizes your mental model and adapts help just for you.
               </p>
             </motion.div>
             <motion.div variants={fadeInUp}>
-              <img
-                src="/placeholder.svg?height=300&width=400"
-                alt="Feature illustration"
-                className="rounded-lg w-full h-64 mb-6 object-cover"
-              />
+              <div className="relative w-full h-64 mb-6">
+                <Image
+                  src="/placeholder.svg?height=300&width=400"
+                  alt="Feature illustration"
+                  fill
+                  className="rounded-lg object-cover"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+              </div>
               <h4 className="text-2xl font-bold text-black mb-4">Not just mistakes.</h4>
               <p className="text-lg text-gray-500 leading-relaxed">
                 Identifies true misconceptions—not random errors—and tailors explanations accordingly.
               </p>
             </motion.div>
             <motion.div variants={fadeInUp}>
-              <img
-                src="/placeholder.svg?height=300&width=400"
-                alt="Feature illustration"
-                className="rounded-lg w-full h-64 mb-6 object-cover"
-              />
+              <div className="relative w-full h-64 mb-6">
+                <Image
+                  src="/placeholder.svg?height=300&width=400"
+                  alt="Feature illustration"
+                  fill
+                  className="rounded-lg object-cover"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+              </div>
               <h4 className="text-2xl font-bold text-black mb-4">Meets you where you are.</h4>
               <p className="text-lg text-gray-500 leading-relaxed">
                 Provides empathetic support exactly at your conceptual level.
