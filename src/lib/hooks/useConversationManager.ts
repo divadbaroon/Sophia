@@ -75,9 +75,6 @@ export const useConversationManager = () => {
   const conceptMapHistoryRef = useRef<ConceptMap[]>([]);
   const pivotMessageHistoryRef = useRef<string[]>([]);
 
-  // Track if confidence was previously met (to detect changes)
-  const wasConfidenceMetRef = useRef<boolean>(false);
-
   const isClaudeGeneratingRef = useRef<boolean>(false);
 
   const previousLogRef = useRef<{
