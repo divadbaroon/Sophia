@@ -542,6 +542,826 @@ sys.stdout = sys.__stdout__
 test_output = output_buffer.getvalue()
 `;
     }
+
+    // Add these test case implementations to your Terminal component's getTestRunnerCode function
+
+// Variables & Data Types test cases
+else if (activeMethodId === "create_student_info") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for create_student_info function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    name = test["input"]["name"]
+    age = test["input"]["age"]
+    expected = test["expected"]
+    
+    try:
+        result = create_student_info(name, age)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: name = '{name}', age = {age}")
+            print(f"   Expected: '{expected}'")
+            print(f"   Result: '{result}'")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: name = '{name}', age = {age}")
+            print(f"   Expected: '{expected}'")
+            print(f"   Result: '{result}'")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: name = '{name}', age = {age}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+} else if (activeMethodId === "calculate_circle_area") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for calculate_circle_area function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    radius = test["input"]["radius"]
+    expected = test["expected"]
+    
+    try:
+        result = calculate_circle_area(radius)
+        
+        # Check if result is close to expected (for floating point precision)
+        if abs(result - expected) < 0.01:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: radius = {radius}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: radius = {radius}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: radius = {radius}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+} else if (activeMethodId === "type_checker") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for type_checker function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    value = test["input"]["value"]
+    expected = test["expected"]
+    
+    try:
+        result = type_checker(value)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: value = {value} ({type(value).__name__})")
+            print(f"   Expected: '{expected}'")
+            print(f"   Result: '{result}'")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: value = {value} ({type(value).__name__})")
+            print(f"   Expected: '{expected}'")
+            print(f"   Result: '{result}'")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: value = {value}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+
+// Conditionals test cases
+} else if (activeMethodId === "check_age_category") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for check_age_category function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    age = test["input"]["age"]
+    expected = test["expected"]
+    
+    try:
+        result = check_age_category(age)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: age = {age}")
+            print(f"   Expected: '{expected}'")
+            print(f"   Result: '{result}'")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: age = {age}")
+            print(f"   Expected: '{expected}'")
+            print(f"   Result: '{result}'")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: age = {age}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+} else if (activeMethodId === "grade_calculator") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for grade_calculator function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    score = test["input"]["score"]
+    expected = test["expected"]
+    
+    try:
+        result = grade_calculator(score)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: score = {score}")
+            print(f"   Expected: '{expected}'")
+            print(f"   Result: '{result}'")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: score = {score}")
+            print(f"   Expected: '{expected}'")
+            print(f"   Result: '{result}'")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: score = {score}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+} else if (activeMethodId === "password_strength") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for password_strength function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    password = test["input"]["password"]
+    expected = test["expected"]
+    
+    try:
+        result = password_strength(password)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: password = '{password}'")
+            print(f"   Expected: '{expected}'")
+            print(f"   Result: '{result}'")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: password = '{password}'")
+            print(f"   Expected: '{expected}'")
+            print(f"   Result: '{result}'")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: password = '{password}'")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+
+// Loops test cases
+} else if (activeMethodId === "count_to_n") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for count_to_n function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    n = test["input"]["n"]
+    expected = test["expected"]
+    
+    try:
+        result = count_to_n(n)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: n = {n}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: n = {n}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: n = {n}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+} else if (activeMethodId === "sum_of_evens") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for sum_of_evens function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    n = test["input"]["n"]
+    expected = test["expected"]
+    
+    try:
+        result = sum_of_evens(n)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: n = {n}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: n = {n}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: n = {n}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+} else if (activeMethodId === "factorial") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for factorial function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    n = test["input"]["n"]
+    expected = test["expected"]
+    
+    try:
+        result = factorial(n)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: n = {n}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: n = {n}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: n = {n}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+
+// Functions test cases
+} else if (activeMethodId === "calculate_average") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for calculate_average function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    a = test["input"]["a"]
+    b = test["input"]["b"]
+    c = test["input"]["c"]
+    expected = test["expected"]
+    
+    try:
+        result = calculate_average(a, b, c)
+        
+        # Check if result is close to expected (for floating point precision)
+        if abs(result - expected) < 0.01:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: a = {a}, b = {b}, c = {c}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: a = {a}, b = {b}, c = {c}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: a = {a}, b = {b}, c = {c}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+} else if (activeMethodId === "is_prime") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for is_prime function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    n = test["input"]["n"]
+    expected = test["expected"]
+    
+    try:
+        result = is_prime(n)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: n = {n}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: n = {n}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: n = {n}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+} else if (activeMethodId === "fibonacci_sequence") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for fibonacci_sequence function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    n = test["input"]["n"]
+    expected = test["expected"]
+    
+    try:
+        result = fibonacci_sequence(n)
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: n = {n}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: n = {n}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: n = {n}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+
+// Arrays & Objects test cases
+} else if (activeMethodId === "find_maximum") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for find_maximum function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    numbers = test["input"]["numbers"]
+    expected = test["expected"]
+    
+    try:
+        result = find_maximum(numbers.copy())  # Pass a copy to prevent modification
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: numbers = {numbers}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: numbers = {numbers}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: numbers = {numbers}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+} else if (activeMethodId === "count_occurrences") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for count_occurrences function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    items = test["input"]["items"]
+    target = test["input"]["target"]
+    expected = test["expected"]
+    
+    try:
+        result = count_occurrences(items.copy(), target)  # Pass a copy to prevent modification
+        
+        if result == expected:
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: items = {items}, target = {target}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: items = {items}, target = {target}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: items = {items}, target = {target}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+} else if (activeMethodId === "create_student_record") {
+  return `
+# First execute the user's code to define the functions
+${fullCodeWithTests}
+
+# Define test cases
+test_cases = ${JSON.stringify(currentTestCases)}
+
+# Capture output
+import sys
+from io import StringIO
+output_buffer = StringIO()
+sys.stdout = output_buffer
+
+print("Running test cases for create_student_record function:")
+print("=====================================")
+
+all_passed = True
+for i, test in enumerate(test_cases):
+    name = test["input"]["name"]
+    age = test["input"]["age"]
+    grades = test["input"]["grades"]
+    expected = test["expected"]
+    
+    try:
+        result = create_student_record(name, age, grades.copy())  # Pass a copy to prevent modification
+        
+        # Check if the result matches expected structure
+        if (result["name"] == expected["name"] and 
+            result["age"] == expected["age"] and 
+            result["grades"] == expected["grades"] and
+            abs(result["average"] - expected["average"]) < 0.01):
+            print(f"✅ Test {i+1} PASSED")
+            print(f"   Input: name = '{name}', age = {age}, grades = {grades}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+        else:
+            all_passed = False
+            print(f"❌ Test {i+1} FAILED")
+            print(f"   Input: name = '{name}', age = {age}, grades = {grades}")
+            print(f"   Expected: {expected}")
+            print(f"   Result: {result}")
+    except Exception as e:
+        all_passed = False
+        print(f"❌ Test {i+1} ERROR")
+        print(f"   Input: name = '{name}', age = {age}, grades = {grades}")
+        print(f"   Error: {str(e)}")
+        
+    print()
+
+if all_passed:
+    print("🎉 All tests passed! Your solution works for all test cases.")
+else:
+    print("Some tests failed. Review your solution and try again.")
+
+# Restore stdout and get output
+sys.stdout = sys.__stdout__
+test_output = output_buffer.getvalue()
+`;
+}
     
     // Default case - should not happen
     return "";
