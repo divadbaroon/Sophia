@@ -8,8 +8,7 @@ import { ConversationStatus } from '@/lib/services/ConversationManager'
 import VoiceCircle from './VoiceCircle'
 import RecognitionDisplay from './RecognitionDisplay'
 import TranscriptHistory from './TranscriptHistory'
-import RecognitionSettings from './RecognitionSettings'
-import { QuestionPanelProps, TranscriptData, SpeakToOption, ScenarioOption, VoiceCircleState } from '@/types'
+import { QuestionPanelProps, TranscriptData, VoiceCircleState } from '@/types'
 
 /**
  * Maps conversation status to voice circle state
@@ -80,21 +79,12 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
   
   // Get current file context
   const { 
-    speakTo: fileSpeakTo, 
-    scenario: fileScenario, 
-    updateSpeakTo, 
-    updateScenario,
     conceptMapInitializing
   } = useFile() as {
-    speakTo: SpeakToOption,
-    scenario: ScenarioOption,
-    updateSpeakTo: (value: SpeakToOption) => void,
-    updateScenario: (value: ScenarioOption) => void,
     conceptMapInitializing: boolean
   }
 
   const contentRef = useRef<HTMLDivElement>(null)
-  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false)
 
   // Listen for transcripts being finalized
   useEffect(() => {
@@ -132,13 +122,6 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
       setShowInitialGreeting(false)
     }
   }, [conversationHistory])
-
-  // Save settings
-  const handleSaveSettings = (speakTo: SpeakToOption, scenario: ScenarioOption) => {
-    updateSpeakTo(speakTo)
-    updateScenario(scenario)
-    setIsSettingsOpen(false)
-  }
 
   // Determine the current voice state
   const voiceState = mapStatusToVoiceState(status, isUserSpeaking, conceptMapInitializing)
@@ -200,15 +183,6 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
           <TranscriptHistory conversationHistory={conversationHistory} />
         </TabsContent>
       </Tabs>
-
-      {/* Settings Dialog */}
-      <RecognitionSettings
-        isOpen={isSettingsOpen}
-        onOpenChange={setIsSettingsOpen}
-        speakTo={fileSpeakTo}
-        scenario={fileScenario}
-        onSave={handleSaveSettings}
-      />
     </div>
   );
 }

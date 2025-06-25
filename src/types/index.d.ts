@@ -1,189 +1,3 @@
-// ====== COURSE
-export interface Course {
-  id: string
-  name: string
-  code: string
-}
-
-// ====== LOCATION
-export interface Location {
-  type: "physical" | "virtual" | "hybrid"
-  details: string
-}
-
-// ====== METRICS
-export interface ActiveMetrics {
-  currentQueue: number
-  totalHelped: number
-  averageWaitTime: number
-  activeTime: number
-}
-
-export interface PastMetrics {
-  studentsHelped: number
-  averageWaitTime: number
-  peakQueueSize: number
-  totalDuration: number
-  actualStartTime: string
-  actualEndTime: string
-  topicsCovered: string[]
-  commonIssues: string[]
-  conceptualBreakthroughs: number
-  studentSatisfaction: number
-}
-
-// ====== DISCUSSION
-export interface Discussion {
-  topics: string[]
-  prerequisites: string[]
-  materials: string[]
-  preparation: string
-}
-
-// ====== RECURRING
-export interface Recurring {
-  frequency: "weekly" | "biweekly" | "monthly"
-  endDate: string
-}
-
-// ====== FEEDBACK
-export interface Feedback {
-  averageRating: number
-  responses: number
-  comments?: string[]
-  improvements?: string[]
-}
-
-// ====== STUDENT
-export interface Student {
-  id: number
-  name: string
-  waitTime: string
-  conceptGaps: string[]
-  status: "In Queue" | "In Progress" | "Completed"
-  joinedAt: string
-  avatar?: string
-  preferredName?: string
-  course?: string
-  previousVisits?: number
-}
-
-// ====== SESSION
-export interface BaseSession {
-  id: number
-  name: string
-  course: Course
-  duration: number
-  location: Location
-}
-
-export interface ActiveSession extends BaseSession {
-  status: "active"
-  date: string
-  time: string
-  metrics?: {
-    currentQueue: number
-    totalHelped: number
-    averageWaitTime: number
-    activeTime: number
-  }
-}
-
-export interface ActiveSessionsProps {
-  sessions: ActiveSession[]
-  isLoading: boolean
-  onNewClick?: () => void
-}
-
-export interface UpcomingSession extends BaseSession {
-  status: "upcoming"
-  date: string
-  time: string
-  expectedAttendees?: number
-  description?: string
-  recurring?: Recurring
-  discussion?: Discussion
-}
-
-export interface UpcomingSessionsProps {
-  sessions: UpcomingSession[]
-  isLoading: boolean
-  onUpdate: () => void
-  onNewClick?: () => void
-}
-
-export interface PastSession extends BaseSession {
-  status: "past"
-  date: string
-  time: string
-  metrics: PastMetrics
-  feedback?: Feedback
-}
-
-export interface PastSessionsProps {
-  sessions: PastSession[]
-  isLoading: boolean
-}
-
-export type Session = ActiveSession | UpcomingSession | PastSession
-
-// ====== DASHBOARD CREATE SESSION
-export interface CreateSessionProps {
-  onCancel: () => void
-  onSuccess: () => void
-}
-
-export interface CreateSessionFormData {
-  name: string
-  course: Course
-  description?: string
-  date: string
-  duration: number
-  location: Location
-}
-
-// ====== DASHBOARD SEARCH
-export interface SearchHeaderProps {
-  title: string
-  description: string
-  showNewButton?: boolean
-  onNewClick?: () => void
-  filterOptions: {
-    value: string
-    label: string
-  }[]
-}
-
-// ====== DASHBOARD CARD
-export interface SessionCardProps {
-  type: "active" | "upcoming" | "past"
-  data: Session
-  onUpdate?: {
-    active?: (session: ActiveSession) => void
-    upcoming?: (session: UpcomingSession) => void
-    past?: (session: PastSession) => void
-  }
-}
-
-// ====== DASHBOARD SIDEBAR
-export interface SidebarProps {
-  activeTab: string
-  setActiveTab: (tab: string) => void
-}
-
-// ====== MODAL
-export interface SessionDetailsModalProps {
-  isOpen: boolean
-  onClose: () => void
-  session: Session
-}
-
-export interface EditSessionModalProps {
-  isOpen: boolean
-  onClose: () => void
-  session: UpcomingSession
-  onUpdate: (updatedSession: UpcomingSession) => void
-}
 
 export interface FileSystemWritableFileStream extends WritableStream {
   write(data: string | BufferSource | Blob): Promise<void>;
@@ -202,12 +16,6 @@ export interface FileSystemDirectoryHandle extends FileSystemHandle {
   entries(): AsyncIterableIterator<[string, FileSystemHandle]>;
   getDirectoryHandle(name: string, options?: { create?: boolean }): Promise<FileSystemDirectoryHandle>;
   getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>;
-}
-
-export interface TestCase {
-  input: Record<string, any>
-  expected: any
-  methodId?: string
 }
 
 export interface KnowledgeState {
@@ -231,13 +39,12 @@ export interface ConceptMap {
   };
 }
 
-// Then update the TaskData interface to include the conceptMap
 export interface TaskData {
   tasks: TaskSidebarProps[]
   methodTemplates: Record<string, string>
   testCases: Record<string, TestCase[]>
   conceptMappings: Record<number, string[]>
-  conceptMap?: ConceptMap  // Optional property with the ConceptMap type
+  conceptMap?: ConceptMap  
   system: string
 }
 
@@ -286,13 +93,12 @@ export interface FileContextType {
 
   conversationHistory: ConversationMessage[];
   updateConversationHistory: (newHistory: ConversationMessage[]) => void;
-  conceptMap: any; // Update this with a more specific type if available
+  conceptMap: any; 
   updateConceptMap: (newConceptMap: any) => void;
 
   showReport: boolean;
   setShowReport: React.Dispatch<React.SetStateAction<boolean>>;
   
-  // System type properties
   systemType: 'ATLAS' | 'Standalone';
   updateSystemType: (type: 'ATLAS' | 'Standalone') => void;
 
@@ -315,15 +121,6 @@ export type FolderContextType = {
   setSelectedFolder: (folderName: string | null) => void;
   setFileStructure: (structure: FileSystemNode[]) => void;
 };
-
-export interface VideoChatContextType {
-  role: RoleType;
-  setRole: (role: RoleType) => void;
-  chatId: string;
-  setChatId: (id: string) => void;
-  receiverId: string;
-  setReceiverId: (id: string) => void;
-}
 
 export interface User {
   id: string;
@@ -431,11 +228,6 @@ export interface QuestionPanelProps {
   onReadyForTA?: () => void;
 }
 
-
-// Settings related types
-export type SpeakToOption = 'student' | 'ta'
-export type ScenarioOption = 'one-on-one' | 'group'
-
 export interface ConversationMessage {
   role: 'user' | 'assistant' | 'system';  
   content: string;
@@ -455,14 +247,6 @@ export interface RecognitionDisplayProps {
 
 export interface TranscriptHistoryProps {
   conversationHistory: ConversationMessage[] | null
-}
-
-export interface RecognitionSettingsProps {
-  isOpen: boolean
-  onOpenChange: (open: boolean) => void
-  speakTo: SpeakToOption
-  scenario: ScenarioOption
-  onSave: (speakTo: SpeakToOption, scenario: ScenarioOption) => void
 }
 
 export interface WordTiming {
@@ -546,15 +330,6 @@ export interface UserProgress {
   currentStreak?: number
   achievements?: Achievement[]
   level: number
-}
-
-export interface Achievement {
-  id: string
-  title: string
-  description: string
-  icon: string
-  unlocked: boolean
-  unlockedAt?: Date
 }
 
 export interface ConceptProgress {

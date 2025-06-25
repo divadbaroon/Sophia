@@ -9,8 +9,6 @@ import { prepareClaudePrompt } from '@/utils/claude/claudePromptCreation';
 import { ConceptMapService, ConceptMap } from '@/lib/services/ConceptMap';
 import { createClient } from '@/utils/supabase/client';
 
-import { updateStudentSessionData } from "@/lib/actions/studentsActions"
-
 const DEEPGRAM_API_KEY = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY || '';
 const ANTHROPIC_API_KEY = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '';
 const ELEVENLABS_API_KEY = process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY || '';
@@ -142,22 +140,6 @@ export const useConversationManager = () => {
 
         console.log("UPDATING SESSION WITH ", dataToSave)
         
-        // Save directly to the database
-        updateStudentSessionData(studentId, dataToSave)
-    
-        // If confidence was newly met, save additional data
-        if (conceptMapReady && !wasConfidenceMetRef.current) {
-          wasConfidenceMetRef.current = true;
-          
-          // Save code, task, and error content when confidence is met
-          updateStudentSessionData(studentId, {
-            code: fileContext?.fileContent || '',
-            task: fileContext?.studentTask || '',
-            errorContent: fileContext?.errorContent || '',
-            confidenceMetAt: new Date().toISOString(),
-            lastUpdated: new Date().toISOString()
-          })
-        }
       }
     }
   }, [conceptMap, conceptMapReady, taPivot, sessionId, studentId]);
