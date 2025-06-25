@@ -327,7 +327,7 @@ export default function ConceptTree() {
         expanded: expandedState[i] || false,
       })),
     )
-  }, [currentTimeIndex])
+  }, [currentTimeIndex, concepts])
 
   const toggleConcept = (index: number) => {
     setConcepts((prevConcepts) =>
