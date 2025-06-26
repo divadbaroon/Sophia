@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 
+import { useRouter } from 'next/navigation'
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,6 +16,7 @@ import { Users, ArrowRight, AlertCircle, CheckCircle } from "lucide-react"
 import { enrollInClass } from "@/lib/actions/class-actions"
 
 export function ClassIdEntry() {
+  const router = useRouter()
   const [classId, setClassId] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -62,10 +65,9 @@ export function ClassIdEntry() {
     setShowDemographicForm(false)
     setShowSuccess(true)
     
-    // Show success for 1 second, then refresh
-    setTimeout(() => {
-      window.location.reload()
-    }, 1000)
+    // reroute back to lessons
+    router.push('/lessons')
+ 
   }
 
   // Show demographic form
