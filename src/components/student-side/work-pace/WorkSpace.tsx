@@ -1,4 +1,3 @@
-// src/components/student-side/WorkspaceLayout.tsx
 'use client'
 
 import React, { useState, useEffect, useRef } from "react"
@@ -18,14 +17,7 @@ import Terminal from "@/components/student-side/terminal/Terminal"
 const CONSENT_STORAGE_KEY = 'sophia_user_consent'
 
 export const WorkspaceLayout: React.FC = () => {
-  // Lifted Deepgram hook
-  const {
-    transcript,
-    isTranscribing,
-    error,
-    startTranscription,
-    stopTranscription
-  } = DeepgramTranscriber()
+  const { startTranscription, stopTranscription } = DeepgramTranscriber()
 
   // Panel & UI state
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
@@ -160,12 +152,7 @@ export const WorkspaceLayout: React.FC = () => {
                 {/* Sophia panel */}
                 {isQuestionPanelVisible && (
                   <Card className="absolute top-14 right-4 w-[400px] z-40 shadow-lg mt-6 mr-1">
-                    <SophiaWrapper
-                      onClose={onToggleSophia}
-                      transcript={transcript}
-                      isTranscribing={isTranscribing}
-                      error={error}
-                    />
+                    <SophiaWrapper onClose={onToggleSophia} />
                   </Card>
                 )}
               </div>
