@@ -93,31 +93,6 @@ export const DeepgramTranscriber= () => {
     setTranscript('')
   }, [])
 
-  // This would call your Claude + ElevenLabs API
-  const processFinalTranscript = async (text: string) => {
-    try {
-      console.log('🤖 Processing with Claude:', text)
-      
-      // TODO: Replace with your actual API call
-      const response = await fetch('/api/sophia/stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text })
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to get Sophia response')
-      }
-      
-      // Handle streaming response here
-      console.log('🎯 Got Sophia response')
-      
-    } catch (error) {
-      console.error('❌ Error processing with Claude:', error)
-      setError('Failed to get response')
-    }
-  }
-
   return {
     transcript,
     isTranscribing,
