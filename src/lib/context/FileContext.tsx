@@ -38,9 +38,6 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [activeMethodId, setActiveMethodId] = useState<string>('')
   const [currentTestCases, setCurrentTestCases] = useState<TestCase[]>([])
   
-  // System type state
-  const [systemType, setSystemType] = useState<'SOPHIA' | 'Standalone'>('SOPHIA')
-  
   // Concept map and pivot state
   const [conceptMapConfidenceMet, setConceptMapConfidenceMet] = useState<boolean>(false)
   const [latestPivotMessage, setLatestPivotMessage] = useState<string | null>(null)
@@ -218,18 +215,16 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     if (!sessionData || isLoadingTasks) return
     
     const systemInfo = {
-      systemType,
       studentTask,
       studentCode: fileContent,
       conceptMapInitial: sessionData.conceptMap,
     }
     
     console.log('=== SYSTEM INFORMATION ===', systemInfo)
-    console.log('System Type:', systemType)
     console.log('Student Task:', studentTask)
     console.log('Student Code:', fileContent)
     console.log('Initial Concept Map:', sessionData.conceptMap)
-  }, [systemType, studentTask, fileContent, sessionData, isLoadingTasks])
+  }, [studentTask, fileContent, sessionData, isLoadingTasks])
 
   // Helper functions
   const updatePivotQueue = (queue: Array<{concept: string, category: string, confidence: number}>) => {
@@ -370,10 +365,6 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     return sessionData?.methodTemplates || {}
   }
 
-  const updateSystemType = (type: 'SOPHIA' | 'Standalone') => {
-    setSystemType(type)
-  }
-
   return (
     <FileContext.Provider
       value={{
@@ -413,8 +404,6 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         updateConceptMap,
         showReport,
         setShowReport,
-        systemType,
-        updateSystemType,
         pivotQueue,
         updatePivotQueue,
         conceptMapInitializing,
