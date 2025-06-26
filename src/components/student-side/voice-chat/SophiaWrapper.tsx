@@ -3,33 +3,26 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { X, Mic, MicOff } from 'lucide-react'
+import { X } from 'lucide-react'
 import VoiceCircle from '../question-panel/VoiceCircle'
-import { DeepgramTranscriber } from './DeepgramTranscriber'
 import { SophiaWrapperProps } from './types/SophiaBrainType'
 
-const SophiaWrapper: React.FC<SophiaWrapperProps> = ({ onClose }) => {
-  const { 
-    transcript, 
-    isTranscribing, 
-    error, 
-    startTranscription, 
-    stopTranscription 
-  } = DeepgramTranscriber()
-
-  // Determine current state for UI
-  const currentState = 
-                      isTranscribing ? 'listening' : 
-                      'initializing'
+const SophiaWrapper: React.FC<SophiaWrapperProps> = ({
+  onClose,
+  transcript,
+  isTranscribing,
+  error,
+}) => {
+  const currentState = isTranscribing ? 'listening' : 'initializing'
 
   if (error) {
     return (
       <div className="p-6 text-center">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-semibold">Sophia</h3>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClose}
             className="h-6 w-6 p-0"
           >
@@ -37,9 +30,7 @@ const SophiaWrapper: React.FC<SophiaWrapperProps> = ({ onClose }) => {
           </Button>
         </div>
         <div className="text-red-500 mb-4">{error}</div>
-        <Button onClick={startTranscription}>
-          Try Again
-        </Button>
+        <Button onClick={onClose}>Close</Button>
       </div>
     )
   }
@@ -48,9 +39,9 @@ const SophiaWrapper: React.FC<SophiaWrapperProps> = ({ onClose }) => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold">Sophia</h3>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onClose}
           className="h-6 w-6 p-0"
         >
@@ -70,16 +61,19 @@ const SophiaWrapper: React.FC<SophiaWrapperProps> = ({ onClose }) => {
               {/* State indicator */}
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
-                  {currentState === 'listening' && (
+                  {currentState === 'listening' ? (
                     <>
                       <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-                      <span className="text-sm text-muted-foreground">Listening</span>
+                      <span className="text-sm text-muted-foreground">
+                        Listening
+                      </span>
                     </>
-                  )}
-                  {currentState === 'initializing' && (
+                  ) : (
                     <>
                       <div className="h-2 w-2 bg-gray-500 rounded-full" />
-                      <span className="text-sm text-muted-foreground">Ready</span>
+                      <span className="text-sm text-muted-foreground">
+                        Ready
+                      </span>
                     </>
                   )}
                 </div>
@@ -92,7 +86,7 @@ const SophiaWrapper: React.FC<SophiaWrapperProps> = ({ onClose }) => {
                 </div>
               </div>
 
-              {/* Current Text Display */}
+              {/* Transcript display */}
               {transcript && (
                 <div className="mt-4">
                   <div className="p-3 bg-muted/50 rounded-lg min-h-[50px] flex items-center">
@@ -102,28 +96,6 @@ const SophiaWrapper: React.FC<SophiaWrapperProps> = ({ onClose }) => {
                   </div>
                 </div>
               )}
-
-              {/* Control Button */}
-              <div className="flex justify-center mt-6">
-                {isTranscribing ? (
-                  <Button 
-                    onClick={stopTranscription}
-                    variant="destructive"
-                    className="px-6 py-2"
-                  >
-                    <MicOff className="h-4 w-4 mr-2" />
-                    Stop Listening
-                  </Button>
-                ) : (
-                  <Button 
-                    onClick={startTranscription}
-                    className="px-6 py-2"
-                  >
-                    <Mic className="h-4 w-4 mr-2" />
-                    Start Listening
-                  </Button>
-                )}
-              </div>
             </div>
           </div>
         </TabsContent>
