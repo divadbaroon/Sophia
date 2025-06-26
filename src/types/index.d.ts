@@ -209,7 +209,7 @@ export type VoiceCircleState =
     "error" 
   | "idle" 
   | "listening" 
-  | "processing" 
+  | "thinking" 
   | "speaking" 
   | "initializing";
 
