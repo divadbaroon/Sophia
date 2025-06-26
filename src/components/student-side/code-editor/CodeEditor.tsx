@@ -11,6 +11,7 @@ import { ViewUpdate } from '@uiw/react-codemirror';
 import { SelectionRange, Extension, Range } from '@codemirror/state';
 import { Decoration } from '@codemirror/view';
 import { indentUnit } from '@codemirror/language';
+import { saveCodeSnapshot, loadAllCodeSnapshots } from '@/lib/actions/code-snapshot-actions';
 
 export interface CodeEditorRef {
   highlightLine: (lineNumber: number) => void;
@@ -18,6 +19,7 @@ export interface CodeEditorRef {
   zoomIn: () => void;
   zoomOut: () => void;
   resetZoom: () => void;
+  saveCode: () => Promise<void>;
 }
 
 // Generate template for only the current active method
@@ -29,8 +31,7 @@ const generateCurrentMethodTemplate = (methodsCode: Record<string, string>, acti
   return methodsCode[activeMethodId].trim();
 };
 
-// Local storage keys for saving code
-const LOCAL_STORAGE_CODE_KEY_PREFIX = 'functions_code_'; 
+// Local storage keys for zoom level only
 const LOCAL_STORAGE_ZOOM_KEY = 'code_editor_zoom_level';
 
 // Default base font size in pixels
@@ -80,6 +81,8 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     sessionId,
     sessionData,
     activeMethodId,
+    lessonId,
+    currentMethodIndex,
   } = useFile();
   
   const editorViewRef = useRef<EditorView | null>(null);
@@ -90,6 +93,8 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   const [highlightedLineNumber, setHighlightedLineNumber] = useState<number | null>();
   const [customExtensions, setCustomExtensions] = useState<Extension[]>([]);
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Function to highlight a specific line by line number
   const highlightLineByNumber = (lineNumber: number) => {
@@ -141,6 +146,36 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     setFontSize(DEFAULT_FONT_SIZE);
     localStorage.setItem(LOCAL_STORAGE_ZOOM_KEY, String(DEFAULT_FONT_SIZE));
   };
+
+  // Save current method to database
+  const saveCurrentMethod = async () => {
+    if (!activeMethodId || !sessionId || !lessonId || currentMethodIndex === undefined) {
+      return;
+    }
+
+    const codeContent = methodsCode[activeMethodId] || '';
+    
+    try {
+      setIsSaving(true);
+      await saveCodeSnapshot({
+        sessionId,
+        lessonId,
+        taskIndex: currentMethodIndex,
+        methodId: activeMethodId,
+        codeContent
+      });
+      console.log(`✅ Saved code for method: ${activeMethodId}`);
+    } catch (error) {
+      console.error(`❌ Failed to save code for method ${activeMethodId}:`, error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Manual save function (exposed via ref)
+  const manualSave = async () => {
+    await saveCurrentMethod();
+  };
   
   // Expose functions via ref
   useImperativeHandle(ref, () => ({
@@ -148,44 +183,45 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     clearHighlight: clearHighlightedLine,
     zoomIn,
     zoomOut,
-    resetZoom
+    resetZoom,
+    saveCode: manualSave
   }));
   
-  // Load saved code from localStorage or initialize with templates
+  // Load saved code from database or initialize with templates
   useEffect(() => {
-    if (isInitialized || !sessionData || !sessionData.methodTemplates) return;
+    if (isInitialized || !sessionData || !sessionData.methodTemplates || !sessionId || !lessonId) return;
     
     console.log("CodeEditor initializing with templates for session", sessionId);
     
-    // Create a session-specific localStorage key
-    const storageKey = `${LOCAL_STORAGE_CODE_KEY_PREFIX}${sessionId}`;
-    
-    // Try to load from localStorage first
-    let initialMethodsCode = { ...sessionData.methodTemplates };
-    
-    if (typeof window !== 'undefined') {
+    const initializeCode = async () => {
+      // Start with templates as fallback
+      let initialMethodsCode = { ...sessionData.methodTemplates };
+      
       try {
-        const savedCode = localStorage.getItem(storageKey);
-        if (savedCode) {
-          console.log("Found saved code in localStorage for session", sessionId);
-          const parsedCode = JSON.parse(savedCode);
+        // Try to load saved code from database
+        const result = await loadAllCodeSnapshots(sessionId, lessonId);
+        
+        if (result.success && result.methodsCode) {
+          console.log("Found saved code in database for session", sessionId);
           
-          // Verify the saved methods match the current session's methods
-          const templateKeys = Object.keys(sessionData.methodTemplates);
-          const savedKeys = Object.keys(parsedCode);
+          // Merge saved code with templates (saved code takes priority)
+          Object.keys(sessionData.methodTemplates).forEach(methodId => {
+            if (result.methodsCode![methodId]) {
+              initialMethodsCode[methodId] = result.methodsCode![methodId];
+            }
+          });
           
-          const methodsMatch = templateKeys.length === savedKeys.length && 
-                               templateKeys.every(key => savedKeys.includes(key));
-                               
-          if (methodsMatch) {
-            console.log("Using saved code from localStorage");
-            initialMethodsCode = parsedCode;
-          } else {
-            console.log("Saved code doesn't match current session templates, using defaults");
-          }
+          console.log("Using saved code from database");
+        } else {
+          console.log("No saved code found, using templates");
         }
+      } catch (error) {
+        console.error("Error loading saved code:", error);
+        console.log("Falling back to templates");
+      }
 
-        // Load saved zoom level
+      // Load saved zoom level from localStorage
+      try {
         const savedZoom = localStorage.getItem(LOCAL_STORAGE_ZOOM_KEY);
         if (savedZoom) {
           const parsedZoom = parseInt(savedZoom, 10);
@@ -194,41 +230,59 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
           }
         }
       } catch (err) {
-        console.error("Error accessing localStorage:", err);
+        console.error("Error loading zoom level:", err);
       }
-    }
-    
-    // Set methodsCode first
-    setMethodsCode(initialMethodsCode);
-    
-    // Generate and set initial content (only current method)
-    const initialCurrentMethodCode = generateCurrentMethodTemplate(initialMethodsCode, activeMethodId);
-    setFileContent(initialCurrentMethodCode);
-    updateCachedFileContent(initialCurrentMethodCode);
-    
-    // Clear any previous results
-    updateExecutionOutput('');
-    setErrorContent('');
-    
-    console.log("CodeEditor initialized with current method for session", sessionId);
-    setIsInitialized(true);
-  }, [sessionData, sessionId, isInitialized, activeMethodId, updateCachedFileContent, setFileContent, updateExecutionOutput, setErrorContent]);
+      
+      // Set methodsCode first
+      setMethodsCode(initialMethodsCode);
+      
+      // Generate and set initial content (only current method)
+      const initialCurrentMethodCode = generateCurrentMethodTemplate(initialMethodsCode, activeMethodId);
+      setFileContent(initialCurrentMethodCode);
+      updateCachedFileContent(initialCurrentMethodCode);
+      
+      // Clear any previous results
+      updateExecutionOutput('');
+      setErrorContent('');
+      
+      console.log("CodeEditor initialized with current method for session", sessionId);
+      setIsInitialized(true);
+    };
+
+    initializeCode();
+  }, [sessionData, sessionId, lessonId, isInitialized, activeMethodId, updateCachedFileContent, setFileContent, updateExecutionOutput, setErrorContent]);
 
   // Reset initialization when session changes
   useEffect(() => {
     setIsInitialized(false);
   }, [sessionId]);
 
-  // Update fileContent when activeMethodId changes
+  // Save code when switching methods
   useEffect(() => {
     if (!isInitialized || !activeMethodId || !methodsCode[activeMethodId]) return;
+    
+    // Save previous method before switching (if there was a previous method)
+    const methodIds = Object.keys(methodsCode);
+    const currentIndex = methodIds.indexOf(activeMethodId);
+    if (currentIndex > 0) {
+      const previousMethodId = methodIds[currentIndex - 1];
+      if (methodsCode[previousMethodId]) {
+        saveCodeSnapshot({
+          sessionId: sessionId || '',
+          lessonId: lessonId || '',
+          taskIndex: currentMethodIndex,
+          methodId: previousMethodId,
+          codeContent: methodsCode[previousMethodId]
+        }).catch(console.error);
+      }
+    }
     
     const currentMethodCode = generateCurrentMethodTemplate(methodsCode, activeMethodId);
     setFileContent(currentMethodCode);
     updateCachedFileContent(currentMethodCode);
     
     console.log("Switched to method:", activeMethodId);
-  }, [activeMethodId, isInitialized, methodsCode, setFileContent, updateCachedFileContent]);
+  }, [activeMethodId, isInitialized, methodsCode, setFileContent, updateCachedFileContent, sessionId, lessonId, currentMethodIndex]);
 
   // Update custom extensions when highlighted line or font size changes
   useEffect(() => {
@@ -327,7 +381,6 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     }
   };
 
-  // FIXED: Handle code changes with immediate local updates
   const handleCodeChange = (value: string): void => {
     // 1. Update fileContent immediately for the editor
     setFileContent(value); 
@@ -342,27 +395,35 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     
     // 3. Update cached content immediately
     updateCachedFileContent(value);
+
+    // 4. Debounced auto-save to database
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(() => {
+      if (activeMethodId && sessionId && lessonId && currentMethodIndex !== undefined) {
+        saveCodeSnapshot({
+          sessionId,
+          lessonId,
+          taskIndex: currentMethodIndex,
+          methodId: activeMethodId,
+          codeContent: value
+        }).catch(error => {
+          console.error("Auto-save failed:", error);
+        });
+      }
+    }, 3000); // Save after 3 seconds of idle time
   };
 
-  // Save methods code to localStorage whenever it changes (debounced)
+  // Cleanup timeout on unmount
   useEffect(() => {
-    if (!isInitialized || !sessionId) return;
-    
-    const saveDelay = 500; // ms
-    
-    const saveTimer = setTimeout(() => {
-      try {
-        // Use session-specific key
-        const storageKey = `${LOCAL_STORAGE_CODE_KEY_PREFIX}${sessionId}`;
-        localStorage.setItem(storageKey, JSON.stringify(methodsCode));
-        console.log(`Saved functions code to localStorage for session ${sessionId}`);
-      } catch (err) {
-        console.error("Error saving to localStorage:", err);
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
-    }, saveDelay);
-    
-    return () => clearTimeout(saveTimer);
-  }, [isInitialized, methodsCode, sessionId]);
+    };
+  }, []);
 
   // Generate the current method code for the editor
   const currentMethodCode = isInitialized && activeMethodId ? 
@@ -373,28 +434,6 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
       className={`h-full flex flex-col ${className}`}
       ref={editorContainerRef}
     >
-      {/* Add a small zoom control indicator */}
-      <div className="absolute top-3 right-3 z-10 bg-white bg-opacity-75 rounded px-2 py-1 text-xs text-gray-600 flex items-center space-x-2">
-        <button 
-          onClick={zoomOut}
-          className="hover:text-blue-600 focus:outline-none"
-        >
-          −
-        </button>
-        <span>{fontSize}px</span>
-        <button 
-          onClick={zoomIn}
-          className="hover:text-blue-600 focus:outline-none"
-        >
-          +
-        </button>
-        <button 
-          onClick={resetZoom}
-          className="ml-1 text-gray-500 hover:text-blue-600 text-[10px] focus:outline-none"
-        >
-          reset
-        </button>
-      </div>
       
       <ScrollArea className="flex-1">
         <CodeMirror
