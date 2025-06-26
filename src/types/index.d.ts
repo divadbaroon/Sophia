@@ -368,3 +368,28 @@ export interface TaskSidebarProps {
   isSurveyModalOpen: boolean;
   setIsSurveyModalOpen: (open: boolean) => void;
 }
+
+export interface CodeError {
+  sessionId: string
+  lessonId: string
+  taskIndex: number
+  errorMessage: string
+}
+
+export interface TestCaseResult {
+  testCaseIndex: number
+  testInput: any
+  expectedOutput: any
+  actualOutput?: any
+  passed: boolean
+  errorMessage?: string
+  executionTimeMs?: number
+}
+
+export interface TestRunResults {
+  sessionId: string
+  lessonId: string
+  taskIndex: number
+  methodId: string
+  testCaseResults: TestCaseResult[]
+}
