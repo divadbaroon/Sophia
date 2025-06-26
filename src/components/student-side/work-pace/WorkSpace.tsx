@@ -1,18 +1,19 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from "react"
+
 import { Card } from "@/components/ui/card"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
 import { HelpCircle } from "lucide-react"
-import SophiaWrapper from "@/components/student-side/voice-chat/SophiaWrapper"
-import { DeepgramTranscriber } from "@/components/student-side/voice-chat/DeepgramTranscriber"
-import { useFile } from "@/lib/context/FileContext"
-import ConsentModal from "@/components/student-side/consent/ConsentModal"
-import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
+
 import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader"
+import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
 import CodeEditor, { CodeEditorRef } from "@/components/student-side/code-editor/CodeEditor"
 import Terminal from "@/components/student-side/terminal/Terminal"
+import ConsentModal from "@/components/student-side/consent/ConsentModal"
+import SophiaWrapper from "@/components/student-side/voice-chat/SophiaWrapper"
+import { DeepgramTranscriber } from "@/components/student-side/voice-chat/DeepgramTranscriber"
 
 const CONSENT_STORAGE_KEY = 'sophia_user_consent'
 
@@ -27,8 +28,6 @@ export const WorkspaceLayout: React.FC = () => {
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false)
   const [terminalHeight, setTerminalHeight] = useState(50)
 
-  // FileContext (for task updates, etc.)
-  const { sessionData, currentMethodIndex, updateStudentTask } = useFile()
   const codeEditorRef = useRef<CodeEditorRef>(null)
 
   // Consent check on mount
