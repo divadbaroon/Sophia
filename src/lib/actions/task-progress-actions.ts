@@ -75,7 +75,6 @@ export async function getTaskProgressForSession(sessionId: string) {
     const { data, error } = await supabase
       .from('task_progress')
       .select('*')
-      .eq('session_id', sessionId)
       .eq('profile_id', user.id)
       .order('task_index', { ascending: true })
 
