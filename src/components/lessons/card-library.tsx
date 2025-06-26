@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -92,12 +92,7 @@ export default function GamifiedConceptLibrary() {
     }
   }
 
-  // Load data on mount
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     // Get user's classes
     const { data: classes } = await getUserClasses()
     
@@ -133,7 +128,12 @@ export default function GamifiedConceptLibrary() {
     }
     
     setLoading(false)
-  }
+  }, [])
+
+  // Load data on mount
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   // Handle class change
   const handleClassChange = async (classCode: string) => {

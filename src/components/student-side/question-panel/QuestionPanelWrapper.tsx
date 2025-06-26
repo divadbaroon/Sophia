@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useImperativeHandle, forwardRef, Ref } from 'react'
+import React, { useImperativeHandle, forwardRef, Ref, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { HelpCircle } from 'lucide-react'
 import QuestionPanel from '@/components/student-side/question-panel/QuestionPanel'
@@ -64,18 +64,18 @@ const QuestionPanelContent: React.FC<QuestionPanelContentProps> = ({ editorRef, 
   const [retryCount, setRetryCount] = React.useState(0);
 
   // Function to highlight a line in the editor
-  const highlightLine = (lineNumber: number) => {
+  const highlightLine = useCallback((lineNumber: number) => {
     if (editorRef?.current) {
       editorRef.current.highlightLine(lineNumber);
     }
-  };
+  }, [editorRef]);
 
   // Function to clear highlighting
-  const clearHighlight = () => {
+  const clearHighlight = useCallback(() => {
     if (editorRef?.current) {
       editorRef.current.clearHighlight();
     }
-  };
+  }, [editorRef]);
 
   // Expose the highlight functions through the forwarded ref
   useImperativeHandle(forwardedRef, () => ({
@@ -88,7 +88,7 @@ const QuestionPanelContent: React.FC<QuestionPanelContentProps> = ({ editorRef, 
     return () => {
       clearHighlight();
     };
-  }, []);
+  }, [clearHighlight]);
 
   // Check if we need to show initialization status
   if (!isInitialized || error) {

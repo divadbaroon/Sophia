@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import {
   PolarAngleAxis,
@@ -110,7 +110,7 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
   }, []);
 
   // Generate skills assessment overview using Anthropic API
-  const generateSkillsAssessment = async () => {
+  const generateSkillsAssessment = useCallback(async () => {
     setIsGeneratingOverview(true);
 
     try {
@@ -173,14 +173,14 @@ const KnowledgeRadarModal: React.FC<KnowledgeRadarModalProps> = ({
     } finally {
       setIsGeneratingOverview(false);
     }
-  };
+  }, [conceptMap]);
 
   // Generate the assessment when the component is ready
   useEffect(() => {
     if (!loading && conceptMap && !assessmentOverview) {
       generateSkillsAssessment();
     }
-  }, [loading, conceptMap, assessmentOverview]);
+  }, [loading, conceptMap, assessmentOverview, generateSkillsAssessment]);
 
   // Log the received data for debugging purposes
   useEffect(() => {
