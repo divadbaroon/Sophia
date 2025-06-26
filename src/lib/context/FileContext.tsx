@@ -5,7 +5,6 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react'
-import { FileSystemNode } from '@/utils/FileUtils'
 import { FileContextType, TestCase, TaskData, ConversationMessage } from '@/types'
 import { usePathname } from 'next/navigation'
 import { getCodingTasksForLesson } from '@/lib/actions/coding-tasks-actions'
@@ -20,11 +19,8 @@ const FileContext = createContext<FileContextType | undefined>(undefined)
 export const FileProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname()
   
-  const [selectedFile, setSelectedFile] = useState<string | null>(null)
   const [fileContent, setFileContent] = useState<string>('')
   const [cachedFileContent, setCachedFileContent] = useState<string>('')
-  const [filePath, setFilePath] = useState<string | null>(null)
-  const [fileNode, setFileNode] = useState<FileSystemNode | null>(null)
 
   const [errorContent, setErrorContent] = useState('')
   const [executionOutput, setExecutionOutput] = useState<string>('')
@@ -51,9 +47,6 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
 
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([])
   const [conceptMap, setConceptMap] = useState<any>(null)
-
-  const [speakTo, setSpeakTo] = useState<'student' | 'ta'>('ta')
-  const [scenario, setScenario] = useState<'one-on-one' | 'group'>('one-on-one')
 
   const [showReport, setShowReport] = useState<boolean>(false)
 
@@ -330,13 +323,6 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     setExecutionOutput(output)
   }
 
-  const selectFile = (fileName: string, content: string, path: string) => {
-    setSelectedFile(fileName)
-    setFileContent(content)
-    setCachedFileContent(content)
-    setFilePath(path)
-  }
-
   const updateCachedFileContent = (content: string) => {
     setCachedFileContent(content)
   }
@@ -373,14 +359,6 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     return fileContent === cachedFileContent
   }
 
-  const updateSpeakTo = (role: 'student' | 'ta') => {
-    setSpeakTo(role)
-  }
-
-  const updateScenario = (newScenario: 'one-on-one' | 'group') => {
-    setScenario(newScenario)
-  }
-
   const getCurrentMethodTemplate = () => {
     if (activeMethodId && sessionData?.methodTemplates) {
       return sessionData.methodTemplates[activeMethodId]
@@ -399,10 +377,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   return (
     <FileContext.Provider
       value={{
-        selectedFile,
         fileContent,
-        filePath,
-        selectFile,
         cachedFileContent,
         updateCachedFileContent,
         setFileContent,
@@ -411,16 +386,10 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         executionOutput,
         updateExecutionOutput,
         isSaved,
-        fileNode,
-        setFileNode,
         highlightedText,
         updateHighlightedText,
         studentTask,
         updateStudentTask,
-        speakTo,
-        updateSpeakTo,
-        scenario,
-        updateScenario,
         lineNumber,
         updateLineNumber,
         conceptMapConfidenceMet,
