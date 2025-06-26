@@ -139,7 +139,7 @@ export const useConversationManager = () => {
         
       }
     }
-  }, [conceptMap, conceptMapReady, taPivot, sessionId, studentId, fileContext]);
+  }, [conceptMap, conceptMapReady, taPivot, sessionId, MediaStreamAudioDestinationNode]);
 
   // Save new conversation histroy
   useEffect(() => {
@@ -148,7 +148,7 @@ export const useConversationManager = () => {
       fileContext.updateConversationHistory(state.conversationHistory);
       console.log("Updated FileContext conversationHistory", state.conversationHistory);
     }
-  }, [state.conversationHistory, fileContext]);
+  }, [state.conversationHistory]);
   
   // Manager reference
   const managerRef = useRef<ConversationManager | null>(null);
@@ -407,7 +407,7 @@ export const useConversationManager = () => {
       console.error('Failed to initialize conversation manager:', error);
       setState(prev => ({ ...prev, error: 'Failed to initialize speech recognition system' }));
     }
-  }, [cancelAllAudioPlayback, fileContext]);
+  }, []);
   
   // Function to handle text-to-speech streaming
   const speakText = useCallback(async (text: string, isFirstSentence: boolean = false) => {
@@ -747,7 +747,7 @@ export const useConversationManager = () => {
       
       streamResponse();
     }
-  }, [state.status, state.conversationHistory, isConceptMapProcessing, queueOrSpeakText, sessionId, studentId, fileContext]);
+  }, [state.status, state.conversationHistory, isConceptMapProcessing, queueOrSpeakText, sessionId, studentId]);
   
   // Helper function to ensure manager exists
   const getManager = useCallback(() => {
