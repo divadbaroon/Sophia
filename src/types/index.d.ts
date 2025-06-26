@@ -393,3 +393,11 @@ export interface TestRunResults {
   methodId: string
   testCaseResults: TestCaseResult[]
 }
+
+export interface CodeSave {
+  sessionId: string
+  lessonId: string
+  taskIndex: number
+  methodId: string
+  codeContent: string
+}
