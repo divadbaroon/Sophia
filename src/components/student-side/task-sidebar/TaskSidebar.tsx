@@ -1,25 +1,25 @@
 "use client"
 
 import { useState, useEffect } from "react"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, ArrowRight, Target, BookOpen, Zap, ChevronRight, CheckCircle, Lock } from "lucide-react"
-import { useFile } from "@/lib/context/FileContext"
-import { conceptIcons } from "@/lib/data/conceptIcons"
+
 import { QuizModal } from "@/components/lessons/components/quiz-modal"
 import { SurveyModal } from "@/components/lessons/components/survery-modal"
+
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
 import { getQuizQuestions } from "@/lib/actions/quiz-actions" 
 
-interface TaskSidebarProps {
-  isQuizModalOpen: boolean;
-  setIsQuizModalOpen: (open: boolean) => void;
-  isSurveyModalOpen: boolean;
-  setIsSurveyModalOpen: (open: boolean) => void;
-}
+import { useFile } from "@/lib/context/FileContext"
+
+import { conceptIcons } from "@/lib/data/conceptIcons"
+
+import { TaskSidebarProps } from "@/types"
 
 export default function TaskSidebar({ 
   isQuizModalOpen, 
@@ -127,12 +127,11 @@ export default function TaskSidebar({
       goToNextMethod()
     }
   }
-  // UPDATE THIS FUNCTION - Add lesson completion logic
+
   const handleQuizComplete = async (score: number, conceptTitle: string) => {
     setIsQuizModalOpen(false)
     setCurrentConceptTitle(conceptTitle)
     
-    // 🎯 UPDATE LESSON PROGRESS IN DATABASE
     if (lessonId) {
       try {
         console.log('📝 Updating lesson progress...', { lessonId, score })
@@ -186,36 +185,6 @@ export default function TaskSidebar({
   const currentTask = sessionData.tasks[currentMethodIndex]
   const concepts = sessionData.conceptMappings[currentMethodIndex] || []
 
-  // Mock difficulty level - you can replace this with actual data from your task
-  const difficultyLevel = currentTask.difficulty || "Beginner"
-  const getDifficultyColor = (level: string) => {
-    switch (level.toLowerCase()) {
-      case "beginner":
-      case "easy":
-        return "bg-green-100 text-green-800 border-green-200"
-      case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
-      case "hard":
-        return "bg-red-100 text-red-800 border-red-200"
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
-    }
-  }
-
-  const getDifficultyIcon = (level: string) => {
-    switch (level.toLowerCase()) {
-      case "beginner":
-      case "easy":
-        return <Zap className="h-3 w-3" />
-      case "medium":
-        return <Target className="h-3 w-3" />
-      case "hard":
-        return <BookOpen className="h-3 w-3" />
-      default:
-        return <Target className="h-3 w-3" />
-    }
-  }
-
   if (isCollapsed) {
     return (
       <div className="h-screen w-12 bg-gradient-to-b from-background to-muted/20 border-r flex flex-col items-center py-4 transition-all duration-300 relative">
@@ -257,7 +226,7 @@ export default function TaskSidebar({
   return (
     <>
       <div className="h-screen flex flex-col bg-gradient-to-b from-background to-muted/20 transition-all duration-300 relative">
-        {/* Header with collapse button - Fixed height */}
+        {/* Header */}
         <div className="flex-shrink-0 p-4 pt-12 mt-11 pb-3 border-b bg-background/80 backdrop-blur-sm">
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2 flex-1">
@@ -266,16 +235,8 @@ export default function TaskSidebar({
             </div>
           </div>
 
-          {/* Difficulty and Concept badges inline */}
+          {/* Concept badges inline */}
           <div className="flex flex-wrap items-center gap-2">
-            <Badge
-              variant="outline"
-              className={`${getDifficultyColor(difficultyLevel)} text-xs font-medium flex items-center gap-1.5 px-3 py-1.5`}
-            >
-              {getDifficultyIcon(difficultyLevel)}
-              {difficultyLevel}
-            </Badge>
-
             {concepts.length === 0 && (
               <Badge variant="secondary" className="text-xs font-medium bg-blue-100 text-blue-800">
                 Lambda Functions
@@ -299,7 +260,7 @@ export default function TaskSidebar({
           </div>
         </div>
 
-        {/* Scrollable content area - Takes remaining space but leaves room for fixed navigation */}
+        {/* Scrollable content area */}
         <div className="flex-1 min-h-0 pb-28">
           <ScrollArea className="h-full">
             <div className="p-4 space-y-6">
