@@ -125,6 +125,43 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     setHighlightedLineNumber(null);
   };
 
+  // Add keyboard event listener for Ctrl+S
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Ctrl+S (or Cmd+S on Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        
+        // Get current code directly from editor and save
+        if (editorViewRef.current && activeMethodId && sessionId && lessonId && currentMethodIndex !== undefined) {
+          const currentCode = editorViewRef.current.state.doc.toString();
+          
+          // Update state immediately
+          setMethodsCode(prev => ({
+            ...prev,
+            [activeMethodId]: currentCode
+          }));
+          
+          // Save to database
+          saveCodeSnapshot({
+            sessionId,
+            lessonId,
+            taskIndex: currentMethodIndex,
+            methodId: activeMethodId,
+            codeContent: currentCode
+          }).then(() => {
+            console.log(`✅ Manual save completed for ${activeMethodId}`);
+          }).catch(error => {
+            console.error(`❌ Manual save failed for ${activeMethodId}:`, error);
+          });
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [activeMethodId, sessionId, lessonId, currentMethodIndex]);
+
   // Add zoom functions
   const zoomIn = () => {
     setFontSize(prev => {
@@ -153,7 +190,8 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
       return;
     }
 
-    const codeContent = methodsCode[activeMethodId] || '';
+    // Get the current code content from the editor view
+    const currentCode = editorViewRef.current?.state.doc.toString() || '';
     
     try {
       setIsSaving(true);
@@ -162,7 +200,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
         lessonId,
         taskIndex: currentMethodIndex,
         methodId: activeMethodId,
-        codeContent
+        codeContent: currentCode  
       });
       console.log(`✅ Saved code for method: ${activeMethodId}`);
     } catch (error) {
@@ -174,6 +212,14 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
 
   // Manual save function (exposed via ref)
   const manualSave = async () => {
+    // update methodsCode state to keep it in sync
+    if (activeMethodId && editorViewRef.current) {
+      const currentCode = editorViewRef.current.state.doc.toString();
+      setMethodsCode(prev => ({
+        ...prev,
+        [activeMethodId]: currentCode
+      }));
+    }
     await saveCurrentMethod();
   };
   
@@ -185,7 +231,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     zoomOut,
     resetZoom,
     saveCode: manualSave
-  }));
+  }), [activeMethodId, sessionId, lessonId, currentMethodIndex]);
   
   // Load saved code from database or initialize with templates
   useEffect(() => {
