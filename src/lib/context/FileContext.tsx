@@ -37,7 +37,6 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [sessionId, setSessionId] = useState<string>('')
   const [lessonId, setLessonId] = useState<string>('')
   const [sessionData, setSessionData] = useState<TaskData | null>(null)
-  console.log("TESTING", sessionData)
   const [isLoadingTasks, setIsLoadingTasks] = useState(true)
   const [currentMethodIndex, setCurrentMethodIndex] = useState<number>(0)
   const [activeMethodId, setActiveMethodId] = useState<string>('')
