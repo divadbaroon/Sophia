@@ -67,20 +67,28 @@ const SophiaWrapper: React.FC<SophiaWrapperProps> = ({
                 </div>
               </div>
 
-              {/* Voice Circle Animation */}
-              <div className="flex justify-center items-center mb-6">
-                <div className="h-28 w-28">
-                  <VoiceCircle state={currentState} />
+              {/* Voice Circle Animation - only show when not listening */}
+              {currentState !== 'listening' && (
+                <div className="flex justify-center items-center mb-6">
+                  <div className="h-28 w-28">
+                    <VoiceCircle state={currentState} />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Transcript display */}
-              {transcript && (
-                <div className="mt-4">
-                  <div className="p-3 bg-muted/50 rounded-lg min-h-[50px] flex items-center">
-                    <p className="text-sm text-muted-foreground">
-                      <span className="text-foreground">{transcript}</span>
-                    </p>
+              {(transcript || currentState === 'listening') && (
+                <div className="flex justify-center items-center min-h-[120px]">
+                  <div className="text-center max-w-md">
+                    {transcript ? (
+                      <p className="text-lg leading-relaxed text-foreground">
+                        {transcript}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Start speaking...
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
