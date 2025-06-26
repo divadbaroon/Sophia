@@ -2,8 +2,12 @@
 
 import { useRef, useCallback } from 'react'
 import { useSophiaBrain } from './hooks/useSophiaBrain'
+import { saveMessage } from '@/lib/actions/message-actions'
+import { MessageSave } from "@/types"
+import { useFile } from '@/lib/context/FileContext'
 
 export const DeepgramTranscriber = () => {
+  const { sessionId, lessonId: classId } = useFile()
   const socketRef = useRef<WebSocket | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -24,13 +28,26 @@ export const DeepgramTranscriber = () => {
   const startSilenceTimeout = useCallback(() => {
     clearSilenceTimeout()
 
-    silenceTimeoutRef.current = window.setTimeout(() => {
+    silenceTimeoutRef.current = window.setTimeout(async () => {
       const transcript = finalTranscriptRef.current.trim()
       if (!transcript) return
 
+      // 1) Prepare the user’s message
+      const payload: MessageSave = {
+        sessionId,
+        classId,
+        content: transcript,
+        role: 'user',
+      }
+      const result = await saveMessage(payload)
+      if (!result.success) {
+        console.error('Failed to save message:', result.error)
+      }
+
+      // 2) Now flip the UI into “thinking”
       brain.startThinking()
     }, 3000)
-  }, [brain, clearSilenceTimeout])
+  }, [clearSilenceTimeout, sessionId, classId, brain])
 
   const startTranscription = useCallback(async () => {
     if (brain.state === 'listening') return
