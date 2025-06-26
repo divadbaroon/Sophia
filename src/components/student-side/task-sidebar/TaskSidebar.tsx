@@ -160,7 +160,7 @@ export default function TaskSidebar({
     console.log("Survey data submitted:", surveyData)
     setIsSurveyModalOpen(false)
     // Redirect to homepage after survey
-    window.location.href = "/"
+    window.location.href = "/lessons"
   }
 
   // Show loading state if sessionData not ready
