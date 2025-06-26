@@ -63,7 +63,7 @@ export async function updateTaskProgress(
 }
 
 // Get all task progress for a specific session
-export async function getTaskProgressForSession(sessionId: string) {
+export async function getTaskProgressForSession() {
   const supabase = await createClient()
   
   try {
