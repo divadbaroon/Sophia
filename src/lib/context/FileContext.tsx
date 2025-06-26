@@ -9,6 +9,11 @@ import { FileSystemNode } from '@/utils/FileUtils'
 import { FileContextType, TestCase, TaskData, ConversationMessage } from '@/types'
 import { usePathname } from 'next/navigation'
 import { getCodingTasksForLesson } from '@/lib/actions/coding-tasks-actions'
+import { 
+  getTaskProgressForSession, 
+  markTaskCompleted as dbMarkTaskCompleted,
+  recordTaskAttempt 
+} from '@/lib/actions/task-progress-actions'
 
 const FileContext = createContext<FileContextType | undefined>(undefined)
 
@@ -32,6 +37,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [sessionId, setSessionId] = useState<string>('')
   const [lessonId, setLessonId] = useState<string>('')
   const [sessionData, setSessionData] = useState<TaskData | null>(null)
+  console.log("TESTING", sessionData)
   const [isLoadingTasks, setIsLoadingTasks] = useState(true)
   const [currentMethodIndex, setCurrentMethodIndex] = useState<number>(0)
   const [activeMethodId, setActiveMethodId] = useState<string>('')
@@ -56,8 +62,9 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
 
   const [conceptMapInitializing, setConceptMapInitializing] = useState<boolean>(false)
 
-  // Add simple boolean completion tracking state
+  // completion tracking state 
   const [taskCompletionStatus, setTaskCompletionStatus] = useState<Record<string, Record<number, boolean>>>({})
+  const [isLoadingTaskProgress, setIsLoadingTaskProgress] = useState(false)
 
   // Extract lesson ID and session ID from URL
   useEffect(() => {
@@ -115,7 +122,6 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
           setConceptMap(taskData.conceptMap)
         } else {
           console.error('Failed to load coding tasks:', result.error)
-          // You might want to show an error message to the user here
         }
       } catch (error) {
         console.error('Error loading coding tasks:', error)
@@ -127,52 +133,77 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     loadCodingTasks()
   }, [lessonId])
 
-  // Load completion status from localStorage when session changes
+  // Load completion status from database when session changes
   useEffect(() => {
-    if (sessionId) {
-      const storageKey = `task_completion_${sessionId}`
-      const saved = localStorage.getItem(storageKey)
-      if (saved) {
-        try {
-          const completedData = JSON.parse(saved)
-          setTaskCompletionStatus(prev => ({
-            ...prev,
-            [sessionId]: completedData
-          }))
-        } catch (error) {
-          console.error('Error loading completion status:', error)
-          // Initialize with false for all tasks
-          const initialStatus: Record<number, boolean> = {}
-          sessionData?.tasks.forEach((_, index) => {
-            initialStatus[index] = false
+    const loadTaskProgress = async () => {
+      if (!sessionId) return
+      
+      setIsLoadingTaskProgress(true)
+      
+      try {
+        // Try to load from database first
+        const result = await getTaskProgressForSession(sessionId)
+        
+        if (result.success && result.data) {
+          // Convert database format to local state format
+          const progressMap: Record<number, boolean> = {}
+          result.data.forEach((progress: any) => {
+            progressMap[progress.task_index] = progress.completed
           })
+          
           setTaskCompletionStatus(prev => ({
             ...prev,
-            [sessionId]: initialStatus
+            [sessionId]: progressMap
           }))
+          
+          console.log('✅ Loaded task progress from database:', progressMap)
+        } else {
+          // Fallback to localStorage if database fails
+          console.log('⚠️ Database load failed, trying localStorage...')
+          const storageKey = `task_completion_${sessionId}`
+          const saved = localStorage.getItem(storageKey)
+          
+          if (saved) {
+            try {
+              const completedData = JSON.parse(saved)
+              setTaskCompletionStatus(prev => ({
+                ...prev,
+                [sessionId]: completedData
+              }))
+              console.log('📱 Loaded task progress from localStorage:', completedData)
+            } catch (error) {
+              console.error('Error parsing localStorage data:', error)
+              initializeEmptyProgress()
+            }
+          } else {
+            initializeEmptyProgress()
+          }
         }
-      } else {
-        // Initialize empty status for new session
-        const initialStatus: Record<number, boolean> = {}
-        sessionData?.tasks.forEach((_, index) => {
-          initialStatus[index] = false
-        })
-        setTaskCompletionStatus(prev => ({
-          ...prev,
-          [sessionId]: initialStatus
-        }))
+      } catch (error) {
+        console.error('Error loading task progress:', error)
+        initializeEmptyProgress()
+      } finally {
+        setIsLoadingTaskProgress(false)
       }
+    }
+
+    const initializeEmptyProgress = () => {
+      const initialStatus: Record<number, boolean> = {}
+      sessionData?.tasks.forEach((_, index) => {
+        initialStatus[index] = false
+      })
+      setTaskCompletionStatus(prev => ({
+        ...prev,
+        [sessionId]: initialStatus
+      }))
+      console.log('🔄 Initialized empty task progress')
+    }
+
+    if (sessionId && sessionData) {
+      loadTaskProgress()
     }
   }, [sessionId, sessionData])
 
-  // Save completion status to localStorage when it changes
-  useEffect(() => {
-    if (sessionId && taskCompletionStatus[sessionId]) {
-      const storageKey = `task_completion_${sessionId}`
-      localStorage.setItem(storageKey, JSON.stringify(taskCompletionStatus[sessionId]))
-    }
-  }, [taskCompletionStatus, sessionId])
-  
   // Update active method ID and test cases when method index or session changes
   useEffect(() => {
     if (sessionData?.tasks && sessionData.tasks[currentMethodIndex]) {
@@ -208,7 +239,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     console.log('Initial Concept Map:', sessionData.conceptMap)
   }, [systemType, studentTask, fileContent, sessionData, isLoadingTasks])
 
-  // All your existing functions remain the same...
+  // Helper functions
   const updatePivotQueue = (queue: Array<{concept: string, category: string, confidence: number}>) => {
     setPivotQueue(queue)
   }
@@ -218,10 +249,11 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     console.log(`Concept map initialization state updated to: ${isInitializing ? 'initializing' : 'complete'}`)
   }
 
-  // Task completion functions
-  const markTaskCompleted = (taskIndex: number) => {
+  // Updated task completion functions with database integration
+  const markTaskCompleted = async (taskIndex: number, testCasesPassed?: number, totalTestCases?: number) => {
     if (!sessionId) return
     
+    // Update local state immediately for responsive UI
     setTaskCompletionStatus(prev => ({
       ...prev,
       [sessionId]: {
@@ -229,6 +261,34 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         [taskIndex]: true
       }
     }))
+    
+    // Save to database
+    try {
+      const result = await dbMarkTaskCompleted(sessionId, taskIndex, testCasesPassed, totalTestCases)
+      if (result.success) {
+        console.log(`✅ Task ${taskIndex} completion saved to database`)
+      } else {
+        console.error('❌ Failed to save task completion to database:', result.error)
+      }
+    } catch (error) {
+      console.error('❌ Error saving task completion:', error)
+    }
+  }
+
+  // New function to record attempts without completing
+  const recordAttempt = async (taskIndex: number, testCasesPassed: number, totalTestCases: number) => {
+    if (!sessionId) return
+    
+    try {
+      const result = await recordTaskAttempt(sessionId, taskIndex, testCasesPassed, totalTestCases)
+      if (result.success) {
+        console.log(`📝 Task ${taskIndex} attempt recorded: ${testCasesPassed}/${totalTestCases} test cases passed`)
+      } else {
+        console.error('❌ Failed to record task attempt:', result.error)
+      }
+    } catch (error) {
+      console.error('❌ Error recording task attempt:', error)
+    }
   }
 
   const isTaskCompleted = (taskIndex: number): boolean => {
@@ -369,9 +429,9 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         latestPivotMessage,
         updateLatestPivotMessage,
         sessionId,
-        lessonId, // Add lessonId to context
+        lessonId,
         sessionData,
-        isLoadingTasks, // Add loading state
+        isLoadingTasks,
         currentMethodIndex,
         activeMethodId,
         currentTestCases,
@@ -391,12 +451,13 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         updatePivotQueue,
         conceptMapInitializing,
         updateConceptMapInitializing,
-        // Task completion methods
         markTaskCompleted,
+        recordAttempt, 
         isTaskCompleted,
         isTaskUnlocked,
         canGoToNext,
         getCompletionStats,
+        isLoadingTaskProgress, 
       }}>
       {children}
     </FileContext.Provider>
