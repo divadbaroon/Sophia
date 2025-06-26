@@ -389,3 +389,10 @@ export interface CodeSave {
   methodId: string
   codeContent: string
 }
+
+export interface MessageSave {
+  sessionId: string
+  classId: string
+  content: string
+  role?: 'user' | 'assistant'
+}
