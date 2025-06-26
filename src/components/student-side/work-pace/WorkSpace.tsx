@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
 
-import QuestionPanelWrapper from "@/components/student-side/question-panel/QuestionPanelWrapper";
+import SophiaWrapper from "@/components/student-side/voice-chat/SophiaWrapper";
 import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader";
 import CodeEditor, { CodeEditorRef } from "@/components/student-side/code-editor/CodeEditor";
 import Terminal from "@/components/student-side/terminal/Terminal";
@@ -110,7 +110,7 @@ export const WorkspaceLayout = () => {
   // Update student task when session data or current method changes
   useEffect(() => {
     if (sessionData && sessionData.tasks) {
-      let taskDescription = sessionData.system || "ATLAS";
+      let taskDescription = sessionData.system || "SOPHIA";
 
       if (sessionData.tasks[currentMethodIndex]) {
         const currentTask = sessionData.tasks[currentMethodIndex];
@@ -169,7 +169,7 @@ export const WorkspaceLayout = () => {
                 }
               }}
               disabled={showConsentModal}
-              title="Start conversation with ATLAS"
+              title="Start conversation with SOPHIA"
             >
               <HelpCircle className="h-5 w-5" />
               {isQuestionPanelVisible ? 'Close' : 'Ask Sophia'}
@@ -238,10 +238,12 @@ export const WorkspaceLayout = () => {
 
                 {/* Question Panel Popup - Also hide when quiz or survey is open */}
                 {isQuestionPanelVisible && !showConsentModal && !shouldHideGetHelpButton && (
-                  <Card className="absolute top-14 right-4 w-[400px] z-40 shadow-lg mt-6 mr-1">
-                    <QuestionPanelWrapper editorRef={codeEditorRef} />
-                  </Card>
-                )}
+                <Card className="absolute top-14 right-4 w-[400px] z-40 shadow-lg mt-6 mr-1">
+                  <SophiaWrapper 
+                    onClose={() => setIsQuestionPanelVisible(false)}
+                  />
+                </Card>
+              )}
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
