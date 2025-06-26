@@ -1,13 +1,23 @@
 "use client"
 
 import { useState } from "react"
+
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import usePythonRunner from "@/utils/PythonExecuter"
-import { useFile } from "@/lib/context/FileContext"
-import { useToast } from "@/hooks/use-toast"
+
 import { Play } from "lucide-react"
+
+import { saveTestCaseResults } from '@/lib/actions/test-case-results-actions'
+import { saveCodeError } from '@/lib/actions/code-errors-actions'
+
+import { useToast } from "@/hooks/use-toast"
+
+import usePythonRunner from "@/utils/PythonExecuter"
+
+import { useFile } from "@/lib/context/FileContext"
+
+import { TestCaseResult } from "@/types"
 
 const Terminal = () => {
   const [output, setOutput] = useState("")
@@ -21,13 +31,14 @@ const Terminal = () => {
     currentTestCases,
     currentMethodIndex,     
     markTaskCompleted,
-    recordAttempt
+    recordAttempt,
+    sessionId,
+    lessonId
   } = useFile()
   
   const { toast } = useToast()
 
   const getTestRunnerCode = (): string => {
-    // Exit early if activeMethodId or testCases are not available
     if (!activeMethodId || !currentTestCases || currentTestCases.length === 0) {
       return `
 print("❌ No test cases available for function '${activeMethodId}'")
@@ -36,11 +47,14 @@ test_output = "No test cases available"
 all_passed = False
 passed_count = 0
 total_count = 0
+detailed_results = []
 `;
     }
     
-    // Generate simple, reliable test runner
     return `
+import time
+import json
+
 # Execute the user's code to define the functions
 ${fileContent}
 
@@ -59,40 +73,61 @@ print("=" * 50)
 all_passed = True
 passed_count = 0
 total_count = len(test_cases)
+detailed_results = []
 
 for i, test in enumerate(test_cases):
     test_input = test.get("input", {})
     expected = test.get("expected")
     
+    start_time = time.time()
+    error_message = None
+    actual_result = None
+    test_passed = False
+    
     try:
         # Simple approach: use **kwargs to pass all inputs as keyword arguments
-        result = ${activeMethodId}(**test_input)
+        actual_result = ${activeMethodId}(**test_input)
         
         # Check if result matches expected
-        if isinstance(expected, float) and isinstance(result, (int, float)):
+        if isinstance(expected, float) and isinstance(actual_result, (int, float)):
             # Handle floating point comparison
-            success = abs(result - expected) < 0.01
+            test_passed = abs(actual_result - expected) < 0.01
         else:
-            success = (result == expected)
+            test_passed = (actual_result == expected)
         
-        if success:
+        if test_passed:
             passed_count += 1
             print(f"✅ Test {i+1} PASSED")
             print(f"   Input: {test_input}")
             print(f"   Expected: {expected}")
-            print(f"   Result: {result}")
+            print(f"   Result: {actual_result}")
         else:
             all_passed = False
             print(f"❌ Test {i+1} FAILED")
             print(f"   Input: {test_input}")
             print(f"   Expected: {expected}")
-            print(f"   Result: {result}")
+            print(f"   Result: {actual_result}")
             
     except Exception as e:
         all_passed = False
+        error_message = str(e)
         print(f"❌ Test {i+1} ERROR")
         print(f"   Input: {test_input}")
-        print(f"   Error: {str(e)}")
+        print(f"   Error: {error_message}")
+    
+    # Calculate execution time
+    execution_time_ms = int((time.time() - start_time) * 1000)
+    
+    # Store detailed result for tracking
+    detailed_results.append({
+        "testCaseIndex": i,
+        "testInput": test_input,
+        "expectedOutput": expected,
+        "actualOutput": actual_result,
+        "passed": test_passed,
+        "errorMessage": error_message,
+        "executionTimeMs": execution_time_ms
+    })
         
     print()
 
@@ -159,6 +194,14 @@ syntax_valid, error_message = check_code_syntax()
         const errorMessage = await pyodide?.globals.get("error_message")
 
         if (!syntaxValid) {
+          // Save syntax error for tracking
+          saveCodeError({
+            sessionId: sessionId || "unknown-session",
+            lessonId: lessonId || "unknown-lesson",
+            taskIndex: currentMethodIndex,
+            errorMessage: `Syntax Error: ${errorMessage}`
+          }).catch(console.error)
+
           setOutput(`Error: ${errorMessage}`)
           setErrorContent(`Error: ${errorMessage}`)
           toast({
@@ -179,13 +222,58 @@ syntax_valid, error_message = check_code_syntax()
         const allPassed = await pyodide?.globals.get("all_passed")
         const passedCountRaw = await pyodide?.globals.get("passed_count")
         const totalCountRaw = await pyodide?.globals.get("total_count")
+        const detailedResultsRaw = await pyodide?.globals.get("detailed_results")
         
-        // Convert Pyodide objects to JavaScript numbers
+        // Convert Pyodide objects to JavaScript
         const passedCount = Number(passedCountRaw) || 0
         const totalCount = Number(totalCountRaw) || currentTestCases.length
+        
+        // Safely convert detailed results
+        let detailedResults: any[] = []
+        if (detailedResultsRaw) {
+          try {
+            // Check if it's a PyodideObject with toJs method
+            if (typeof detailedResultsRaw === 'object' && detailedResultsRaw !== null && 'toJs' in detailedResultsRaw) {
+              detailedResults = JSON.parse(JSON.stringify((detailedResultsRaw as any).toJs()))
+            } else if (typeof detailedResultsRaw === 'string') {
+              // If it's already a string, parse it
+              detailedResults = JSON.parse(detailedResultsRaw)
+            } else {
+              // Try direct conversion
+              detailedResults = JSON.parse(JSON.stringify(detailedResultsRaw))
+            }
+          } catch (error) {
+            console.error("Failed to convert detailed results:", error)
+            detailedResults = []
+          }
+        }
 
         setOutput(testOutput || "No output")
         setErrorContent("")
+
+        // Save detailed test case results for analytics (non-blocking)
+        if (detailedResults && detailedResults.length > 0) {
+          console.log("Saving test results:", {
+            sessionId: sessionId || "unknown-session",
+            lessonId: lessonId || "unknown-lesson", 
+            taskIndex: currentMethodIndex,
+            methodId: activeMethodId,
+            testCaseCount: detailedResults.length
+          })
+          
+          saveTestCaseResults({
+            sessionId: sessionId || "unknown-session",
+            lessonId: lessonId || "unknown-lesson",
+            taskIndex: currentMethodIndex,
+            methodId: activeMethodId,
+            testCaseResults: detailedResults as TestCaseResult[]
+          }).catch(error => {
+            console.error("Failed to save detailed test results:", error)
+            // Don't block the UI if analytics saving fails
+          })
+        } else {
+          console.log("No detailed results to save - either no tests ran or conversion failed")
+        }
 
         // Record the attempt in the database with test case results
         try {
@@ -229,6 +317,14 @@ syntax_valid, error_message = check_code_syntax()
           errorMessage = "An unknown error occurred"
         }
 
+        // Save runtime error for tracking
+        saveCodeError({
+          sessionId: sessionId || "unknown-session",
+          lessonId: lessonId || "unknown-lesson",
+          taskIndex: currentMethodIndex,
+          errorMessage: `Runtime Error: ${errorMessage}`
+        }).catch(console.error)
+
         setOutput(errorMessage)
         setErrorContent(errorMessage)
         toast({
@@ -263,6 +359,11 @@ syntax_valid, error_message = check_code_syntax()
               </SelectContent>
             </Select>
           </div>
+          {currentTestCases && (
+            <span className="text-xs text-muted-foreground">
+              {currentTestCases.length} test case{currentTestCases.length !== 1 ? 's' : ''} loaded
+            </span>
+          )}
         </div>
       </div>
       <div className="flex-1 p-3 bg-muted/30">
