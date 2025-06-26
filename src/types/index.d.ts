@@ -40,7 +40,7 @@ export interface ConceptMap {
 }
 
 export interface TaskData {
-  tasks: TaskSidebarProps[]
+  tasks: TaskProps[]
   methodTemplates: Record<string, string>
   testCases: Record<string, TestCase[]>
   conceptMappings: Record<number, string[]>
@@ -108,11 +108,16 @@ export interface FileContextType {
   conceptMapInitializing: boolean;
   updateConceptMapInitializing: (isInitializing: boolean) => void;
 
-  markTaskCompleted: (taskIndex: number) => void;
+  // Updated task completion methods with database integration
+  markTaskCompleted: (taskIndex: number, testCasesPassed?: number, totalTestCases?: number) => Promise<void>;
+  recordAttempt: (taskIndex: number, testCasesPassed: number, totalTestCases: number) => Promise<void>;
   isTaskCompleted: (taskIndex: number) => boolean;
   isTaskUnlocked: (taskIndex: number) => boolean;
   canGoToNext: () => boolean;
   getCompletionStats: () => { completed: number; total: number };
+  
+  // New loading state for task progress
+  isLoadingTaskProgress: boolean;
 }
 
 export type FolderContextType = {
@@ -128,7 +133,7 @@ export interface User {
   lastName: string;
 }
 
-export interface TaskSidebarProps {
+export interface TaskProps {
   title: string
   difficulty: "Easy" | "Medium" | "Hard"
   description: string
@@ -355,4 +360,11 @@ export interface DemographicFormProps {
   isOpen: boolean
   onSubmit: () => void
   classId: string
+}
+
+export interface TaskSidebarProps {
+  isQuizModalOpen: boolean;
+  setIsQuizModalOpen: (open: boolean) => void;
+  isSurveyModalOpen: boolean;
+  setIsSurveyModalOpen: (open: boolean) => void;
 }
