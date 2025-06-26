@@ -4,7 +4,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { X } from 'lucide-react'
-import VoiceCircle from '../question-panel/VoiceCircle'
+import VoiceCircle from './VoiceCircle'
 import { useSophiaBrain } from './hooks/useSophiaBrain'
 
 interface SophiaWrapperProps {
