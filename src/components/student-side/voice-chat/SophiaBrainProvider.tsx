@@ -40,7 +40,7 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const startThinking = useCallback(() => {
     console.log('🤔 Sophia: Starting to think...')
     setState('thinking')
-    setCurrentText('Let me think about that...')
+    setCurrentText('')
     setError(null)
   }, [])
   
