@@ -93,7 +93,6 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   const [highlightedLineNumber, setHighlightedLineNumber] = useState<number | null>();
   const [customExtensions, setCustomExtensions] = useState<Extension[]>([]);
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Function to highlight a specific line by line number
@@ -194,7 +193,6 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     const currentCode = editorViewRef.current?.state.doc.toString() || '';
     
     try {
-      setIsSaving(true);
       await saveCodeSnapshot({
         sessionId,
         lessonId,
@@ -205,9 +203,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
       console.log(`✅ Saved code for method: ${activeMethodId}`);
     } catch (error) {
       console.error(`❌ Failed to save code for method ${activeMethodId}:`, error);
-    } finally {
-      setIsSaving(false);
-    }
+    } 
   };
 
   // Manual save function (exposed via ref)
@@ -241,7 +237,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     
     const initializeCode = async () => {
       // Start with templates as fallback
-      let initialMethodsCode = { ...sessionData.methodTemplates };
+      const initialMethodsCode = { ...sessionData.methodTemplates };
       
       try {
         // Try to load saved code from database
