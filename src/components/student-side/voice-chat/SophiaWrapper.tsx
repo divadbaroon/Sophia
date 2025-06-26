@@ -67,7 +67,7 @@ const SophiaWrapper: React.FC<SophiaWrapperProps> = ({
                 </div>
               </div>
 
-              {/* Voice Circle Animation - only show when not listening */}
+              {/* Voice Circle Animation */}
               {currentState !== 'listening' && (
                 <div className="flex justify-center items-center mb-6">
                   <div className="h-28 w-28">
