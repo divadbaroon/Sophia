@@ -214,17 +214,15 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!sessionData || isLoadingTasks) return
     
-    const systemInfo = {
-      studentTask,
-      studentCode: fileContent,
-      conceptMapInitial: sessionData.conceptMap,
-    }
-    
-    console.log('=== SYSTEM INFORMATION ===', systemInfo)
-    console.log('Student Task:', studentTask)
-    console.log('Student Code:', fileContent)
-    console.log('Initial Concept Map:', sessionData.conceptMap)
-  }, [studentTask, fileContent, sessionData, isLoadingTasks])
+    console.log('🎯 ESSENTIAL:', {
+      session: sessionId,
+      lesson: lessonId,
+      activeMethod: activeMethodId,
+      taskIndex: currentMethodIndex,
+      hasCode: !!fileContent,
+      codeLength: fileContent.length
+    })
+  }, [sessionId, lessonId, activeMethodId, currentMethodIndex, fileContent, sessionData, isLoadingTasks])
 
   // Helper functions
   const updatePivotQueue = (queue: Array<{concept: string, category: string, confidence: number}>) => {
