@@ -37,18 +37,6 @@ const SophiaWrapper: React.FC<SophiaWrapperProps> = ({
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-semibold">Sophia</h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="h-6 w-6 p-0"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-
       <Tabs defaultValue="live" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="live">Current</TabsTrigger>
@@ -91,7 +79,7 @@ const SophiaWrapper: React.FC<SophiaWrapperProps> = ({
                 <div className="mt-4">
                   <div className="p-3 bg-muted/50 rounded-lg min-h-[50px] flex items-center">
                     <p className="text-sm text-muted-foreground">
-                      🎤 <span className="text-foreground">{transcript}</span>
+                      <span className="text-foreground">{transcript}</span>
                     </p>
                   </div>
                 </div>
