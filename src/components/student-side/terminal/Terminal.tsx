@@ -359,11 +359,6 @@ syntax_valid, error_message = check_code_syntax()
               </SelectContent>
             </Select>
           </div>
-          {currentTestCases && (
-            <span className="text-xs text-muted-foreground">
-              {currentTestCases.length} test case{currentTestCases.length !== 1 ? 's' : ''} loaded
-            </span>
-          )}
         </div>
       </div>
       <div className="flex-1 p-3 bg-muted/30">
