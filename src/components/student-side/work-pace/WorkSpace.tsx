@@ -1,3 +1,4 @@
+// src/components/student-side/WorkspaceLayout.tsx
 'use client'
 
 import React, { useState, useEffect, useRef } from "react"
@@ -120,6 +121,34 @@ export const WorkspaceLayout: React.FC = () => {
                   </PanelWithHeader>
                 </div>
 
+                {/* Drag handle for resizing terminal */}
+                <div
+                  className="absolute left-0 right-0 h-2 bg-gray-100 hover:bg-gray-200 cursor-ns-resize z-10"
+                  style={{
+                    bottom: `${terminalHeight}%`,
+                    marginBottom: "-4px",
+                  }}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    const startY = e.clientY
+                    const startHeight = terminalHeight
+                    const containerHeight = e.currentTarget.parentElement?.clientHeight || 0
+
+                    const handleMouseMove = (moveEvent: MouseEvent) => {
+                      const deltaY = startY - moveEvent.clientY
+                      const deltaPercent = (deltaY / containerHeight) * 100
+                      updateTerminalHeight(startHeight + deltaPercent)
+                    }
+                    const handleMouseUp = () => {
+                      document.removeEventListener("mousemove", handleMouseMove)
+                      document.removeEventListener("mouseup", handleMouseUp)
+                    }
+
+                    document.addEventListener("mousemove", handleMouseMove)
+                    document.addEventListener("mouseup", handleMouseUp)
+                  }}
+                />
+
                 {/* Terminal */}
                 <div
                   className="absolute left-0 right-0 bottom-0 bg-background"
@@ -131,7 +160,6 @@ export const WorkspaceLayout: React.FC = () => {
                 {/* Sophia panel */}
                 {isQuestionPanelVisible && (
                   <Card className="absolute top-14 right-4 w-[400px] z-40 shadow-lg mt-6 mr-1">
-
                     <SophiaWrapper
                       onClose={onToggleSophia}
                       transcript={transcript}
