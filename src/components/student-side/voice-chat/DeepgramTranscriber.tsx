@@ -8,122 +8,137 @@ export const DeepgramTranscriber = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const finalTranscriptRef = useRef('')
+  const silenceTimeoutRef = useRef<number | null>(null)
 
   const brain = useSophiaBrain()
 
+  // Clear any existing silence timeout
+  const clearSilenceTimeout = useCallback(() => {
+    if (silenceTimeoutRef.current !== null) {
+      window.clearTimeout(silenceTimeoutRef.current)
+      silenceTimeoutRef.current = null
+    }
+  }, [])
+
+  // After 3s of silence, transition to thinking
+  const startSilenceTimeout = useCallback(() => {
+    clearSilenceTimeout()
+
+    silenceTimeoutRef.current = window.setTimeout(() => {
+      const transcript = finalTranscriptRef.current.trim()
+      if (!transcript) return
+
+      brain.startThinking()
+    }, 3000)
+  }, [brain, clearSilenceTimeout])
+
   const startTranscription = useCallback(async () => {
     if (brain.state === 'listening') return
-    
+
     try {
       brain.setError(null)
-      console.log('🚀 Starting Sophia transcription...')
-      
-      // Get API key
-      const apiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY
-      if (!apiKey) {
-        throw new Error('Deepgram API key not configured')
-      }
+      console.log('🚀 Starting Sophia transcription…')
 
-      // Get microphone access
+      finalTranscriptRef.current = ''
+      clearSilenceTimeout()
+
+      const apiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY
+      if (!apiKey) throw new Error('Deepgram API key not configured')
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
 
-      // Create MediaRecorder
       const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
       mediaRecorderRef.current = mediaRecorder
 
-      // Create WebSocket
-      const socket = new WebSocket('wss://api.deepgram.com/v1/listen?model=nova-3&interim_results=true', [
-        'token',
-        apiKey
-      ])
+      const socket = new WebSocket(
+        'wss://api.deepgram.com/v1/listen?model=nova-3&interim_results=true',
+        ['token', apiKey]
+      )
       socketRef.current = socket
 
       socket.onopen = () => {
-        console.log('✅ Sophia WebSocket connected')
-        
-        mediaRecorder.addEventListener('dataavailable', (event) => {
+        console.log('✅ WebSocket connected')
+        mediaRecorder.addEventListener('dataavailable', (e) => {
           if (socket.readyState === WebSocket.OPEN) {
-            socket.send(event.data)
+            socket.send(e.data)
           }
         })
-        
         mediaRecorder.start(250)
-        brain.startListening() 
+        brain.startListening()
       }
 
       socket.onmessage = (message) => {
         const received = JSON.parse(message.data)
         const result = received.channel?.alternatives?.[0]?.transcript
         const isFinal = received.is_final
-        
+
         if (result && result.trim()) {
-          console.log('🗣️ Sophia heard:', result)
-          
           if (isFinal) {
-            // Final transcript - add to conversation history
+            // accumulate full transcript
             finalTranscriptRef.current += (finalTranscriptRef.current ? ' ' : '') + result
-            
-            // Add as user message to conversation history
+
+            // **immediately add each final chunk to history**
             brain.addMessage({
               role: 'user',
               content: result,
-              timestamp: Date.now() 
+              timestamp: Date.now(),
             })
-            
-            // Update current text to show full transcript so far
+
+            // update display
             brain.setCurrentText(finalTranscriptRef.current)
+
+            // start silence timer for processing
+            startSilenceTimeout()
           } else {
-            // For interim results, just accumulate and update display
-            const fullTranscript = finalTranscriptRef.current + (finalTranscriptRef.current ? ' ' : '') + result
-            brain.setCurrentText(fullTranscript)
+            // interim result: show live preview and reset timer
+            const preview =
+              finalTranscriptRef.current +
+              (finalTranscriptRef.current ? ' ' : '') +
+              result
+            brain.setCurrentText(preview)
+            clearSilenceTimeout()
           }
         }
       }
 
-      socket.onerror = (error) => {
-        console.error('❌ Sophia WebSocket error:', error)
+      socket.onerror = (err) => {
+        console.error('❌ WebSocket error:', err)
         brain.setError('Connection failed')
+        clearSilenceTimeout()
       }
 
       socket.onclose = (event) => {
-        console.log('🔌 Sophia WebSocket closed:', event.code)
-        if (event.code !== 1000) {
+        console.log('🔌 WebSocket closed with code', event.code)
+        clearSilenceTimeout()
+        // ignore normal (1000) and no-status (1005)
+        if (event.code !== 1000 && event.code !== 1005) {
           brain.setError(`Connection closed unexpectedly (${event.code})`)
         }
       }
-      
     } catch (err) {
-      console.error('❌ Failed to start Sophia:', err)
+      console.error('❌ Failed to start transcription:', err)
       brain.setError((err as Error).message)
+      clearSilenceTimeout()
     }
-  }, [brain])
+  }, [brain, startSilenceTimeout, clearSilenceTimeout])
 
   const stopTranscription = useCallback(() => {
-    console.log('🛑 Stopping Sophia transcription')
-    
+    console.log('🛑 Stopping transcription')
+    clearSilenceTimeout()
     mediaRecorderRef.current?.stop()
-    streamRef.current?.getTracks().forEach(track => track.stop())
-    socketRef.current?.close()
-    
-    // Reset transcript accumulator
+    streamRef.current?.getTracks().forEach((t) => t.stop())
+    // clean close
+    socketRef.current?.close(1000)
     finalTranscriptRef.current = ''
-    
-    // Clear current text and reset brain state
     brain.setCurrentText('')
-    
-    // Could transition to thinking state here if you want to process the conversation
-    // brain.startThinking()
-    
-  }, [brain])
+  }, [brain, clearSilenceTimeout])
 
-  // Return simple interface - brain context handles all the state
   return {
     startTranscription,
     stopTranscription,
-    // For backward compatibility, expose brain state
     transcript: brain.currentText,
     isTranscribing: brain.state === 'listening',
-    error: brain.error
+    error: brain.error,
   }
 }
