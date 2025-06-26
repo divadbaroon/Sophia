@@ -49,10 +49,7 @@ export interface TaskData {
 }
 
 export interface FileContextType {
-  selectedFile: string | null
   fileContent: string
-  filePath: string | null
-  selectFile: (fileName: string, content: string, path: string) => void
   cachedFileContent: string
   updateCachedFileContent: (content: string) => void
   setFileContent: React.Dispatch<React.SetStateAction<string>>
@@ -61,16 +58,10 @@ export interface FileContextType {
   executionOutput: string
   updateExecutionOutput: (output: string) => void
   isSaved: () => boolean
-  fileNode: FileSystemNode | null
-  setFileNode: React.Dispatch<React.SetStateAction<FileSystemNode | null>>
   highlightedText: string
   updateHighlightedText: (text: string) => void
   studentTask: string
   updateStudentTask: (task: string) => void
-  speakTo: 'student' | 'ta'
-  updateSpeakTo: (role: 'student' | 'ta') => void
-  scenario: 'one-on-one' | 'group'
-  updateScenario: (newScenario: 'one-on-one' | 'group') => void
   lineNumber: number | null
   updateLineNumber: (line: number | null) => void
   conceptMapConfidenceMet: boolean
