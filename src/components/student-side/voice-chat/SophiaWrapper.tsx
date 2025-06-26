@@ -5,15 +5,19 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { X } from 'lucide-react'
 import VoiceCircle from '../question-panel/VoiceCircle'
-import { SophiaWrapperProps } from './types/SophiaBrainType'
+import { useSophiaBrain } from './hooks/useSophiaBrain'
 
-const SophiaWrapper: React.FC<SophiaWrapperProps> = ({
-  onClose,
-  transcript,
-  isTranscribing,
-  error,
-}) => {
-  const currentState = isTranscribing ? 'listening' : 'initializing'
+interface SophiaWrapperProps {
+  onClose: () => void
+}
+
+const SophiaWrapper: React.FC<SophiaWrapperProps> = ({ onClose }) => {
+  const brain = useSophiaBrain()
+  
+  const currentState = brain.state
+  const transcript = brain.currentText
+  const error = brain.error
+  const conversationHistory = brain.conversationHistory
 
   if (error) {
     return (
@@ -46,22 +50,28 @@ const SophiaWrapper: React.FC<SophiaWrapperProps> = ({
         <TabsContent value="live" className="mt-4">
           <div className="rounded-md border p-4 min-h-[200px]">
             <div className="space-y-4">
-              {/* State indicator */}
+              {/* State indicator*/}
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
                   {currentState === 'listening' ? (
                     <>
                       <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-                      <span className="text-sm text-muted-foreground">
-                        Listening
-                      </span>
+                      <span className="text-sm text-muted-foreground">Listening</span>
+                    </>
+                  ) : currentState === 'thinking' ? (
+                    <>
+                      <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse" />
+                      <span className="text-sm text-muted-foreground">Thinking</span>
+                    </>
+                  ) : currentState === 'speaking' ? (
+                    <>
+                      <div className="h-2 w-2 bg-purple-500 rounded-full animate-pulse" />
+                      <span className="text-sm text-muted-foreground">Speaking</span>
                     </>
                   ) : (
                     <>
                       <div className="h-2 w-2 bg-gray-500 rounded-full" />
-                      <span className="text-sm text-muted-foreground">
-                        Ready
-                      </span>
+                      <span className="text-sm text-muted-foreground">Ready</span>
                     </>
                   )}
                 </div>
@@ -98,9 +108,34 @@ const SophiaWrapper: React.FC<SophiaWrapperProps> = ({
 
         <TabsContent value="history" className="mt-4">
           <div className="rounded-md border p-4 min-h-[200px] max-h-96 overflow-auto">
-            <div className="flex items-center justify-center h-48 text-muted-foreground">
-              Conversation history will appear here
-            </div>
+            {conversationHistory.length > 0 ? (
+              <div className="space-y-3">
+                {conversationHistory.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`p-3 rounded-lg ${
+                      message.role === 'user' 
+                        ? 'bg-blue-50 border-l-4 border-blue-500' 
+                        : 'bg-green-50 border-l-4 border-green-500'
+                    }`}
+                  >
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                      {message.role === 'user' ? 'You' : 'Sophia'}
+                    </div>
+                    <p className="text-sm">{message.content}</p>
+                    {message.timestamp && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(message.timestamp).toLocaleTimeString()}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-48 text-muted-foreground">
+                Conversation history will appear here
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
