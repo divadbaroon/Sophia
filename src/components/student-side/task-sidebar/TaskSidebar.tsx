@@ -12,7 +12,7 @@ import { conceptIcons } from "@/lib/data/conceptIcons"
 import { QuizModal } from "@/components/lessons/components/quiz-modal"
 import { SurveyModal } from "@/components/lessons/components/survery-modal"
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
-import { getQuizQuestions } from "@/lib/actions/quiz-actions" // ADD THIS IMPORT
+import { getQuizQuestions } from "@/lib/actions/quiz-actions" 
 
 interface TaskSidebarProps {
   isQuizModalOpen: boolean;
@@ -29,8 +29,8 @@ export default function TaskSidebar({
 }: TaskSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [currentConceptTitle, setCurrentConceptTitle] = useState("")
-  const [quizData, setQuizData] = useState<any>(null) // ADD THIS STATE
-  const [isLoadingQuiz, setIsLoadingQuiz] = useState(false) // ADD THIS STATE
+  const [quizData, setQuizData] = useState<any>(null) 
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState(false) 
 
   const {
     sessionData,
@@ -44,7 +44,6 @@ export default function TaskSidebar({
   // Check if all tasks are completed
   const allTasksCompleted = sessionData?.tasks.every((_, index) => isTaskCompleted(index)) || false
 
-  // LOAD QUIZ QUESTIONS WHEN LESSON ID IS AVAILABLE
   useEffect(() => {
     const loadQuizQuestions = async () => {
       if (!lessonId) return
@@ -56,10 +55,10 @@ export default function TaskSidebar({
         if (quizQuestions && quizQuestions.length > 0) {
           // Format quiz data to match QuizModal expectations
           const formattedQuiz = {
-            title: sessionData?.tasks[0]?.title || "Lesson Quiz", // Use first task title or fallback
+            title: sessionData?.tasks[0]?.title || "Lesson Quiz", 
             questions: quizQuestions.map((question, index) => ({
               ...question,
-              id: question.id || `question-${lessonId}-${index}` // Ensure ID is present
+              id: question.id || `question-${lessonId}-${index}` 
             }))
           }
           setQuizData(formattedQuiz)
@@ -450,7 +449,7 @@ export default function TaskSidebar({
       <QuizModal
         isOpen={isQuizModalOpen}
         onClose={() => setIsQuizModalOpen(false)}
-        concept={quizData} // ✅ USE REAL QUIZ DATA FROM DATABASE
+        concept={quizData} 
         onComplete={handleQuizComplete}
       />
 
