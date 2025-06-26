@@ -37,4 +37,7 @@ export interface SophiaBrainController {
 
 export interface SophiaWrapperProps {
   onClose: () => void
+  transcript: string
+  isTranscribing: boolean
+  error: string | null
 }
