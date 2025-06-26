@@ -105,7 +105,7 @@ const VoiceCircle: React.FC<VoiceCircleProps> = ({ state }) => {
         ctx.arc(centerX, centerY, radius * innerPulse, 0, Math.PI * 2)
         ctx.fillStyle = "rgba(0, 0, 0, 0.1)"
         ctx.fill()
-      } else if (state === "processing") {
+      } else if (state === "thinking") {
         // ChatGPT-style processing animation (spinning dots)
         rotation += 0.05
 
