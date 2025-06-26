@@ -674,7 +674,7 @@ private async generateTAPivot(
     
     // Create the prompt for Claude
     const promptStartTime = performance.now();
-    const prompt = `As the concept mapping agent for ATLAS, focus entirely on assessing the student's understanding of a single concept.
+    const prompt = `As the concept mapping agent for SOPHIA, focus entirely on assessing the student's understanding of a single concept.
 
                     OBJECTIVE: Generate 1-3 extremely concise questions to assess the student's understanding of this specific concept.
                     

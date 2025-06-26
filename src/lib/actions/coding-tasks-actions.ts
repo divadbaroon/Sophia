@@ -72,7 +72,7 @@ export async function getCodingTasksForLesson(lessonId: string) {
         methodTemplates,
         testCases,
         conceptMappings,
-        system: "ATLAS"
+        system: "SOPHIA"
       },
       error: null
     }

@@ -38,7 +38,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [currentTestCases, setCurrentTestCases] = useState<TestCase[]>([])
   
   // System type state
-  const [systemType, setSystemType] = useState<'ATLAS' | 'Standalone'>('ATLAS')
+  const [systemType, setSystemType] = useState<'SOPHIA' | 'Standalone'>('SOPHIA')
   
   // Concept map and pivot state
   const [conceptMapConfidenceMet, setConceptMapConfidenceMet] = useState<boolean>(false)
@@ -333,7 +333,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     return sessionData?.methodTemplates || {}
   }
 
-  const updateSystemType = (type: 'ATLAS' | 'Standalone') => {
+  const updateSystemType = (type: 'SOPHIA' | 'Standalone') => {
     setSystemType(type)
   }
 

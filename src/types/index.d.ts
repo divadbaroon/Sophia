@@ -99,8 +99,8 @@ export interface FileContextType {
   showReport: boolean;
   setShowReport: React.Dispatch<React.SetStateAction<boolean>>;
   
-  systemType: 'ATLAS' | 'Standalone';
-  updateSystemType: (type: 'ATLAS' | 'Standalone') => void;
+  systemType: 'SOPHIA' | 'Standalone';
+  updateSystemType: (type: 'SOPHIA' | 'Standalone') => void;
 
   pivotQueue?: Array<{concept: string, category: string, confidence: number}> | null;
   updatePivotQueue?: (queue: Array<{concept: string, category: string, confidence: number}>) => void;
@@ -206,6 +206,7 @@ export interface AnthropicMessage {
 }
 
 export type VoiceCircleState = 
+    "error" 
   | "idle" 
   | "listening" 
   | "processing" 

@@ -69,7 +69,7 @@ export function prepareClaudePrompt(fileContext?: FileContextType | null): Claud
     lineNumber = null,
     pivotQueue = null,
     conceptMapConfidenceMet = false,
-    systemType = "ATLAS" 
+    systemType = "SOPHIA" 
   } = fileContext || {};
 
   console.log("CONCEPT CONFIDENCE MET", conceptMapConfidenceMet);
@@ -78,7 +78,7 @@ export function prepareClaudePrompt(fileContext?: FileContextType | null): Claud
 
   let systemContent = "";
 
-  if (systemType === "ATLAS") { 
+  if (systemType === "SOPHIA") { 
     systemContent = `
       You're having a tutoring conversation with a CS student who got stuck on their programming assignment. Be the kind of supportive, knowledgeable tutor you'd want to have - someone who's patient, encouraging, and really good at explaining things clearly.
 
