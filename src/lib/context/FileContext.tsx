@@ -142,7 +142,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
       
       try {
         // Try to load from database first
-        const result = await getTaskProgressForSession(sessionId)
+        const result = await getTaskProgressForSession()
         
         if (result.success && result.data) {
           // Convert database format to local state format
