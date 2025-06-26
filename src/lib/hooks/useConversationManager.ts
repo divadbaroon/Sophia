@@ -139,7 +139,7 @@ export const useConversationManager = () => {
         
       }
     }
-  }, [conceptMap, conceptMapReady, taPivot, sessionId, studentId]);
+  }, [conceptMap, conceptMapReady, taPivot, sessionId, studentId, fileContext]);
 
   // Save new conversation histroy
   useEffect(() => {
@@ -173,6 +173,51 @@ export const useConversationManager = () => {
   
   // Flag to prevent recursive calls
   const isHandlingBargeInRef = useRef<boolean>(false);
+
+  // Function to cancel all audio playback
+  const cancelAllAudioPlayback = useCallback(() => {
+    // Prevent recursive calls
+    if (isHandlingBargeInRef.current) {
+      return;
+    }
+    
+    isHandlingBargeInRef.current = true;
+    console.log(`🔊 [${new Date().toISOString()}] Canceling all audio playback`);
+    
+    // Stop all active audio elements
+    activeAudioElementsRef.current.forEach(audio => {
+      try {
+        audio.pause();
+        // Clean up the audio element
+        if (audio.src) {
+          URL.revokeObjectURL(audio.src);
+        }
+      } catch (error) {
+        console.error('Error stopping audio:', error);
+      }
+    });
+    
+    // Clear the active audio elements array
+    activeAudioElementsRef.current = [];
+    
+    // Clear the TTS queue
+    ttsQueueRef.current = [];
+    
+    // If system was speaking, return to IDLE state
+    if (isSpeakingRef.current && managerRef.current) {
+      isSpeakingRef.current = false;
+      
+      // Use setTimeout to break the synchronous call chain
+      setTimeout(() => {
+        if (managerRef.current) {
+          managerRef.current.returnToIdle();
+        }
+        isHandlingBargeInRef.current = false;
+      }, 0);
+    } else {
+      isHandlingBargeInRef.current = false;
+    }
+  }, []);
 
   // Initialize the manager
   useEffect(() => {
@@ -362,52 +407,7 @@ export const useConversationManager = () => {
       console.error('Failed to initialize conversation manager:', error);
       setState(prev => ({ ...prev, error: 'Failed to initialize speech recognition system' }));
     }
-  }, []);
-  
-  // Function to cancel all audio playback
-  const cancelAllAudioPlayback = useCallback(() => {
-    // Prevent recursive calls
-    if (isHandlingBargeInRef.current) {
-      return;
-    }
-    
-    isHandlingBargeInRef.current = true;
-    console.log(`🔊 [${new Date().toISOString()}] Canceling all audio playback`);
-    
-    // Stop all active audio elements
-    activeAudioElementsRef.current.forEach(audio => {
-      try {
-        audio.pause();
-        // Clean up the audio element
-        if (audio.src) {
-          URL.revokeObjectURL(audio.src);
-        }
-      } catch (error) {
-        console.error('Error stopping audio:', error);
-      }
-    });
-    
-    // Clear the active audio elements array
-    activeAudioElementsRef.current = [];
-    
-    // Clear the TTS queue
-    ttsQueueRef.current = [];
-    
-    // If system was speaking, return to IDLE state
-    if (isSpeakingRef.current && managerRef.current) {
-      isSpeakingRef.current = false;
-      
-      // Use setTimeout to break the synchronous call chain
-      setTimeout(() => {
-        if (managerRef.current) {
-          managerRef.current.returnToIdle();
-        }
-        isHandlingBargeInRef.current = false;
-      }, 0);
-    } else {
-      isHandlingBargeInRef.current = false;
-    }
-  }, []);
+  }, [cancelAllAudioPlayback, fileContext]);
   
   // Function to handle text-to-speech streaming
   const speakText = useCallback(async (text: string, isFirstSentence: boolean = false) => {
@@ -747,7 +747,7 @@ export const useConversationManager = () => {
       
       streamResponse();
     }
-  }, [state.status, state.conversationHistory, isConceptMapProcessing, queueOrSpeakText, sessionId, studentId]);
+  }, [state.status, state.conversationHistory, isConceptMapProcessing, queueOrSpeakText, sessionId, studentId, fileContext]);
   
   // Helper function to ensure manager exists
   const getManager = useCallback(() => {
