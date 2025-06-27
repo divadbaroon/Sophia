@@ -45,7 +45,7 @@ export const DeepgramTranscriber = () => {
       }
 
       // 2) Now flip the UI into “thinking”
-      brain.startThinking()
+      await brain.startThinking(transcript)
     }, 3000)
   }, [clearSilenceTimeout, sessionId, classId, brain])
 
