@@ -36,15 +36,8 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setState('speaking')
     setError(null)
   }, [])
-  
-  const startThinking = useCallback(() => {
-    console.log('🤔 Sophia: Starting to think...')
-    setState('thinking')
-    setCurrentText('')
-    setError(null)
-  }, [])
-  
-  const handleSetError = useCallback((newError: string | null) => {
+
+    const handleSetError = useCallback((newError: string | null) => {
     console.log('❌ Sophia: Error occurred:', newError)
     setError(newError)
     if (newError) {
@@ -57,6 +50,72 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
     console.log(`💬 Sophia: Adding ${message.role} message:`, message.content)
     setConversationHistory(prev => [...prev, message])
   }, [])
+  
+  const startThinking = useCallback(async (userMessage: string) => {
+    console.log('🤔 Sophia: Starting to think...')
+    setState('thinking')
+    setCurrentText('')
+    setError(null)
+    
+    try {
+      // Call Claude API
+      const response = await fetch('/api/claude', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: conversationHistory.slice(-10),
+          context: studentContext,
+          currentMessage: userMessage  
+        })
+      })
+      
+      if (!response.ok) throw new Error('Failed to get response')
+      
+      // Handle streaming response
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      let accumulatedResponse = ''
+      
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n')
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6)
+              if (data === '[DONE]') {
+                console.log(accumulatedResponse)
+                // Add assistant message to history
+                addMessage({
+                  role: 'assistant',
+                  content: accumulatedResponse,
+                  timestamp: Date.now()
+                })
+                setState('listening') // Return to listening
+              } else {
+                try {
+                  const parsed = JSON.parse(data)
+                  if (parsed.text) {
+                    accumulatedResponse += parsed.text
+                    setCurrentText(accumulatedResponse)
+                  }
+                } catch (e) {
+                  // Ignore parse errors
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error calling Claude:', error)
+      handleSetError('Failed to process your question')
+    }
+  }, [conversationHistory, studentContext, addMessage, handleSetError])
   
   const updateStudentContext = useCallback((context: Partial<StudentContext>) => {
     console.log('📝 Sophia: Updating student context:', context)
