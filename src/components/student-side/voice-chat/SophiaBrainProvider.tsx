@@ -122,8 +122,13 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
                     accumulatedResponse += parsed.text
                     setCurrentText(accumulatedResponse)
                   }
-                } catch (e) {
-                  // Ignore parse errors
+                } catch (parseError) {
+                  console.warn(
+                    '⚠️ Failed to JSON‐parse a Claude SSE chunk:',
+                    data,
+                    '\nError was:',
+                    parseError
+                  )
                 }
               }
             }
