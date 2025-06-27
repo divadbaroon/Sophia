@@ -26,7 +26,7 @@ export interface SophiaBrainController {
   // State actions
   startListening: () => void
   startSpeaking: () => void
-  startThinking: () => void
+  startThinking: (userMessage: string) => Promise<void>
   setError: (error: string | null) => void
   
   // Data actions
