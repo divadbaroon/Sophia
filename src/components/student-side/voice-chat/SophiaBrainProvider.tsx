@@ -9,7 +9,13 @@ import {
   SophiaBrainController 
 } from './types/SophiaBrainType'
 
+import { saveMessage } from '@/lib/actions/message-actions'
+import { MessageSave } from '@/types'
+import { useFile } from '@/lib/context/FileContext'
+
 export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { sessionId, lessonId: classId } = useFile()
+
   // Core state
   const [state, setState] = useState<VoiceState>('initializing')
   const [error, setError] = useState<string | null>(null)
@@ -95,6 +101,19 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
                   content: accumulatedResponse,
                   timestamp: Date.now()
                 })
+
+                // 2) persist to your DB
+                const payload: MessageSave = {
+                  sessionId,
+                  classId,
+                  content: accumulatedResponse,
+                  role: 'assistant'
+                }
+                const saveRes = await saveMessage(payload)
+                if (!saveRes.success) {
+                  console.error('❌ Failed to save assistant message:', saveRes.error)
+                }
+
                 setState('listening') // Return to listening
               } else {
                 try {
@@ -115,7 +134,14 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
       console.error('Error calling Claude:', error)
       handleSetError('Failed to process your question')
     }
-  }, [conversationHistory, studentContext, addMessage, handleSetError])
+    }, [
+    conversationHistory,
+    studentContext,
+    addMessage,
+    handleSetError,
+    sessionId,
+    classId,
+  ])
   
   const updateStudentContext = useCallback((context: Partial<StudentContext>) => {
     console.log('📝 Sophia: Updating student context:', context)
