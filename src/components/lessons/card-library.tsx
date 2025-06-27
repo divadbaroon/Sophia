@@ -236,21 +236,10 @@ export default function GamifiedConceptLibrary() {
   }
 
   const handleQuizComplete = async (score: number, conceptTitle: string) => {
-    setIsQuizModalOpen(false)
-    setCurrentConceptTitle(conceptTitle)
-    setIsInstructionsModalOpen(true)
-    
-    // Update local completed lessons state (optimistic update)
-    if (selectedConcept) {
-      setCompletedLessons(prev => new Set([...prev, selectedConcept.id]))
-    }
-    
-    handleConceptComplete()
-  }
-
-  const handleConceptComplete = () => {
-    console.log('Concept completed!')
-  }
+    setIsQuizModalOpen(false);
+    setCurrentConceptTitle(conceptTitle);
+    setIsInstructionsModalOpen(true);
+  };
 
   const handleInstructionsContinue = () => {
     window.location.href = `/lessons/${selectedConcept.id}/session/${selectedConcept.sessionId}`
