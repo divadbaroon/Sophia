@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { HelpCircle } from "lucide-react"
 
 import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader"
@@ -125,19 +126,33 @@ export const WorkspaceLayout: React.FC = () => {
 
       <main className={`flex flex-col h-screen ${showConsentModal ? 'pointer-events-none opacity-50' : ''}`}>
         <div className="flex-1 flex relative">
-          {/* Ask Sophia button */}
-          <Button
-            variant="outline"
-            size="lg"
-            className={`absolute top-3.5 right-16 z-50 flex items-center gap-2 ${
-              isQuestionPanelVisible ? 'bg-secondary' : 'bg-background hover:bg-secondary/80'
-            }`}
-            onClick={onToggleSophia}
-            disabled={showConsentModal}
-          >
-            <HelpCircle className="h-5 w-5" />
-            {isQuestionPanelVisible ? 'Close Sophia' : 'Ask Sophia'}
-          </Button>
+          {/* Ask Sophia button with tooltip */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className={`absolute top-3.5 right-16 z-50 flex items-center gap-2 ${
+                    isQuestionPanelVisible ? 'bg-secondary' : 'bg-background hover:bg-secondary/80'
+                  }`}
+                  onClick={onToggleSophia}
+                  disabled={showConsentModal}
+                >
+                  <HelpCircle className="h-5 w-5" />
+                  {isQuestionPanelVisible ? 'Close Sophia' : 'Ask Sophia'}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  {isQuestionPanelVisible 
+                    ? 'Close the help panel' 
+                    : 'Get help from Sophia'
+                  }
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           <ResizablePanelGroup direction="horizontal">
             <ResizablePanel defaultSize={28} minSize={20} maxSize={40}>
