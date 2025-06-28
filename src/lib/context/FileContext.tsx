@@ -55,6 +55,32 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [taskCompletionStatus, setTaskCompletionStatus] = useState<Record<string, Record<number, boolean>>>({})
   const [isLoadingTaskProgress, setIsLoadingTaskProgress] = useState(false)
 
+  // Update student task when method changes
+  useEffect(() => {
+    if (sessionData?.tasks && sessionData.tasks[currentMethodIndex]) {
+      const currentTask = sessionData.tasks[currentMethodIndex]
+      
+      // Build formatted task description
+      const examplesText = currentTask.examples.map((example, index) => {
+        const inputText = Object.entries(example.input)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join(', ')
+        
+        return `Example ${index + 1}:\nInput: ${inputText}\nOutput: ${example.output}`
+      }).join('\n\n')
+      
+      const taskDescription = `${currentTask.title}
+
+  ${currentTask.description}
+
+  Examples:
+  ${examplesText}`.trim()
+      
+      setStudentTask(taskDescription)
+      console.log('📝 Updated student task for:', currentTask.title)
+    }
+  }, [currentMethodIndex, sessionData])
+
   // Extract lesson ID and session ID from URL
   useEffect(() => {
     // Match pattern: /lessons/[lessonId]/session/[sessionId]
@@ -209,20 +235,6 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }, [currentMethodIndex, sessionData])
-
-  // System information logging
-  useEffect(() => {
-    if (!sessionData || isLoadingTasks) return
-    
-    console.log('🎯 ESSENTIAL:', {
-      session: sessionId,
-      lesson: lessonId,
-      activeMethod: activeMethodId,
-      taskIndex: currentMethodIndex,
-      hasCode: !!fileContent,
-      codeLength: fileContent.length
-    })
-  }, [sessionId, lessonId, activeMethodId, currentMethodIndex, fileContent, sessionData, isLoadingTasks])
 
   // Helper functions
   const updatePivotQueue = (queue: Array<{concept: string, category: string, confidence: number}>) => {
