@@ -8,9 +8,12 @@ export interface Message {
 }
 
 export interface StudentContext {
-  task: string
-  code: string
-  errors: string
+  fileContent: string
+  errorContent: string
+  studentTask: string
+  executionOutput: string
+  highlightedText: string
+  lineNumber: number | null
 }
 
 export interface SophiaBrainController {
@@ -30,7 +33,6 @@ export interface SophiaBrainController {
   setError: (error: string | null) => void
   
   // Data actions
-  updateStudentContext: (context: Partial<StudentContext>) => void
   setCurrentText: (text: string) => void
 }
 
