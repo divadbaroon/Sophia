@@ -106,6 +106,10 @@ export interface FileContextType {
   
   // New loading state for task progress
   isLoadingTaskProgress: boolean;
+
+  codeLoading: boolean
+  methodsCode: Record<string, string>
+  updateMethodsCode: (methodId: string, code: string) => void
 }
 
 export type FolderContextType = {
