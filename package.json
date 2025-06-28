@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^1.2.12",
+    "@ai-sdk/react": "^1.2.12",
     "@anthropic-ai/sdk": "^0.39.0",
     "@codemirror/lang-javascript": "^6.2.3",
     "@codemirror/lang-python": "^6.1.7",
@@ -38,7 +40,7 @@
     "@supabase/supabase-js": "^2.48.1",
     "@uiw/codemirror-theme-vscode": "^4.23.8",
     "@uiw/react-codemirror": "^4.23.8",
-    "ai": "^4.1.41",
+    "ai": "^4.3.16",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
