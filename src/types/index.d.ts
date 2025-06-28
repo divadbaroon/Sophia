@@ -419,3 +419,12 @@ export interface NavigationEvent {
   toTaskIndex: number
   navigationDirection: 'next' | 'previous'
 }
+
+export interface CodeEditorRef {
+  highlightLine: (lineNumber: number) => void;
+  clearHighlight: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetZoom: () => void;
+  saveCode: () => Promise<void>;
+}
