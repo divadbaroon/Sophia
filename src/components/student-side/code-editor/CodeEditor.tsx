@@ -222,12 +222,12 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   // Expose functions via ref
   useImperativeHandle(ref, () => ({
     highlightLine: highlightLineByNumber,
-    clearHighlight: clearHighlightedLine,
+    clearHighlight: clearHighlightedLine, 
     zoomIn,
     zoomOut,
     resetZoom,
     saveCode: manualSave
-  }), [activeMethodId, sessionId, lessonId, currentMethodIndex, manualSave]);
+  }), [])
   
   // Load saved code from database or initialize with templates
   useEffect(() => {
