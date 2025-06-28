@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useRef } from 'react'
 import { SophiaBrainContext } from './context/SophiaBrainContext'
 import { 
   VoiceState, 
@@ -14,19 +14,37 @@ import { MessageSave } from '@/types'
 import { useFile } from '@/lib/context/FileContext'
 
 export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { sessionId, lessonId: classId } = useFile()
+  const { 
+    sessionId, 
+    lessonId: classId,
+    fileContent,
+    errorContent, 
+    studentTask,
+    executionOutput,
+    highlightedText,
+    lineNumber
+  } = useFile()
+  
 
   // Core state
   const [state, setState] = useState<VoiceState>('initializing')
   const [error, setError] = useState<string | null>(null)
   
-  // Shared data
+  // Conversation History - use both state (for UI) and ref (for logic)
+  const conversationHistoryRef = useRef<Message[]>([])
   const [conversationHistory, setConversationHistory] = useState<Message[]>([])
-  const [studentContext, setStudentContext] = useState<StudentContext>({
-    task: '',
-    code: '',
-    errors: ''
-  })
+
+  // Build student context dynamically from file context
+  const studentContext = {
+    fileContent: fileContent || '',
+    errorContent: errorContent || '',
+    studentTask: studentTask || '',
+    executionOutput: executionOutput || '',
+    highlightedText: highlightedText || '',
+    lineNumber: lineNumber
+  }
+
+  console.log("STUDENT CONTEXT", studentContext)
 
   // Current text showing on the wrapper
   const [currentText, setCurrentText] = useState('')
@@ -62,9 +80,13 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
       timestamp: Date.now()
     }
     
-    // Add to conversation history
+    // Update both ref (for immediate access) and state (for UI)
+    const newHistory = [...conversationHistoryRef.current, message]
+    conversationHistoryRef.current = newHistory
+    setConversationHistory(newHistory)
+    
     console.log(`💬 Sophia: Adding ${message.role} message:`, message.content.substring(0, 100) + '...')
-    setConversationHistory(prev => [...prev, message])
+    console.log(`💬 Total messages now: ${newHistory.length}`)
     
     // Save to database
     try {
@@ -91,34 +113,37 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
   
   const startThinking = useCallback(async (userMessage: string) => {
     console.log('🤔 Sophia: Starting to think about:', userMessage)
+    console.log('🔥 Function recreated! Current history length:', conversationHistoryRef.current.length)
+    
     setState('thinking')
     setCurrentText('')
     setError(null)
     
-    // Save users input to conversation history and then save it in the db
+    // Save user message
     await addAndSaveMessage(userMessage, 'user')
     
     try {
-      // Prepare the messages for Claude API including conversation history
-      const updatedHistory = [...conversationHistory, {
-        role: 'user' as const,
-        content: userMessage,
-        timestamp: Date.now()
-      }]
+      // Use the ref which is always current
+      const currentHistory = conversationHistoryRef.current
       
-      const claudeMessages = updatedHistory.slice(-10).map(msg => ({
+      console.log('📚 Using conversation history:', currentHistory.length, 'messages')
+      console.log('📚 Full current history:', currentHistory)
+      
+      const claudeMessages = currentHistory.map(msg => ({
         role: msg.role,
         content: msg.content
       }))
       
-      console.log('📤 Sending to Claude AI SDK:', claudeMessages.length, 'messages')
-      
+      console.log('📤 Final Claude messages:', claudeMessages.length, 'messages')
+      console.log('📤 Final Claude messages detail:', claudeMessages)
+        
       // Call Claude AI SDK 
       const response = await fetch('/api/claude', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: claudeMessages
+          messages: claudeMessages,
+          context: studentContext 
         })
       })
       
@@ -185,19 +210,11 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setState('listening')
       
     } catch (error) {
-      console.error('❌ Error with Claude AI SDK:', error)
+      console.error('❌ Error with Claude API:', error)
       setState('listening')
     }
     
-  }, [
-    conversationHistory,
-    addAndSaveMessage, 
-  ])
-  
-  const updateStudentContext = useCallback((context: Partial<StudentContext>) => {
-    console.log('📝 Sophia: Updating student context:', context)
-    setStudentContext(prev => ({ ...prev, ...context }))
-  }, [])
+  }, [addAndSaveMessage, studentContext])
   
   const handleSetCurrentText = useCallback((text: string) => {
     setCurrentText(text)
@@ -208,7 +225,7 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
     state,
     error,
     
-    // Shared data
+    // Shared data - UI uses state, logic uses ref
     conversationHistory,
     studentContext,
     currentText,
@@ -220,7 +237,6 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setError: handleSetError,
     
     // Data actions
-    updateStudentContext,
     setCurrentText: handleSetCurrentText
   }
   
