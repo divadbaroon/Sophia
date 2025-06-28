@@ -157,7 +157,7 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
                   setState('speaking')
                   hasStartedSpeaking = true
                 }
-              } catch (parseError) {
+              } catch (_parseError) {
                 // If it's not valid JSON, use the raw text
                 const text = jsonChunk
                 console.log('📢 Streamed text (raw):', text)
