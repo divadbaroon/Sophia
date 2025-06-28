@@ -32,31 +32,30 @@ export const DeepgramTranscriber = () => {
       const transcript = finalTranscriptRef.current.trim()
       if (!transcript) return
 
-      // 1) Prepare the user’s message
-      const payload: MessageSave = {
-        sessionId,
-        classId,
-        content: transcript,
-        role: 'user',
-      }
-      const result = await saveMessage(payload)
-      if (!result.success) {
-        console.error('Failed to save message:', result.error)
-      }
+      console.log('🎙️ Deepgram: Processing transcript:', transcript)
 
-      // 2) Now flip the UI into “thinking”
+      // Clear the transcript to prevent duplication
+      finalTranscriptRef.current = ''
+      brain.setCurrentText('')
+
+      // Call startThinking - it will handle saving and adding to history
       await brain.startThinking(transcript)
     }, 3000)
-  }, [clearSilenceTimeout, sessionId, classId, brain])
+  }, [clearSilenceTimeout, brain])
 
   const startTranscription = useCallback(async () => {
-    if (brain.state === 'listening') return
+    if (brain.state === 'listening') {
+      console.log('⚠️ Already listening, ignoring start request')
+      return
+    }
 
     try {
       brain.setError(null)
       console.log('🚀 Starting Sophia transcription…')
 
+      // IMPORTANT: Clear any previous transcript
       finalTranscriptRef.current = ''
+      brain.setCurrentText('')
       clearSilenceTimeout()
 
       const apiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY
@@ -94,13 +93,7 @@ export const DeepgramTranscriber = () => {
           if (isFinal) {
             // accumulate full transcript
             finalTranscriptRef.current += (finalTranscriptRef.current ? ' ' : '') + result
-
-            // **immediately add each final chunk to history**
-            brain.addMessage({
-              role: 'user',
-              content: result,
-              timestamp: Date.now(),
-            })
+            console.log('🎙️ Final transcript segment:', result)
 
             // update display
             brain.setCurrentText(finalTranscriptRef.current)
@@ -143,10 +136,22 @@ export const DeepgramTranscriber = () => {
   const stopTranscription = useCallback(() => {
     console.log('🛑 Stopping transcription')
     clearSilenceTimeout()
+    
+    // Stop recording
     mediaRecorderRef.current?.stop()
     streamRef.current?.getTracks().forEach((t) => t.stop())
-    // clean close
-    socketRef.current?.close(1000)
+    
+    // Close socket cleanly
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.close(1000)
+    }
+    
+    // Clear refs
+    socketRef.current = null
+    mediaRecorderRef.current = null
+    streamRef.current = null
+    
+    // Clear transcript
     finalTranscriptRef.current = ''
     brain.setCurrentText('')
   }, [brain, clearSilenceTimeout])
