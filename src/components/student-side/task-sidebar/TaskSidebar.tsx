@@ -14,6 +14,7 @@ import { SurveyModal } from "@/components/lessons/components/survery-modal"
 
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
 import { getQuizQuestions } from "@/lib/actions/quiz-actions" 
+import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
 
 import { useFile } from "@/lib/context/FileContext"
 
@@ -38,8 +39,52 @@ export default function TaskSidebar({
     goToNextMethod,
     goToPrevMethod,
     isTaskCompleted,
+    sessionId,
     lessonId,
   } = useFile()
+
+  // Navigation handlers with tracking
+  const handleNextClick = () => {
+    if (!sessionData || !sessionId || !lessonId) return
+    
+    const fromTaskIndex = currentMethodIndex
+    const toTaskIndex = currentMethodIndex + 1
+    
+    // Move to next task
+    goToNextMethod()
+    
+    // Track navigation in background 
+    trackNavigation({
+      sessionId,
+      lessonId,
+      fromTaskIndex,
+      toTaskIndex,
+      navigationDirection: 'next'
+    }).catch(error => {
+      console.error('Failed to track next navigation:', error)
+    })
+  }
+
+  const handlePreviousClick = () => {
+    if (!sessionData || !sessionId || !lessonId || currentMethodIndex === 0) return
+    
+    const fromTaskIndex = currentMethodIndex
+    const toTaskIndex = currentMethodIndex - 1
+    
+    // Move back a task
+    goToPrevMethod()
+    
+    // Track navigation in background 
+    trackNavigation({
+      sessionId,
+      lessonId,
+      fromTaskIndex,
+      toTaskIndex,
+      navigationDirection: 'previous'
+    }).catch(error => {
+      console.error('Failed to track previous navigation:', error)
+    })
+  }
 
   // Check if all tasks are completed
   const allTasksCompleted = sessionData?.tasks.every((_, index) => isTaskCompleted(index)) || false
@@ -124,7 +169,7 @@ export default function TaskSidebar({
       setCurrentConceptTitle(conceptTitle)
       setIsQuizModalOpen(true)
     } else {
-      goToNextMethod()
+      handleNextClick() 
     }
   }
 
@@ -139,10 +184,8 @@ export default function TaskSidebar({
         
         if (result.success) {
           console.log('✅ Lesson completed successfully!', result.data)
-          // Optionally show a success toast/notification here
         } else {
           console.error('❌ Failed to update lesson progress:', result.error)
-          // Optionally show an error message to user
         }
       } catch (error) {
         console.error('❌ Error updating lesson progress:', error)
@@ -158,7 +201,7 @@ export default function TaskSidebar({
   const handleSurveySubmit = (surveyData: any) => {
     console.log("Survey data submitted:", surveyData)
     setIsSurveyModalOpen(false)
-    // Redirect to homepage after survey
+    // Redirect to lessons page after survey
     window.location.href = "/lessons"
   }
 
@@ -203,7 +246,7 @@ export default function TaskSidebar({
           <Button
             variant="ghost"
             size="sm"
-            onClick={goToPrevMethod}
+            onClick={handlePreviousClick} 
             disabled={currentMethodIndex === 0}
             className="p-2"
           >
@@ -212,7 +255,7 @@ export default function TaskSidebar({
           <Button
             variant="ghost"
             size="sm"
-            onClick={goToNextMethod}
+            onClick={handleNextClick} 
             disabled={currentMethodIndex === sessionData.tasks.length - 1}
             className="p-2"
           >
@@ -355,7 +398,7 @@ export default function TaskSidebar({
             <Button
               variant="outline"
               size="sm"
-              onClick={goToPrevMethod}
+              onClick={handlePreviousClick} 
               disabled={currentMethodIndex === 0}
               className="flex items-center gap-2"
             >
