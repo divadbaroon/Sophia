@@ -182,6 +182,7 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
                 }
               } catch (parseError) {
                 // If it's not valid JSON, use the raw text
+                console.warn('📢 JSON parse failed, using raw text:', parseError)
                 const text = jsonChunk
                 fullResponse += text
                 setCurrentText(fullResponse)
