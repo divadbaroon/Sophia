@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ArrowLeft, ArrowRight, Target, ChevronRight, CheckCircle, Lock } from "lucide-react"
 
 import { QuizModal } from "@/components/lessons/components/quiz-modal"
@@ -395,56 +396,87 @@ export default function TaskSidebar({
           </div>
 
           <div className="flex items-center justify-between gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePreviousClick} 
-              disabled={currentMethodIndex === 0}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Previous
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className={currentMethodIndex === 0 ? "cursor-not-allowed" : ""}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handlePreviousClick} 
+                      disabled={currentMethodIndex === 0}
+                      className={`flex items-center gap-2 ${
+                        currentMethodIndex === 0 ? "pointer-events-none" : ""
+                      }`}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {currentMethodIndex === 0 
+                      ? "You're on the first task" 
+                      : "Go back to the previous task"
+                    }
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleFinishedClick}
-              disabled={!isTaskCompleted(currentMethodIndex) || isLoadingQuiz}
-              className={`flex items-center gap-2 ${
-                !isTaskCompleted(currentMethodIndex) ? "opacity-50 cursor-not-allowed" : ""
-              } ${currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex) ? "bg-green-600 hover:bg-green-700" : ""}`}
-              title={
-                currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex)
-                  ? "Take quiz and complete survey"
-                  : !isTaskCompleted(currentMethodIndex)
-                    ? "Complete all test cases to unlock the next task"
-                    : currentMethodIndex === sessionData.tasks.length - 1
-                      ? "Complete this task to finish"
-                      : "Proceed to next task"
-              }
-            >
-              {isLoadingQuiz ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Loading...
-                </>
-              ) : currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex) ? (
-                <>
-                  Finished
-                  <CheckCircle className="h-4 w-4" />
-                </>
-              ) : (
-                <>
-                  Next
-                  {!isTaskCompleted(currentMethodIndex) ? (
-                    <Lock className="h-4 w-4" />
-                  ) : (
-                    <ArrowRight className="h-4 w-4" />
-                  )}
-                </>
-              )}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className={(!isTaskCompleted(currentMethodIndex) || isLoadingQuiz) ? "cursor-not-allowed" : ""}>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleFinishedClick}
+                      disabled={!isTaskCompleted(currentMethodIndex) || isLoadingQuiz}
+                      className={`flex items-center gap-2 ${
+                        !isTaskCompleted(currentMethodIndex) ? "opacity-50 pointer-events-none" : ""
+                      } ${currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex) ? "bg-green-600 hover:bg-green-700" : ""}`}
+                    >
+                      {isLoadingQuiz ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Loading...
+                        </>
+                      ) : currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex) ? (
+                        <>
+                          Finished
+                          <CheckCircle className="h-4 w-4" />
+                        </>
+                      ) : (
+                        <>
+                          Next
+                          {!isTaskCompleted(currentMethodIndex) ? (
+                            <Lock className="h-4 w-4" />
+                          ) : (
+                            <ArrowRight className="h-4 w-4" />
+                          )}
+                        </>
+                      )}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {isLoadingQuiz
+                      ? "Loading quiz questions..."
+                      : currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex)
+                        ? "Take quiz and complete survey"
+                        : !isTaskCompleted(currentMethodIndex)
+                          ? "Complete all test cases to unlock the next task"
+                          : currentMethodIndex === sessionData.tasks.length - 1
+                            ? "Complete this task to finish"
+                            : "Proceed to next task"
+                    }
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </div>
