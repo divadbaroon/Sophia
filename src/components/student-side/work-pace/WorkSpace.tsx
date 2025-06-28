@@ -24,7 +24,7 @@ const CONSENT_STORAGE_KEY = 'sophia_user_consent'
 export const WorkspaceLayout: React.FC = () => {
   const { startTranscription, stopTranscription } = DeepgramTranscriber()
 
-  const { sessionId, lessonId, currentMethodIndex } = useFile()
+  const { sessionId, lessonId, currentMethodIndex, sessionData, codeLoading } = useFile()
 
   // Panel & UI state
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
@@ -35,6 +35,9 @@ export const WorkspaceLayout: React.FC = () => {
   const [terminalHeight, setTerminalHeight] = useState(50)
 
   const codeEditorRef = useRef<CodeEditorRef>(null)
+
+  // Check if essential data is loaded
+  const isLoading = !sessionData || !sessionId || !lessonId || currentMethodIndex === undefined || codeLoading
 
   // Consent check on mount
   useEffect(() => {
@@ -105,6 +108,39 @@ export const WorkspaceLayout: React.FC = () => {
     setTerminalHeight(Math.min(Math.max(newHeight, 5), 70))
   }
 
+  // Show global loading state
+  if (isLoading) {
+    return (
+      <>
+        {showConsentModal && (
+          <ConsentModal
+            isOpen={showConsentModal}
+            onClose={() => window.location.href = '/'}
+            onConsent={async (ok) => {
+              setConsentProcessing(true)
+              localStorage.setItem(
+                CONSENT_STORAGE_KEY,
+                JSON.stringify({ consented: ok, timestamp: new Date().toISOString() })
+              )
+              setConsentProcessing(false)
+              if (ok) setShowConsentModal(false)
+            }}
+            isProcessing={consentProcessing}
+          />
+        )}
+        
+        <main className={`flex flex-col h-screen ${showConsentModal ? 'pointer-events-none opacity-50' : ''}`}>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <p className="text-lg text-muted-foreground">Setting up your workspace...</p>
+            </div>
+          </div>
+        </main>
+      </>
+    )
+  }
+
   return (
     <>
       {showConsentModal && (
@@ -146,8 +182,8 @@ export const WorkspaceLayout: React.FC = () => {
               <TooltipContent>
                 <p>
                   {isQuestionPanelVisible 
-                    ? 'Close the help panel' 
-                    : 'Get help from Sophia'
+                    ? 'Close your coding tutor' 
+                    : 'Get help from Sophia, your coding tutor'
                   }
                 </p>
               </TooltipContent>
