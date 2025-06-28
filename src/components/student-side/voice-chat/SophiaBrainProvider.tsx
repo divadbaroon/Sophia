@@ -27,6 +27,8 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
     code: '',
     errors: ''
   })
+
+  // Current text showing on the wrapper
   const [currentText, setCurrentText] = useState('')
   
   // State actions
@@ -51,11 +53,41 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, [])
   
-  // Data actions
-  const addMessage = useCallback((message: Message) => {
+  // Save message to conversation history and then save it in the db
+  const addAndSaveMessage = useCallback(async (content: string, role: 'user' | 'assistant') => {
+    // Prepare the message
+    const message: Message = {
+      role,
+      content,
+      timestamp: Date.now()
+    }
+    
+    // Add to conversation history
     console.log(`💬 Sophia: Adding ${message.role} message:`, message.content.substring(0, 100) + '...')
     setConversationHistory(prev => [...prev, message])
-  }, [])
+    
+    // Save to database
+    try {
+      const payload: MessageSave = {
+        sessionId,
+        classId,
+        content,
+        role
+      }
+      
+      const saveRes = await saveMessage(payload)
+      
+      if (!saveRes.success) {
+        console.error(`❌ Failed to save ${role} message:`, saveRes.error)
+      } else {
+        console.log(`✅ Saved ${role} message to database`)
+      }
+    } catch (error) {
+      console.error(`❌ Error saving ${role} message:`, error)
+    }
+    
+    return message
+  }, [sessionId, classId])
   
   const startThinking = useCallback(async (userMessage: string) => {
     console.log('🤔 Sophia: Starting to think about:', userMessage)
@@ -63,37 +95,17 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setCurrentText('')
     setError(null)
     
-    // Prepare the user's message
-    const userMsg: Message = {
-      role: 'user',
-      content: userMessage,
-      timestamp: Date.now()
-    }
+    // Save users input to conversation history and then save it in the db
+    await addAndSaveMessage(userMessage, 'user')
     
-    // Add to conversation history
-    addMessage(userMsg)
-    
-    // Save user message to database
     try {
-      const userPayload: MessageSave = {
-        sessionId,
-        classId,
+      // Prepare the messages for Claude API including conversation history
+      const updatedHistory = [...conversationHistory, {
+        role: 'user' as const,
         content: userMessage,
-        role: 'user'
-      }
-
-      const userSaveRes = await saveMessage(userPayload)
-
-      if (!userSaveRes.success) {
-        console.error('❌ Failed to save user message:', userSaveRes.error)
-      }
-    } catch (error) {
-      console.error('❌ Error saving user message:', error)
-    }
-    
-    try {
-      // Build messages for Claude API including conversation history
-      const updatedHistory = [...conversationHistory, userMsg]
+        timestamp: Date.now()
+      }]
+      
       const claudeMessages = updatedHistory.slice(-10).map(msg => ({
         role: msg.role,
         content: msg.content
@@ -162,29 +174,10 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
         }
       }
       
-      // Add the complete response to conversation history
+      // Add and save assistant message
       if (fullResponse.trim()) {
         console.log('✅ Full Claude response:', fullResponse)
-        
-        const assistantMsg: Message = {
-          role: 'assistant',
-          content: fullResponse.trim(),
-          timestamp: Date.now()
-        }
-        addMessage(assistantMsg)
-        
-        // Save assistant message to database
-        const assistantPayload: MessageSave = {
-          sessionId,
-          classId,
-          content: fullResponse.trim(),
-          role: 'assistant'
-        }
-        
-        const assistantSaveRes = await saveMessage(assistantPayload)
-        if (!assistantSaveRes.success) {
-          console.error('❌ Failed to save assistant message:', assistantSaveRes.error)
-        }
+        await addAndSaveMessage(fullResponse.trim(), 'assistant')
       }
       
       // Return to listening
@@ -197,9 +190,7 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
     
   }, [
     conversationHistory,
-    addMessage,
-    sessionId,
-    classId,
+    addAndSaveMessage, 
   ])
   
   const updateStudentContext = useCallback((context: Partial<StudentContext>) => {
@@ -228,7 +219,6 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setError: handleSetError,
     
     // Data actions
-    addMessage,
     updateStudentContext,
     setCurrentText: handleSetCurrentText
   }
