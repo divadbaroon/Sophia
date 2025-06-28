@@ -13,6 +13,7 @@ import {
   markTaskCompleted as dbMarkTaskCompleted,
   recordTaskAttempt 
 } from '@/lib/actions/task-progress-actions'
+import { loadAllCodeSnapshots } from '@/lib/actions/code-snapshot-actions'
 
 const FileContext = createContext<FileContextType | undefined>(undefined)
 
@@ -54,6 +55,12 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   // completion tracking state 
   const [taskCompletionStatus, setTaskCompletionStatus] = useState<Record<string, Record<number, boolean>>>({})
   const [isLoadingTaskProgress, setIsLoadingTaskProgress] = useState(false)
+
+  // State for loading in code
+  const [codeLoading, setCodeLoading] = useState(true)
+
+  // State for storing the current code for each method 
+  const [methodsCode, setMethodsCode] = useState<Record<string, string>>({})
 
   // Update student task when method changes
   useEffect(() => {
@@ -235,6 +242,77 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }, [currentMethodIndex, sessionData])
+
+  // Load code snapshots when session and lesson data are ready
+  useEffect(() => {
+    const loadCodeSnapshots = async () => {
+      if (!sessionData?.methodTemplates || !sessionId || !lessonId) return
+      
+      console.log("Loading code snapshots for session", sessionId)
+      setCodeLoading(true)
+      
+      try {
+        // Start with templates as fallback
+        const initialMethodsCode = { ...sessionData.methodTemplates }
+        
+        // Try to load saved code from database
+        const result = await loadAllCodeSnapshots(sessionId, lessonId)
+        
+        if (result.success && result.methodsCode) {
+          console.log("Found saved code in database for session", sessionId)
+          
+          // Merge saved code with templates (saved code takes priority)
+          Object.keys(sessionData.methodTemplates).forEach(methodId => {
+            if (result.methodsCode![methodId]) {
+              initialMethodsCode[methodId] = result.methodsCode![methodId]
+            }
+          })
+          
+          console.log("Using saved code from database")
+        } else {
+          console.log("No saved code found, using templates")
+        }
+        
+        // Set the methods code
+        setMethodsCode(initialMethodsCode)
+        
+        // Set initial file content for current method
+        if (activeMethodId && initialMethodsCode[activeMethodId]) {
+          const initialContent = initialMethodsCode[activeMethodId].trim()
+          setFileContent(initialContent)
+          updateCachedFileContent(initialContent)
+        }
+        
+        console.log("Code snapshots loaded successfully")
+      } catch (error) {
+        console.error("Error loading code snapshots:", error)
+        // Fallback to templates only
+        setMethodsCode({ ...sessionData.methodTemplates })
+      } finally {
+        setCodeLoading(false)
+      }
+    }
+
+    loadCodeSnapshots()
+  }, [sessionData, sessionId, lessonId]) 
+
+  // Update users code being displayed when they switch tasks
+  useEffect(() => {
+    if (!activeMethodId || !methodsCode[activeMethodId] || codeLoading) return
+    
+    const currentMethodCode = methodsCode[activeMethodId].trim()
+    console.log("Setting initial file content for method:", activeMethodId, currentMethodCode)
+    setFileContent(currentMethodCode)
+    updateCachedFileContent(currentMethodCode)
+  }, [activeMethodId, methodsCode, codeLoading]) 
+
+  // Add this helper function to update methods code
+  const updateMethodsCode = (methodId: string, code: string) => {
+    setMethodsCode(prev => ({
+      ...prev,
+      [methodId]: code
+    }))
+  }
 
   // Helper functions
   const updatePivotQueue = (queue: Array<{concept: string, category: string, confidence: number}>) => {
@@ -425,6 +503,9 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         canGoToNext,
         getCompletionStats,
         isLoadingTaskProgress, 
+        codeLoading,
+        methodsCode,
+        updateMethodsCode,
       }}>
       {children}
     </FileContext.Provider>
