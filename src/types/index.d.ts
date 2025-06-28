@@ -428,3 +428,8 @@ export interface CodeEditorRef {
   resetZoom: () => void;
   saveCode: () => Promise<void>;
 }
+
+export type CodeEditorProps = {
+  className?: string;
+  readOnly?: boolean;
+};
