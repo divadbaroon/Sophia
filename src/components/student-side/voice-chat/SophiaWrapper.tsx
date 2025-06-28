@@ -78,7 +78,7 @@ const SophiaWrapper: React.FC<SophiaWrapperProps> = ({ onClose }) => {
               </div>
 
               {/* Voice Circle Animation */}
-              {currentState !== 'listening' && (
+              {(currentState === 'thinking' || currentState === 'initializing') && (
                 <div className="flex justify-center items-center mb-6">
                   <div className="h-28 w-28">
                     <VoiceCircle state={currentState} />
