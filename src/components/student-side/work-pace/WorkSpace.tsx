@@ -10,7 +10,7 @@ import { HelpCircle } from "lucide-react"
 
 import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader"
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
-import CodeEditor, { CodeEditorRef } from "@/components/student-side/code-editor/CodeEditor"
+import CodeEditor from "@/components/student-side/code-editor/CodeEditor"
 import Terminal from "@/components/student-side/terminal/Terminal"
 import ConsentModal from "@/components/student-side/consent/ConsentModal"
 import SophiaWrapper from "@/components/student-side/voice-chat/wrapper/SophiaWrapper"
@@ -18,6 +18,8 @@ import { DeepgramTranscriber } from "@/components/student-side/voice-chat/stt/De
 import { trackSophiaInteraction } from "@/lib/actions/sophia-button-interaction-actions"
 
 import { useFile } from "@/lib/context/FileContext" 
+
+import { CodeEditorRef } from "@/types"
 
 const CONSENT_STORAGE_KEY = 'sophia_user_consent'
 
