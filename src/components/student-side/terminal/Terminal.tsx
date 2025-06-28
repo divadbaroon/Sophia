@@ -11,8 +11,6 @@ import { Play } from "lucide-react"
 import { saveTestCaseResults } from '@/lib/actions/test-case-results-actions'
 import { saveCodeError } from '@/lib/actions/code-errors-actions'
 
-import { useToast } from "@/lib/hooks/use-toast"
-
 import usePythonRunner from "@/utils/PythonExecuter"
 
 import { useFile } from "@/lib/context/FileContext"
@@ -27,6 +25,7 @@ const Terminal = () => {
     fileContent, 
     isSaved, 
     setErrorContent,
+    updateExecutionOutput, 
     activeMethodId,
     currentTestCases,
     currentMethodIndex,     
@@ -35,8 +34,6 @@ const Terminal = () => {
     sessionId,
     lessonId
   } = useFile()
-  
-  const { toast } = useToast()
 
   const getTestRunnerCode = (): string => {
     if (!activeMethodId || !currentTestCases || currentTestCases.length === 0) {
@@ -145,28 +142,17 @@ test_output = output_buffer.getvalue()
 
   const handleRun = async (): Promise<void> => {
     if (!isSaved()) {
-      toast({
-        title: "Please save the file before running",
-        variant: "destructive",
-      })
+      console.log("❌ Please save the file before running")
       return
     }
 
     if (!activeMethodId) {
-      toast({
-        title: "No function selected",
-        description: "Please select a function to test",
-        variant: "destructive",
-      })
+      console.log("❌ No function selected - please select a function to test")
       return
     }
 
     if (!currentTestCases || currentTestCases.length === 0) {
-      toast({
-        title: "No test cases available",
-        description: "Please contact your instructor if you believe this is an error",
-        variant: "destructive",
-      })
+      console.log("❌ No test cases available - please contact your instructor if you believe this is an error")
       return
     }
 
@@ -187,13 +173,15 @@ def check_code_syntax():
 syntax_valid, error_message = check_code_syntax()
 `.trim()
 
-        console.log("Checking code syntax...")
+        console.log("🔍 Checking code syntax...")
         await pyodide?.runPython(checkSyntaxCode)
 
         const syntaxValid = await pyodide?.globals.get("syntax_valid")
         const errorMessage = await pyodide?.globals.get("error_message")
 
         if (!syntaxValid) {
+          console.log("❌ Syntax Error:", errorMessage)
+          
           // Save syntax error for tracking
           saveCodeError({
             sessionId: sessionId || "unknown-session",
@@ -204,18 +192,13 @@ syntax_valid, error_message = check_code_syntax()
 
           setOutput(`Error: ${errorMessage}`)
           setErrorContent(`Error: ${errorMessage}`)
-          toast({
-            title: "Syntax Error",
-            description: "Please fix the syntax errors in your code",
-            variant: "destructive",
-          })
           return
         }
 
         // If syntax is valid, run test cases
         const testRunnerCode = getTestRunnerCode();
         
-        console.log(`Running test cases for ${activeMethodId}...`)
+        console.log(`🧪 Running test cases for ${activeMethodId}...`)
         await pyodide?.runPython(testRunnerCode)
 
         const testOutput = await pyodide?.globals.get("test_output")
@@ -248,12 +231,14 @@ syntax_valid, error_message = check_code_syntax()
           }
         }
 
-        setOutput(testOutput || "No output")
+        const outputText = testOutput || "No output"
+        setOutput(outputText)
+        updateExecutionOutput(outputText)  
         setErrorContent("")
 
         // Save detailed test case results for analytics (non-blocking)
         if (detailedResults && detailedResults.length > 0) {
-          console.log("Saving test results:", {
+          console.log("💾 Saving test results:", {
             sessionId: sessionId || "unknown-session",
             lessonId: lessonId || "unknown-lesson", 
             taskIndex: currentMethodIndex,
@@ -272,7 +257,7 @@ syntax_valid, error_message = check_code_syntax()
             // Don't block the UI if analytics saving fails
           })
         } else {
-          console.log("No detailed results to save - either no tests ran or conversion failed")
+          console.log("⚠️ No detailed results to save - either no tests ran or conversion failed")
         }
 
         // Record the attempt in the database with test case results
@@ -285,6 +270,8 @@ syntax_valid, error_message = check_code_syntax()
 
         // Check if all tests passed
         if (allPassed && testOutput && testOutput.includes("All tests passed")) {
+          console.log(`🎉 Success! All ${totalCount} test cases passed!`)
+          
           // Mark the current task as completed with test case data
           try {
             await markTaskCompleted(currentMethodIndex, passedCount, totalCount)
@@ -292,21 +279,11 @@ syntax_valid, error_message = check_code_syntax()
           } catch (error) {
             console.error("Failed to mark task as completed:", error)
           }
-          
-          toast({
-            title: "Success! 🎉",
-            description: `All ${totalCount} test cases passed!`,
-            variant: "default",
-          })
         } else if (testOutput) {
-          toast({
-            title: `${passedCount}/${totalCount} tests passed`,
-            description: "Your solution works partially. Check the output for details.",
-            variant: "default",
-          })
+          console.log(`📊 Test Results: ${passedCount}/${totalCount} tests passed - Your solution works partially. Check the output for details.`)
         }
       } catch (error: unknown) {
-        console.log("Detailed error:", error)
+        console.log("❌ Detailed error:", error)
         let errorMessage: string
 
         if (error instanceof Error) {
@@ -317,6 +294,8 @@ syntax_valid, error_message = check_code_syntax()
           errorMessage = "An unknown error occurred"
         }
 
+        console.log("❌ Runtime Error:", errorMessage)
+
         // Save runtime error for tracking
         saveCodeError({
           sessionId: sessionId || "unknown-session",
@@ -326,18 +305,11 @@ syntax_valid, error_message = check_code_syntax()
         }).catch(console.error)
 
         setOutput(errorMessage)
+        updateExecutionOutput("")  
         setErrorContent(errorMessage)
-        toast({
-          title: "Error",
-          description: "Failed to execute code",
-          variant: "destructive",
-        })
       }
     } else {
-      toast({
-        title: "Please select a valid compiler",
-        variant: "destructive",
-      })
+      console.log("❌ Please select a valid compiler")
     }
   }
 
