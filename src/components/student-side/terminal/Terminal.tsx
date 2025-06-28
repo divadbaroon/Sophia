@@ -11,7 +11,7 @@ import { Play } from "lucide-react"
 import { saveTestCaseResults } from '@/lib/actions/test-case-results-actions'
 import { saveCodeError } from '@/lib/actions/code-errors-actions'
 
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/lib/hooks/use-toast"
 
 import usePythonRunner from "@/utils/PythonExecuter"
 

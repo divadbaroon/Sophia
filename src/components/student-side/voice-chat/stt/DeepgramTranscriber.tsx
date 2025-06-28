@@ -1,8 +1,7 @@
 'use client'
 
 import { useRef, useCallback } from 'react'
-import { useSophiaBrain } from './hooks/useSophiaBrain'
-import { useFile } from '@/lib/context/FileContext'
+import { useSophiaBrain } from '../hooks/useSophiaBrain'
 
 export const DeepgramTranscriber = () => {
   const socketRef = useRef<WebSocket | null>(null)
