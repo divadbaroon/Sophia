@@ -1,142 +1,129 @@
-import { ClaudeMessage, FileContextType } from "@/types";
 import { addLineNumbers } from "./codeModifier";
 
-//     Here's what you should know about this particular student: {natural_guidance_based_on_concept_map}
-
-//    Their situation:
-//    - Task: {student_task}
-//   - Code they wrote: {student_code}
-//   - Error they're seeing: {error_message}
-//   - Previous conversation: {conversation_history}
-
-/**
- * Creates a context message with all relevant file and scenario details
- */
-function createContextMessage(
-  studentTask: string, 
-  studentCode: string, 
-  errorMessage: string,
-  executionOutput: string,
-  highlightedText: string,
-  lineNumber: number | string | null,
-): ClaudeMessage | null {
-  // Same implementation as before
-  const contextParts = [];
-
-  if (studentTask) {
-    contextParts.push(`Task: ${studentTask}`);
-  }
-  
-  if (studentCode) {
-    const numberedCode = addLineNumbers(studentCode);
-    contextParts.push(`=== STUDENT CODE ===\n\`\`\`python\n${numberedCode}\n\`\`\``);
-  }
-  
-  if (errorMessage) {
-    contextParts.push(`=== ERROR MESSAGE ===\n\`\`\`\n${errorMessage}\n\`\`\``);
-  }
-  
-  if (executionOutput) {
-    contextParts.push(`=== EXECUTION OUTPUT ===\n\`\`\`\n${executionOutput}\n\`\`\``);
-  }
-
-  if (highlightedText) {
-    contextParts.push(`=== HIGHLIGHTED TEXT ===\nStudent's highlighted text: "${highlightedText}"`);
-  }
-
-  if (lineNumber !== null && lineNumber !== '') {
-    contextParts.push(`Line number: ${lineNumber}`);
-  }
-  
-  return {
-    role: 'system',
-    content: `${contextParts.join('\n\n')}`
-  };
+// Define the interface for the context
+interface StudentContext {
+  fileContent: string
+  errorContent: string
+  studentTask: string
+  executionOutput: string
+  highlightedText: string
+  lineNumber: number | null
 }
 
 /**
- * Prepares system message and context for communicating with Claude
+ * Prepares system message and context for Claude with proper priority order
  */
-export function prepareClaudePrompt(fileContext?: FileContextType | null): ClaudeMessage[] {
+export function prepareClaudePrompt(context?: StudentContext | null): string {
   
-  // Extract all context 
-  const {
-    fileContent: studentCode = "",
-    errorContent: errorMessage = "",
-    studentTask = "",
-    executionOutput = "",
-    highlightedText = "",
-    lineNumber = null,
-    pivotQueue = null,
-    conceptMapConfidenceMet = false,
-  } = fileContext || {};
+  // Base system prompt with instructions
+  let systemPrompt = `You're having a tutoring conversation with a CS student who got stuck on their programming assignment. Be the kind of supportive, knowledgeable tutor you'd want to have - someone who's patient, encouraging, and really good at explaining things clearly.
 
-  console.log("CONCEPT CONFIDENCE MET", conceptMapConfidenceMet);
-  console.log("Full concept queue:", pivotQueue);
+CONVERSATION APPROACH:
+Always start with this exact greeting:
 
-  let systemContent = "";
+"Hello! I'm here to help you work through whatever's confusing you. What's your biggest confusion right now?"
 
-  systemContent = `
-    You're having a tutoring conversation with a CS student who got stuck on their programming assignment. Be the kind of supportive, knowledgeable tutor you'd want to have - someone who's patient, encouraging, and really good at explaining things clearly.
+Then listen carefully to their response. That will tell you exactly where to focus your help. Keep the conversation natural and supportive - you're here to help them learn, not to lecture them.
 
-    CONVERSATION APPROACH:
-    Always start with this exact greeting:
+IMPORTANT GUIDELINES YOU MUST FOLLOW IN YOUR RESPONSE:
+- Keep responses short and conversational (2-3 sentences max)
+- If the user is correct, let them know it looks good and ask if there is anything else they need help with
+- Don't explain back to them what they just wrote correctly
+- Avoid giving direct answers - provide guidance and let them work it out
+- If they ask for syntax, give the general syntax pattern rather than their specific solution
+- End responses with encouragement like "Give it a shot" or "Want to try that?"
+- Focus on being a supportive friend, not a code reviewer
+- Try not to repeat what has already been mentioned in the conversation unless necessary
 
-    "Hello! I'm here to help you work through whatever's confusing you. What's your biggest confusion right now?"
+SPECIAL INTERACTION FEATURES:
+1. Text Highlighting: When students highlight code, you'll see "Student's highlighted text: [text]" - respond directly to highlighted sections
+2. Code Line References: When discussing code, reference line numbers using "in line X" format - the system will highlight them automatically
 
-    Then listen carefully to their response. That will tell you exactly where to focus your help. Keep the conversation natural and supportive - you're here to help them learn, not to lecture them.
+SESSION MANAGEMENT:
+Pay attention to when the student has worked through their main confusion. Once they understand and feel confident, offer to wrap up naturally.
 
-    Adjust your explanations based on how they respond. If they seem to follow along easily, you can move faster. If they look confused, slow down and try a different approach. The goal is to meet them where they are and help them move forward.
+Remember: Be conversational, empathetic, and genuinely helpful - like the best study partner they could have.`;
 
-    IMPORTANT GUIDELINES YOU MUST FOLLOW IN YOUR RESPONSE:
-      - Keep responses short and conversational (2-3 sentences max)
-      - If the user is correct, let them know it looks good and ask if there is anything else they need help with.
-      - Don't explain back to them what they just wrote correctly
-      - Avoid giving direct answers - provide guidance and let them work it out
-      - If they ask for syntax, give the general syntax pattern rather than their specific solution
-      - End responses with encouragement like "Give it a shot" or "Want to try that?"
-      - Focus on being a supportive friend, not a code reviewer
-      - Try not to repeat what has already been mentioned in the conversaiton unless it is necessary
+  // Add student context if available
+  if (context) {
+    const {
+      fileContent = "",
+      errorContent = "",
+      studentTask = "",
+      executionOutput = "",
+      highlightedText = "",
+      lineNumber = null
+    } = context;
 
-    SPECIAL INTERACTION FEATURES:
-    1. Text Highlighting by Student:
-      - You can instruct the student to highlight portions of their code in the editor which will include it as context to you
-      - When they do, you'll see "Student's highlighted text: [text they highlighted]" in your context
-      - Respond directly to any highlighted code sections when you see them
+    // Build context sections in priority order
+    const contextSections = [];
 
-    2. Code Line References:
-      - CRITICAL: When discussing code, reference line numbers using the exact format "in line X" (e.g., "in line 5")
-      - Reference only ONE line number at a time in each sentence
-      - If you need to refer to multiple lines, use separate sentences for each line reference
-      - NEVER quote the actual code content from those lines
-      - The system will automatically highlight any line numbers you mention in this format
+    // 1. Current Task (High Priority - what they're working on)
+    if (studentTask) {
+      contextSections.push(`
+**CURRENT TASK:**
+The user is currently attempting this task:
+${studentTask}`);
+    }
 
-    SESSION MANAGEMENT:
-    Pay attention to when the student has worked through their main confusion. Once they seem to understand the concept and feel confident, offer to wrap up naturally with something like:
+    // 2. Current Code (High Priority - what they've written)
+    if (fileContent) {
+      const numberedCode = addLineNumbers(fileContent);
+      contextSections.push(`
+**CURRENT CODE:**
+This is their most up-to-date code:
+\`\`\`python
+${numberedCode}
+\`\`\``);
+    }
 
-    "It sounds like you've got a good handle on this now! Ready to continue on your own?"
+    // 3. Execution Output (Medium Priority - what happened when they ran it)
+    if (executionOutput) {
+      contextSections.push(`
+**TERMINAL OUTPUT:**
+This is their current terminal output:
+\`\`\`
+${executionOutput}
+\`\`\``);
+    }
 
-    Don't mention ending the session unless it feels like a natural stopping point. Let the conversation flow organically.
+    // 4. Error Messages (Medium Priority - what's broken)
+    if (errorContent) {
+      contextSections.push(`
+**ERROR MESSAGES:**
+This is the error they're seeing:
+\`\`\`
+${errorContent}
+\`\`\``);
+    }
 
-    Remember: Be conversational, empathetic, and genuinely helpful - like the best study partner they could have.`;
-  
+    // 5. Highlighted Code (Medium Priority - what they're focusing on)
+    if (highlightedText) {
+      contextSections.push(`
+**HIGHLIGHTED CODE:**
+Here is code the user has highlighted:
+\`\`\`python
+${highlightedText}
+\`\`\``);
+    }
 
-  // Build all messages
-  const messages: ClaudeMessage[] = [
-    { role: 'system', content: systemContent }
-  ];
-  
-  // Creates message for currently available context
-  const contextMessage = createContextMessage(
-    studentTask, studentCode, errorMessage, 
-    executionOutput, highlightedText, lineNumber
-  );
-  
-  // add context
-  if (contextMessage) {
-    messages.push(contextMessage);
+    // 6. Line Number Reference (Low Priority - supplementary info)
+    if (lineNumber !== null) {
+      contextSections.push(`
+**LINE REFERENCE:**
+Student is asking about line ${lineNumber}`);
+    }
+
+    // Add context sections to system prompt
+    if (contextSections.length > 0) {
+      systemPrompt += `
+
+---
+
+CURRENT STUDENT CONTEXT:
+${contextSections.join('\n')}`;
+    }
   }
 
-  return messages;
+  return systemPrompt;
 }
-
