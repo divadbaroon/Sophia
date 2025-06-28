@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/client'
 
 import { CodeSave } from "@/types"
 
-// Save or update code snapshot 
+// Save code snapshot 
 export async function saveCodeSnapshot(codeData: CodeSave) {
   const supabase = await createClient()
   
@@ -12,66 +12,33 @@ export async function saveCodeSnapshot(codeData: CodeSave) {
       return { success: false, error: "Not authenticated" }
     }
 
-    // First, check if a record exists
-    const { data: existing, error: checkError } = await supabase
+    // Insert new record     
+    const { data, error: insertError } = await supabase
       .from('code_snapshots')
-      .select('id')
-      .eq('profile_id', user.id)
-      .eq('session_id', codeData.sessionId)
-      .eq('lesson_id', codeData.lessonId)
-      .eq('task_index', codeData.taskIndex)
-      .eq('method_id', codeData.methodId)
-      .maybeSingle()
+      .insert({
+        profile_id: user.id,
+        session_id: codeData.sessionId,
+        lesson_id: codeData.lessonId,
+        task_index: codeData.taskIndex,
+        method_id: codeData.methodId,
+        code_content: codeData.codeContent,
+      })
+      .select()
 
-    if (checkError) {
-      console.error('Error checking existing record:', checkError)
-      return { success: false, error: checkError.message }
+    if (insertError) {
+      console.error('Error saving code snapshot:', insertError)
+      return { success: false, error: insertError.message }
     }
 
-    let result
-    if (existing) {
-      // Update existing record
-      const { data, error: updateError } = await supabase
-        .from('code_snapshots')
-        .update({
-          code_content: codeData.codeContent,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existing.id)
-        .select()
-
-      result = { data, error: updateError }
-    } else {
-      // Insert new record
-      const { data, error: insertError } = await supabase
-        .from('code_snapshots')
-        .insert({
-          profile_id: user.id,
-          session_id: codeData.sessionId,
-          lesson_id: codeData.lessonId,
-          task_index: codeData.taskIndex,
-          method_id: codeData.methodId,
-          code_content: codeData.codeContent,
-        })
-        .select()
-
-      result = { data, error: insertError }
-    }
-
-    if (result.error) {
-      console.error('Error saving code snapshot:', result.error)
-      return { success: false, error: result.error.message }
-    }
-
-    console.log('✅ Code snapshot saved')
-    return { success: true, data: result.data }
+    console.log('✅ Code snapshot saved (new record created)')
+    return { success: true, data }
   } catch (error) {
     console.error('Error in saveCodeSnapshot:', error)
     return { success: false, error: "Failed to save code" }
   }
 }
 
-// Load all saved code for a session (for initialization)
+// Load all saved code for a session - gets latest for each task
 export async function loadAllCodeSnapshots(sessionId: string, lessonId: string) {
   const supabase = await createClient()
   
@@ -81,22 +48,30 @@ export async function loadAllCodeSnapshots(sessionId: string, lessonId: string) 
       return { success: false, error: "Not authenticated" }
     }
 
+    // Get ALL records 
     const { data, error } = await supabase
       .from('code_snapshots')
-      .select('task_index, method_id, code_content')
+      .select('task_index, method_id, code_content, created_at')
       .eq('profile_id', user.id)
       .eq('session_id', sessionId)
       .eq('lesson_id', lessonId)
+      .order('created_at', { ascending: false }) // Newest first
 
     if (error) {
       console.error('Error loading all code snapshots:', error)
       return { success: false, error: error.message }
     }
 
-    // Convert to methodsCode format
+    // Convert to methodsCode format 
     const methodsCode: Record<string, string> = {}
+    const seenMethods = new Set<string>()
+
     data?.forEach(snapshot => {
-      methodsCode[snapshot.method_id] = snapshot.code_content
+      // Only keep the first (newest) occurrence of each method_id for loading
+      if (!seenMethods.has(snapshot.method_id)) {
+        methodsCode[snapshot.method_id] = snapshot.code_content
+        seenMethods.add(snapshot.method_id)
+      }
     })
 
     return { success: true, methodsCode }
