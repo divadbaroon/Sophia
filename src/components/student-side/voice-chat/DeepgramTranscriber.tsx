@@ -2,12 +2,9 @@
 
 import { useRef, useCallback } from 'react'
 import { useSophiaBrain } from './hooks/useSophiaBrain'
-import { saveMessage } from '@/lib/actions/message-actions'
-import { MessageSave } from "@/types"
 import { useFile } from '@/lib/context/FileContext'
 
 export const DeepgramTranscriber = () => {
-  const { sessionId, lessonId: classId } = useFile()
   const socketRef = useRef<WebSocket | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -34,11 +31,11 @@ export const DeepgramTranscriber = () => {
 
       console.log('🎙️ Deepgram: Processing transcript:', transcript)
 
-      // Clear the transcript to prevent duplication
+      // Clear existing transcription to avoid duplication
       finalTranscriptRef.current = ''
       brain.setCurrentText('')
 
-      // Call startThinking - it will handle saving and adding to history
+      // initiate thinking
       await brain.startThinking(transcript)
     }, 3000)
   }, [clearSilenceTimeout, brain])
@@ -53,7 +50,7 @@ export const DeepgramTranscriber = () => {
       brain.setError(null)
       console.log('🚀 Starting Sophia transcription…')
 
-      // IMPORTANT: Clear any previous transcript
+      // Clear existing transcription to avoid duplication
       finalTranscriptRef.current = ''
       brain.setCurrentText('')
       clearSilenceTimeout()
