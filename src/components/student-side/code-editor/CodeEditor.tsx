@@ -227,7 +227,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     zoomOut,
     resetZoom,
     saveCode: manualSave
-  }), [activeMethodId, sessionId, lessonId, currentMethodIndex]);
+  }), [activeMethodId, sessionId, lessonId, currentMethodIndex, manualSave]);
   
   // Load saved code from database or initialize with templates
   useEffect(() => {
