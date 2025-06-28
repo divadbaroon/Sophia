@@ -170,7 +170,6 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
               try {
                 // Parse the JSON to get the actual text
                 const text = JSON.parse(jsonChunk)
-                console.log('📢 Streamed text:', text)
                 fullResponse += text // Accumulate each chunk
                 
                 // Update currentText in real-time for the UI
@@ -183,9 +182,7 @@ export const SophiaBrainProvider: React.FC<{ children: React.ReactNode }> = ({ c
                 }
               } catch (parseError) {
                 // If it's not valid JSON, use the raw text
-                console.warn('📢 JSON parse failed, using raw text:', parseError)
                 const text = jsonChunk
-                console.log('📢 Streamed text (raw):', text)
                 fullResponse += text
                 setCurrentText(fullResponse)
                 

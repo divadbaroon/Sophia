@@ -55,8 +55,6 @@ export async function signInAsGuest() {
     redirect('/login?message=Could not sign in as guest')
   }
 
-  console.log('Guest user created:', data.user?.id)
-
   revalidatePath('/', 'layout')
 }
 

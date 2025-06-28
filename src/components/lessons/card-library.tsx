@@ -85,7 +85,6 @@ export default function GamifiedConceptLibrary() {
           .map(session => session.lesson_id)
         
         setCompletedLessons(new Set(completedLessonIds))
-        console.log('✅ Loaded completed lessons:', completedLessonIds)
       }
     } catch (error) {
       console.error('Error loading completed lessons:', error)
