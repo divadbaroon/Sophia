@@ -5,7 +5,6 @@ import { SophiaBrainContext } from './context/SophiaBrainContext'
 import { 
   VoiceState, 
   Message, 
-  StudentContext, 
   SophiaBrainController 
 } from './types/SophiaBrainType'
 
