@@ -63,7 +63,7 @@ export async function updateTaskProgress(
 }
 
 // Get all task progress for a specific session
-export async function getTaskProgressForSession() {
+export async function getTaskProgressForSession(sessionId?: string) {
   const supabase = await createClient()
   
   try {
@@ -72,11 +72,17 @@ export async function getTaskProgressForSession() {
       return { success: false, error: "Not authenticated" }
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('task_progress')
       .select('*')
       .eq('profile_id', user.id)
-      .order('task_index', { ascending: true })
+
+    // If sessionId provided, filter by it
+    if (sessionId) {
+      query = query.eq('session_id', sessionId)
+    }
+
+    const { data, error } = await query.order('task_index', { ascending: true })
 
     if (error) {
       console.error('Error fetching task progress:', error)
