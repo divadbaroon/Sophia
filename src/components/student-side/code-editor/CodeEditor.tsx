@@ -11,7 +11,7 @@ import { ViewUpdate } from '@uiw/react-codemirror';
 import { SelectionRange, Extension, Range } from '@codemirror/state';
 import { Decoration } from '@codemirror/view';
 import { indentUnit } from '@codemirror/language';
-import { saveCodeSnapshot, loadAllCodeSnapshots } from '@/lib/actions/code-snapshot-actions';
+import { saveCodeSnapshot } from '@/lib/actions/code-snapshot-actions';
 
 export interface CodeEditorRef {
   highlightLine: (lineNumber: number) => void;
@@ -79,16 +79,15 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     updateExecutionOutput,
     setErrorContent,
     sessionId,
-    sessionData,
     activeMethodId,
     lessonId,
     currentMethodIndex,
+    methodsCode,       
+    updateMethodsCode,  
   } = useFile();
   
   const editorViewRef = useRef<EditorView | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
-  const [methodsCode, setMethodsCode] = useState<Record<string, string>>({});
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [localHighlightedText, setLocalHighlightedText] = useState<string>('');
   const [highlightedLineNumber, setHighlightedLineNumber] = useState<number | null>();
   const [customExtensions, setCustomExtensions] = useState<Extension[]>([]);
@@ -135,11 +134,8 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
         if (editorViewRef.current && activeMethodId && sessionId && lessonId && currentMethodIndex !== undefined) {
           const currentCode = editorViewRef.current.state.doc.toString();
           
-          // Update state immediately
-          setMethodsCode(prev => ({
-            ...prev,
-            [activeMethodId]: currentCode
-          }));
+          // update methods code in fileContext
+          updateMethodsCode(activeMethodId, currentCode);
           
           // Save to database
           saveCodeSnapshot({
@@ -159,7 +155,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [activeMethodId, sessionId, lessonId, currentMethodIndex]);
+  }, [activeMethodId, sessionId, lessonId, currentMethodIndex, updateMethodsCode]); 
 
   // Add zoom functions
   const zoomIn = () => {
@@ -208,13 +204,9 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
 
   // Manual save function (exposed via ref)
   const manualSave = async () => {
-    // update methodsCode state to keep it in sync
     if (activeMethodId && editorViewRef.current) {
       const currentCode = editorViewRef.current.state.doc.toString();
-      setMethodsCode(prev => ({
-        ...prev,
-        [activeMethodId]: currentCode
-      }));
+      updateMethodsCode(activeMethodId, currentCode);
     }
     await saveCurrentMethod();
   };
@@ -229,102 +221,20 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     saveCode: manualSave
   }), [])
   
-  // Load saved code from database or initialize with templates
+  // Handles task switching using context methodsCode
   useEffect(() => {
-    if (isInitialized || !sessionData || !sessionData.methodTemplates || !sessionId || !lessonId) return;
-    
-    console.log("CodeEditor initializing with templates for session", sessionId);
-    
-    const initializeCode = async () => {
-      // Start with templates as fallback
-      const initialMethodsCode = { ...sessionData.methodTemplates };
-      
-      try {
-        // Try to load saved code from database
-        const result = await loadAllCodeSnapshots(sessionId, lessonId);
-        
-        if (result.success && result.methodsCode) {
-          console.log("Found saved code in database for session", sessionId);
-          
-          // Merge saved code with templates (saved code takes priority)
-          Object.keys(sessionData.methodTemplates).forEach(methodId => {
-            if (result.methodsCode![methodId]) {
-              initialMethodsCode[methodId] = result.methodsCode![methodId];
-            }
-          });
-          
-          console.log("Using saved code from database");
-        } else {
-          console.log("No saved code found, using templates");
-        }
-      } catch (error) {
-        console.error("Error loading saved code:", error);
-        console.log("Falling back to templates");
-      }
-
-      // Load saved zoom level from localStorage
-      try {
-        const savedZoom = localStorage.getItem(LOCAL_STORAGE_ZOOM_KEY);
-        if (savedZoom) {
-          const parsedZoom = parseInt(savedZoom, 10);
-          if (!isNaN(parsedZoom)) {
-            setFontSize(parsedZoom);
-          }
-        }
-      } catch (err) {
-        console.error("Error loading zoom level:", err);
-      }
-      
-      // Set methodsCode first
-      setMethodsCode(initialMethodsCode);
-      
-      // Generate and set initial content (only current method)
-      const initialCurrentMethodCode = generateCurrentMethodTemplate(initialMethodsCode, activeMethodId);
-      setFileContent(initialCurrentMethodCode);
-      updateCachedFileContent(initialCurrentMethodCode);
-      
-      // Clear any previous results
-      updateExecutionOutput('');
-      setErrorContent('');
-      
-      console.log("CodeEditor initialized with current method for session", sessionId);
-      setIsInitialized(true);
-    };
-
-    initializeCode();
-  }, [sessionData, sessionId, lessonId, isInitialized, activeMethodId, updateCachedFileContent, setFileContent, updateExecutionOutput, setErrorContent]);
-
-  // Reset initialization when session changes
-  useEffect(() => {
-    setIsInitialized(false);
-  }, [sessionId]);
-
-  // Save code when switching methods
-  useEffect(() => {
-    if (!isInitialized || !activeMethodId || !methodsCode[activeMethodId]) return;
-    
-    // Save previous method before switching (if there was a previous method)
-    const methodIds = Object.keys(methodsCode);
-    const currentIndex = methodIds.indexOf(activeMethodId);
-    if (currentIndex > 0) {
-      const previousMethodId = methodIds[currentIndex - 1];
-      if (methodsCode[previousMethodId]) {
-        saveCodeSnapshot({
-          sessionId: sessionId || '',
-          lessonId: lessonId || '',
-          taskIndex: currentMethodIndex,
-          methodId: previousMethodId,
-          codeContent: methodsCode[previousMethodId]
-        }).catch(console.error);
-      }
-    }
+    if (!activeMethodId || !methodsCode[activeMethodId]) return;
     
     const currentMethodCode = generateCurrentMethodTemplate(methodsCode, activeMethodId);
     setFileContent(currentMethodCode);
     updateCachedFileContent(currentMethodCode);
     
+    // Clear any previous results when switching methods
+    updateExecutionOutput('');
+    setErrorContent('');
+    
     console.log("Switched to method:", activeMethodId);
-  }, [activeMethodId, isInitialized, methodsCode, setFileContent, updateCachedFileContent, sessionId, lessonId, currentMethodIndex]);
+  }, [activeMethodId, methodsCode, setFileContent, updateCachedFileContent, updateExecutionOutput, setErrorContent]);
 
   // Update custom extensions when highlighted line or font size changes
   useEffect(() => {
@@ -335,8 +245,8 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
       indentUnit.of("    ")
     ];
     
-    if (highlightedLineNumber !== null) {
-      extensions.push(createLineHighlightExtension(0));
+    if (highlightedLineNumber !== null && highlightedLineNumber !== undefined) { // FIX: Type safety
+      extensions.push(createLineHighlightExtension(highlightedLineNumber));
     }
     
     setCustomExtensions(extensions);
@@ -424,21 +334,18 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   };
 
   const handleCodeChange = (value: string): void => {
-    // 1. Update fileContent immediately for the editor
+    // Update fileContent immediately for the editor
     setFileContent(value); 
     
-    // 2. Update methodsCode immediately for local consistency
+    // Use context function instead of local state
     if (activeMethodId) {
-      setMethodsCode(prevMethodsCode => ({
-        ...prevMethodsCode,
-        [activeMethodId]: value
-      }));
+      updateMethodsCode(activeMethodId, value);
     }
     
-    // 3. Update cached content immediately
+    // Update cached content immediately
     updateCachedFileContent(value);
 
-    // 4. Debounced auto-save to database
+    // Debounced auto-save to database
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -467,8 +374,8 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     };
   }, []);
 
-  // Generate the current method code for the editor
-  const currentMethodCode = isInitialized && activeMethodId ? 
+  // Use context methodsCode instead of local state and isInitialized
+  const currentMethodCode = activeMethodId && methodsCode[activeMethodId] ? 
     generateCurrentMethodTemplate(methodsCode, activeMethodId) : '';
 
   return (
