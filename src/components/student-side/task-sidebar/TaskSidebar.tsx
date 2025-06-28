@@ -206,28 +206,17 @@ export default function TaskSidebar({
     window.location.href = "/lessons"
   }
 
-  // Show loading state if sessionData not ready
-  if (!sessionData || !sessionData.tasks) {
-    return (
-      <div
-        className={`h-screen flex items-center justify-center transition-all duration-300 ${isCollapsed ? "w-12" : "w-full"}`}
-      >
-        {isCollapsed ? (
-          <Button variant="ghost" size="sm" onClick={() => setIsCollapsed(false)} className="p-2">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        ) : (
-          <div className="text-center space-y-2">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="text-sm text-muted-foreground">Loading task information...</p>
-          </div>
-        )}
-      </div>
-    )
-  }
+  // REMOVED: Internal loading state check - now handled by WorkspaceLayout
+  // if (!sessionData || !sessionData.tasks) { ... }
 
-  const currentTask = sessionData.tasks[currentMethodIndex]
-  const concepts = sessionData.conceptMappings[currentMethodIndex] || []
+  // Add null checks since global loading guarantees sessionData exists
+  const currentTask = sessionData?.tasks[currentMethodIndex]
+  const concepts = sessionData?.conceptMappings[currentMethodIndex] || []
+
+  // Early return if data is not available (shouldn't happen with global loading)
+  if (!sessionData || !currentTask) {
+    return null
+  }
 
   if (isCollapsed) {
     return (
@@ -238,7 +227,7 @@ export default function TaskSidebar({
 
         <div className="flex-1 flex flex-col items-center justify-center gap-2">
           <div className="text-xs text-muted-foreground writing-mode-vertical transform rotate-180">
-            {currentMethodIndex + 1}/{sessionData.tasks.length}
+            {currentMethodIndex + 1}/{sessionData?.tasks.length || 0}
           </div>
         </div>
 
@@ -257,7 +246,7 @@ export default function TaskSidebar({
             variant="ghost"
             size="sm"
             onClick={handleNextClick} 
-            disabled={currentMethodIndex === sessionData.tasks.length - 1}
+            disabled={currentMethodIndex === (sessionData?.tasks.length || 0) - 1}
             className="p-2"
           >
             <ArrowRight className="h-4 w-4" />
@@ -390,7 +379,7 @@ export default function TaskSidebar({
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>Task Progress</span>
               <span>
-                {currentMethodIndex + 1} of {sessionData.tasks.length}
+                {currentMethodIndex + 1} of {sessionData?.tasks.length || 0}
               </span>
             </div>
           </div>
@@ -436,14 +425,14 @@ export default function TaskSidebar({
                       disabled={!isTaskCompleted(currentMethodIndex) || isLoadingQuiz}
                       className={`flex items-center gap-2 ${
                         !isTaskCompleted(currentMethodIndex) ? "opacity-50 pointer-events-none" : ""
-                      } ${currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex) ? "bg-green-600 hover:bg-green-700" : ""}`}
+                      } ${currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex) ? "bg-green-600 hover:bg-green-700" : ""}`}
                     >
                       {isLoadingQuiz ? (
                         <>
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           Loading...
                         </>
-                      ) : currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex) ? (
+                      ) : currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex) ? (
                         <>
                           Finished
                           <CheckCircle className="h-4 w-4" />
@@ -465,11 +454,11 @@ export default function TaskSidebar({
                   <p>
                     {isLoadingQuiz
                       ? "Loading quiz questions..."
-                      : currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex)
+                      : currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex)
                         ? "Take quiz and complete survey"
                         : !isTaskCompleted(currentMethodIndex)
                           ? "Complete all test cases to unlock the next task"
-                          : currentMethodIndex === sessionData.tasks.length - 1
+                          : currentMethodIndex === (sessionData?.tasks.length || 0) - 1
                             ? "Complete this task to finish"
                             : "Proceed to next task"
                     }
