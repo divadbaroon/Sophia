@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef, useCallback, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import CodeMirror from '@uiw/react-codemirror';
 import { python } from '@codemirror/lang-python';
@@ -13,14 +13,11 @@ import { Decoration } from '@codemirror/view';
 import { indentUnit } from '@codemirror/language';
 import { saveCodeSnapshot } from '@/lib/actions/code-snapshot-actions';
 
-export interface CodeEditorRef {
-  highlightLine: (lineNumber: number) => void;
-  clearHighlight: () => void;
-  zoomIn: () => void;
-  zoomOut: () => void;
-  resetZoom: () => void;
-  saveCode: () => Promise<void>;
-}
+import { CodeEditorRef, CodeEditorProps } from "@/types"
+import { DEFAULT_FONT_SIZE } from "@/lib/constants"
+
+// Local storage keys for zoom level only
+const LOCAL_STORAGE_ZOOM_KEY = 'code_editor_zoom_level';
 
 // Generate template for only the current active method
 const generateCurrentMethodTemplate = (methodsCode: Record<string, string>, activeMethodId: string): string => {
@@ -30,12 +27,6 @@ const generateCurrentMethodTemplate = (methodsCode: Record<string, string>, acti
   
   return methodsCode[activeMethodId].trim();
 };
-
-// Local storage keys for zoom level only
-const LOCAL_STORAGE_ZOOM_KEY = 'code_editor_zoom_level';
-
-// Default base font size in pixels
-const DEFAULT_FONT_SIZE = 14;
 
 // Create a custom extension for line highlighting
 const createLineHighlightExtension = (lineNumber: number) => {
@@ -65,11 +56,6 @@ const createFontSizeExtension = (fontSize: number) => {
   });
 };
 
-type CodeEditorProps = {
-  className?: string;
-  readOnly?: boolean;
-};
-
 // Convert to forwardRef to expose the ref interface
 const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '', readOnly = false }, ref) => {
   const { 
@@ -90,12 +76,15 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const [localHighlightedText, setLocalHighlightedText] = useState<string>('');
   const [highlightedLineNumber, setHighlightedLineNumber] = useState<number | null>();
-  const [customExtensions, setCustomExtensions] = useState<Extension[]>([]);
-  const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
+  const [fontSize, setFontSize] = useState<number>(() => {
+    // Initialize from localStorage
+    const saved = localStorage.getItem(LOCAL_STORAGE_ZOOM_KEY);
+    return saved ? parseInt(saved, 10) : DEFAULT_FONT_SIZE;
+  });
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Function to highlight a specific line by line number
-  const highlightLineByNumber = (lineNumber: number) => {
+  const highlightLineByNumber = useCallback((lineNumber: number) => {
     console.log("Highlighting line:", lineNumber);
     setHighlightedLineNumber(lineNumber);
     
@@ -115,72 +104,38 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
         });
       }
     }
-  };
+  }, []);
   
   // Function to clear the highlighted line
-  const clearHighlightedLine = () => {
+  const clearHighlightedLine = useCallback(() => {
     console.log("Clearing highlighted line");
     setHighlightedLineNumber(null);
-  };
-
-  // Add keyboard event listener for Ctrl+S
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Check for Ctrl+S (or Cmd+S on Mac)
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        
-        // Get current code directly from editor and save
-        if (editorViewRef.current && activeMethodId && sessionId && lessonId && currentMethodIndex !== undefined) {
-          const currentCode = editorViewRef.current.state.doc.toString();
-          
-          // update methods code in fileContext
-          updateMethodsCode(activeMethodId, currentCode);
-          
-          // Save to database
-          saveCodeSnapshot({
-            sessionId,
-            lessonId,
-            taskIndex: currentMethodIndex,
-            methodId: activeMethodId,
-            codeContent: currentCode
-          }).then(() => {
-            console.log(`✅ Manual save completed for ${activeMethodId}`);
-          }).catch(error => {
-            console.error(`❌ Manual save failed for ${activeMethodId}:`, error);
-          });
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [activeMethodId, sessionId, lessonId, currentMethodIndex, updateMethodsCode]); 
+  }, []);
 
   // Add zoom functions
-  const zoomIn = () => {
+  const zoomIn = useCallback(() => {
     setFontSize(prev => {
       const newSize = Math.min(prev + 1, 30); // Cap at 30px
       localStorage.setItem(LOCAL_STORAGE_ZOOM_KEY, String(newSize));
       return newSize;
     });
-  };
+  }, []);
 
-  const zoomOut = () => {
+  const zoomOut = useCallback(() => {
     setFontSize(prev => {
       const newSize = Math.max(prev - 1, 8); // Don't go below 8px
       localStorage.setItem(LOCAL_STORAGE_ZOOM_KEY, String(newSize));
       return newSize;
     });
-  };
+  }, []);
 
-  const resetZoom = () => {
+  const resetZoom = useCallback(() => {
     setFontSize(DEFAULT_FONT_SIZE);
     localStorage.setItem(LOCAL_STORAGE_ZOOM_KEY, String(DEFAULT_FONT_SIZE));
-  };
+  }, []);
 
   // Save current method to database
-  const saveCurrentMethod = async () => {
+  const saveCurrentMethod = useCallback(async () => {
     if (!activeMethodId || !sessionId || !lessonId || currentMethodIndex === undefined) {
       return;
     }
@@ -200,16 +155,16 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     } catch (error) {
       console.error(`❌ Failed to save code for method ${activeMethodId}:`, error);
     } 
-  };
+  }, [activeMethodId, sessionId, lessonId, currentMethodIndex]);
 
   // Manual save function (exposed via ref)
-  const manualSave = async () => {
+  const manualSave = useCallback(async () => {
     if (activeMethodId && editorViewRef.current) {
       const currentCode = editorViewRef.current.state.doc.toString();
       updateMethodsCode(activeMethodId, currentCode);
     }
     await saveCurrentMethod();
-  };
+  }, [activeMethodId, updateMethodsCode, saveCurrentMethod]);
   
   // Expose functions via ref
   useImperativeHandle(ref, () => ({
@@ -219,8 +174,110 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     zoomOut,
     resetZoom,
     saveCode: manualSave
-  }), [])
+  }), [highlightLineByNumber, clearHighlightedLine, zoomIn, zoomOut, resetZoom, manualSave]);
+
+  // Memoize custom extensions
+  const customExtensions = useMemo(() => {
+    const extensions: Extension[] = [
+      // Add font size extension
+      createFontSizeExtension(fontSize),
+      // Set indentation to 4 spaces for Python
+      indentUnit.of("    ")
+    ];
+    
+    if (highlightedLineNumber !== null && highlightedLineNumber !== undefined) {
+      extensions.push(createLineHighlightExtension(highlightedLineNumber));
+    }
+    
+    return extensions;
+  }, [highlightedLineNumber, fontSize]);
+
+  // Handle updates from CodeMirror including selection changes
+  const handleEditorUpdate = useCallback((viewUpdate: ViewUpdate): void => {
+    // Only store the editor view reference if it has actually changed
+    if (viewUpdate.view !== editorViewRef.current) {
+      editorViewRef.current = viewUpdate.view;
+    }
+    
+    // Check if this update includes selection changes
+    if (viewUpdate.selectionSet) {
+      const selection = viewUpdate.state.selection.main;
+      handleSelectionChange(selection);
+    }
+  }, []);
   
+  const handleSelectionChange = useCallback((selection: SelectionRange): void => {
+    // Prevent unnecessary state updates if selection hasn't meaningfully changed
+    if (selection.from !== selection.to) {
+      // There is a selection
+      const selectedText = editorViewRef.current?.state.sliceDoc(selection.from, selection.to) || '';
+      
+      // Only update if the selected text is different from the current selection
+      if (selectedText !== localHighlightedText) {
+        // Update local state
+        setLocalHighlightedText(selectedText);
+        
+        // Update file context
+        if (typeof updateHighlightedText === 'function') {
+          updateHighlightedText(selectedText);
+        }
+      }
+    } else if (localHighlightedText !== '') {
+      // Clear selection if it was previously set
+      setLocalHighlightedText('');
+      
+      if (typeof updateHighlightedText === 'function') {
+        updateHighlightedText('');
+      }
+    }
+  }, [localHighlightedText, updateHighlightedText]);
+
+  const handleCodeChange = useCallback((value: string): void => {
+    // Update fileContent immediately for the editor
+    setFileContent(value); 
+    
+    // Use context function instead of local state
+    if (activeMethodId) {
+      updateMethodsCode(activeMethodId, value);
+    }
+    
+    // Update cached content immediately
+    updateCachedFileContent(value);
+
+    // Debounced auto-save to database
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(() => {
+      if (activeMethodId && sessionId && lessonId && currentMethodIndex !== undefined) {
+        saveCodeSnapshot({
+          sessionId,
+          lessonId,
+          taskIndex: currentMethodIndex,
+          methodId: activeMethodId,
+          codeContent: value
+        }).catch(error => {
+          console.error("Auto-save failed:", error);
+        });
+      }
+    }, 3000); // Save after 3 seconds of idle time
+  }, [activeMethodId, sessionId, lessonId, currentMethodIndex, setFileContent, updateMethodsCode, updateCachedFileContent]);
+
+  // Add keyboard event listener for Ctrl+S
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Ctrl+S (or Cmd+S on Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        manualSave();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [manualSave]);
+
   // Handles task switching using context methodsCode
   useEffect(() => {
     if (!activeMethodId || !methodsCode[activeMethodId]) return;
@@ -234,33 +291,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     setErrorContent('');
     
     console.log("Switched to method:", activeMethodId);
-  }, [activeMethodId, methodsCode, setFileContent, updateCachedFileContent, updateExecutionOutput, setErrorContent]);
-
-  // Update custom extensions when highlighted line or font size changes
-  useEffect(() => {
-    const extensions: Extension[] = [
-      // Add font size extension
-      createFontSizeExtension(fontSize),
-      // Set indentation to 4 spaces for Python
-      indentUnit.of("    ")
-    ];
-    
-    if (highlightedLineNumber !== null && highlightedLineNumber !== undefined) { // FIX: Type safety
-      extensions.push(createLineHighlightExtension(highlightedLineNumber));
-    }
-    
-    setCustomExtensions(extensions);
-    
-    // If editor view exists, force a refresh to show the highlight and font size
-    if (editorViewRef.current) {
-      setTimeout(() => {
-        // Just dispatch a minimal transaction to force redraw
-        editorViewRef.current?.dispatch({
-          changes: { from: 0, to: 0, insert: "" }
-        });
-      }, 100);
-    }
-  }, [highlightedLineNumber, fontSize]);
+  }, [activeMethodId]); // Remove methodsCode dependency to prevent re-renders
 
   // Add event listener for wheel events to handle zooming
   useEffect(() => {
@@ -291,79 +322,7 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
         container.removeEventListener('wheel', handleWheel);
       }
     };
-  }, []);
-
-  // Handle updates from CodeMirror including selection changes
-  const handleEditorUpdate = (viewUpdate: ViewUpdate): void => {
-    // Only store the editor view reference if it has actually changed
-    if (viewUpdate.view !== editorViewRef.current) {
-      editorViewRef.current = viewUpdate.view;
-    }
-    
-    // Check if this update includes selection changes
-    if (viewUpdate.selectionSet) {
-      const selection = viewUpdate.state.selection.main;
-      handleSelectionChange(selection);
-    }
-  };
-  
-  const handleSelectionChange = (selection: SelectionRange): void => {
-    // Prevent unnecessary state updates if selection hasn't meaningfully changed
-    if (selection.from !== selection.to) {
-      // There is a selection
-      const selectedText = editorViewRef.current?.state.sliceDoc(selection.from, selection.to) || '';
-      
-      // Only update if the selected text is different from the current selection
-      if (selectedText !== localHighlightedText) {
-        // Update local state
-        setLocalHighlightedText(selectedText);
-        
-        // Update file context
-        if (typeof updateHighlightedText === 'function') {
-          updateHighlightedText(selectedText);
-        }
-      }
-    } else if (localHighlightedText !== '') {
-      // Clear selection if it was previously set
-      setLocalHighlightedText('');
-      
-      if (typeof updateHighlightedText === 'function') {
-        updateHighlightedText('');
-      }
-    }
-  };
-
-  const handleCodeChange = (value: string): void => {
-    // Update fileContent immediately for the editor
-    setFileContent(value); 
-    
-    // Use context function instead of local state
-    if (activeMethodId) {
-      updateMethodsCode(activeMethodId, value);
-    }
-    
-    // Update cached content immediately
-    updateCachedFileContent(value);
-
-    // Debounced auto-save to database
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    
-    saveTimeoutRef.current = setTimeout(() => {
-      if (activeMethodId && sessionId && lessonId && currentMethodIndex !== undefined) {
-        saveCodeSnapshot({
-          sessionId,
-          lessonId,
-          taskIndex: currentMethodIndex,
-          methodId: activeMethodId,
-          codeContent: value
-        }).catch(error => {
-          console.error("Auto-save failed:", error);
-        });
-      }
-    }, 3000); // Save after 3 seconds of idle time
-  };
+  }, [zoomIn, zoomOut]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
