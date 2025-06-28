@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
@@ -14,7 +14,6 @@ import { QuizModal } from "@/components/lessons/components/quiz-modal"
 import { SurveyModal } from "@/components/lessons/components/survery-modal"
 
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
-import { getQuizQuestions } from "@/lib/actions/quiz-actions" 
 import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
 
 import { useFile } from "@/lib/context/FileContext"
@@ -31,8 +30,6 @@ export default function TaskSidebar({
 }: TaskSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [currentConceptTitle, setCurrentConceptTitle] = useState("")
-  const [quizData, setQuizData] = useState<any>(null) 
-  const [isLoadingQuiz, setIsLoadingQuiz] = useState(false) 
 
   const {
     sessionData,
@@ -42,6 +39,7 @@ export default function TaskSidebar({
     isTaskCompleted,
     sessionId,
     lessonId,
+    quizData, 
   } = useFile()
 
   // Navigation handlers with tracking
@@ -89,73 +87,6 @@ export default function TaskSidebar({
 
   // Check if all tasks are completed
   const allTasksCompleted = sessionData?.tasks.every((_, index) => isTaskCompleted(index)) || false
-
-  useEffect(() => {
-    const loadQuizQuestions = async () => {
-      if (!lessonId) return
-      
-      setIsLoadingQuiz(true)
-      try {
-        const { data: quizQuestions } = await getQuizQuestions(lessonId)
-        
-        if (quizQuestions && quizQuestions.length > 0) {
-          // Format quiz data to match QuizModal expectations
-          const formattedQuiz = {
-            title: sessionData?.tasks[0]?.title || "Lesson Quiz", 
-            questions: quizQuestions.map((question, index) => ({
-              ...question,
-              id: question.id || `question-${lessonId}-${index}` 
-            }))
-          }
-          setQuizData(formattedQuiz)
-        } else {
-          // Fallback to mock data if no quiz questions found
-          console.warn('No quiz questions found for lesson:', lessonId)
-          setQuizData({
-            title: "Lesson Quiz",
-            questions: [
-              {
-                id: "mock-1",
-                question: "How would you rate your understanding of this lesson?",
-                options: [
-                  "I need more practice",
-                  "I understand the basics",
-                  "I feel confident",
-                  "I could teach this to someone else"
-                ],
-                correctAnswer: 2,
-                explanation: "Great job completing this lesson! Continue practicing to build confidence."
-              }
-            ]
-          })
-        }
-      } catch (error) {
-        console.error('Error loading quiz questions:', error)
-        // Fallback to mock data on error
-        setQuizData({
-          title: "Lesson Quiz",
-          questions: [
-            {
-              id: "fallback-1",
-              question: "You've completed all the tasks! How do you feel?",
-              options: [
-                "Ready for more challenges",
-                "Need to review the concepts",
-                "Confident in my understanding",
-                "Excited to continue learning"
-              ],
-              correctAnswer: 0,
-              explanation: "Excellent work! Keep up the great progress."
-            }
-          ]
-        })
-      } finally {
-        setIsLoadingQuiz(false)
-      }
-    }
-
-    loadQuizQuestions()
-  }, [lessonId, sessionData])
 
   const handleFinishedClick = () => {
     // Add null check for sessionData
@@ -206,14 +137,11 @@ export default function TaskSidebar({
     window.location.href = "/lessons"
   }
 
-  // REMOVED: Internal loading state check - now handled by WorkspaceLayout
-  // if (!sessionData || !sessionData.tasks) { ... }
-
   // Add null checks since global loading guarantees sessionData exists
   const currentTask = sessionData?.tasks[currentMethodIndex]
   const concepts = sessionData?.conceptMappings[currentMethodIndex] || []
 
-  // Early return if data is not available (shouldn't happen with global loading)
+  // Early return if data is not available 
   if (!sessionData || !currentTask) {
     return null
   }
@@ -231,7 +159,7 @@ export default function TaskSidebar({
           </div>
         </div>
 
-        {/* Fixed navigation at bottom for collapsed state */}
+        {/* Navigation buttons */}
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col gap-2">
           <Button
             variant="ghost"
@@ -417,22 +345,17 @@ export default function TaskSidebar({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className={(!isTaskCompleted(currentMethodIndex) || isLoadingQuiz) ? "cursor-not-allowed" : ""}>
+                  <span className={!isTaskCompleted(currentMethodIndex) ? "cursor-not-allowed" : ""}>
                     <Button
                       variant="default"
                       size="sm"
                       onClick={handleFinishedClick}
-                      disabled={!isTaskCompleted(currentMethodIndex) || isLoadingQuiz}
+                      disabled={!isTaskCompleted(currentMethodIndex)}
                       className={`flex items-center gap-2 ${
                         !isTaskCompleted(currentMethodIndex) ? "opacity-50 pointer-events-none" : ""
                       } ${currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex) ? "bg-green-600 hover:bg-green-700" : ""}`}
                     >
-                      {isLoadingQuiz ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Loading...
-                        </>
-                      ) : currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex) ? (
+                      {currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex) ? (
                         <>
                           Finished
                           <CheckCircle className="h-4 w-4" />
@@ -452,15 +375,13 @@ export default function TaskSidebar({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>
-                    {isLoadingQuiz
-                      ? "Loading quiz questions..."
-                      : currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex)
-                        ? "Take quiz and complete survey"
-                        : !isTaskCompleted(currentMethodIndex)
-                          ? "Complete all test cases to unlock the next task"
-                          : currentMethodIndex === (sessionData?.tasks.length || 0) - 1
-                            ? "Complete this task to finish"
-                            : "Proceed to next task"
+                    {currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex)
+                      ? "Take quiz and complete survey"
+                      : !isTaskCompleted(currentMethodIndex)
+                        ? "Complete all test cases to unlock the next task"
+                        : currentMethodIndex === (sessionData?.tasks.length || 0) - 1
+                          ? "Complete this task to finish"
+                          : "Proceed to next task"
                     }
                   </p>
                 </TooltipContent>
