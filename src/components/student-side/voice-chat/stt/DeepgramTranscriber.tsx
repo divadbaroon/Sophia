@@ -40,16 +40,11 @@ export const DeepgramTranscriber = () => {
   }, [clearSilenceTimeout, brain])
 
   const startTranscription = useCallback(async () => {
-    if (brain.state === 'listening') {
-      console.log('⚠️ Already listening, ignoring start request')
-      return
-    }
-
     try {
       brain.setError(null)
       console.log('🚀 Starting Sophia transcription…')
 
-      // Clear existing transcription to avoid duplication
+      // Reset transcript and timers
       finalTranscriptRef.current = ''
       brain.setCurrentText('')
       clearSilenceTimeout()
@@ -57,9 +52,11 @@ export const DeepgramTranscriber = () => {
       const apiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY
       if (!apiKey) throw new Error('Deepgram API key not configured')
 
+      // Request mic
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
 
+      // Start recording & socket
       const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
       mediaRecorderRef.current = mediaRecorder
 
@@ -87,17 +84,12 @@ export const DeepgramTranscriber = () => {
 
         if (result && result.trim()) {
           if (isFinal) {
-            // accumulate full transcript
             finalTranscriptRef.current += (finalTranscriptRef.current ? ' ' : '') + result
             console.log('🎙️ Final transcript segment:', result)
 
-            // update display
             brain.setCurrentText(finalTranscriptRef.current)
-
-            // start silence timer for processing
             startSilenceTimeout()
           } else {
-            // interim result: show live preview and reset timer
             const preview =
               finalTranscriptRef.current +
               (finalTranscriptRef.current ? ' ' : '') +
@@ -117,7 +109,7 @@ export const DeepgramTranscriber = () => {
       socket.onclose = (event) => {
         console.log('🔌 WebSocket closed with code', event.code)
         clearSilenceTimeout()
-        // ignore normal (1000) and no-status (1005)
+        // Only treat as error if abnormal closure
         if (event.code !== 1000 && event.code !== 1005) {
           brain.setError(`Connection closed unexpectedly (${event.code})`)
         }
@@ -127,26 +119,26 @@ export const DeepgramTranscriber = () => {
       brain.setError((err as Error).message)
       clearSilenceTimeout()
     }
-  }, [brain, startSilenceTimeout, clearSilenceTimeout])
+  }, [brain, clearSilenceTimeout, startSilenceTimeout])
 
   const stopTranscription = useCallback(() => {
     console.log('🛑 Stopping transcription')
     clearSilenceTimeout()
-    
+
     // Stop recording
     mediaRecorderRef.current?.stop()
     streamRef.current?.getTracks().forEach((t) => t.stop())
-    
+
     // Close socket cleanly
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.close(1000)
     }
-    
+
     // Clear refs
     socketRef.current = null
     mediaRecorderRef.current = null
     streamRef.current = null
-    
+
     // Clear transcript
     finalTranscriptRef.current = ''
     brain.setCurrentText('')
