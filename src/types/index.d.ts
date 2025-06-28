@@ -396,3 +396,18 @@ export interface MessageSave {
   content: string
   role?: 'user' | 'assistant'
 }
+
+export interface SophiaInteractionEvent {
+  sessionId: string
+  lessonId: string
+  currentTaskIndex: number
+  interactionType: 'open' | 'close'
+}
+
+export interface NavigationEvent {
+  sessionId: string
+  lessonId: string
+  fromTaskIndex: number
+  toTaskIndex: number
+  navigationDirection: 'next' | 'previous'
+}
