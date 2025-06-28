@@ -1,12 +1,12 @@
 'use client'
 
 import React, { useState, useCallback, useRef } from 'react'
-import { SophiaBrainContext } from './context/SophiaBrainContext'
+import { SophiaBrainContext } from '../context/SophiaBrainContext'
 import { 
   VoiceState, 
   Message, 
   SophiaBrainController 
-} from './types/SophiaBrainType'
+} from '../types/SophiaBrainType'
 
 import { saveMessage } from '@/lib/actions/message-actions'
 import { MessageSave } from '@/types'
