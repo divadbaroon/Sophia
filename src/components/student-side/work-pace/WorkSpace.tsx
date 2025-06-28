@@ -14,11 +14,16 @@ import Terminal from "@/components/student-side/terminal/Terminal"
 import ConsentModal from "@/components/student-side/consent/ConsentModal"
 import SophiaWrapper from "@/components/student-side/voice-chat/wrapper/SophiaWrapper"
 import { DeepgramTranscriber } from "@/components/student-side/voice-chat/stt/DeepgramTranscriber"
+import { trackSophiaInteraction } from "@/lib/actions/sophia-button-interaction-actions"
+
+import { useFile } from "@/lib/context/FileContext" 
 
 const CONSENT_STORAGE_KEY = 'sophia_user_consent'
 
 export const WorkspaceLayout: React.FC = () => {
   const { startTranscription, stopTranscription } = DeepgramTranscriber()
+
+  const { sessionId, lessonId, currentMethodIndex } = useFile()
 
   // Panel & UI state
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
@@ -40,14 +45,57 @@ export const WorkspaceLayout: React.FC = () => {
     }
   }, [])
 
-  // Toggle Sophia panel & transcription
   const onToggleSophia = () => {
     if (isQuestionPanelVisible) {
+      // Closing Sophia
       stopTranscription()
       setIsQuestionPanelVisible(false)
+      
+      // Track close interaction in background 
+      if (sessionId && lessonId) {
+        trackSophiaInteraction({
+          sessionId,
+          lessonId,
+          currentTaskIndex: currentMethodIndex,
+          interactionType: 'close'
+        }).catch(error => {
+          console.error('Failed to track Sophia close interaction:', error)
+        })
+      }
     } else {
+      // Opening Sophia
       startTranscription()
       setIsQuestionPanelVisible(true)
+      
+      // Track open interaction in background 
+      if (sessionId && lessonId) {
+        trackSophiaInteraction({
+          sessionId,
+          lessonId,
+          currentTaskIndex: currentMethodIndex,
+          interactionType: 'open'
+        }).catch(error => {
+          console.error('Failed to track Sophia open interaction:', error)
+        })
+      }
+    }
+  }
+
+  // Close handler 
+  const onCloseSophia = () => {
+    stopTranscription()
+    setIsQuestionPanelVisible(false)
+    
+    // Track close interaction from wrapper 
+    if (sessionId && lessonId) {
+      trackSophiaInteraction({
+        sessionId,
+        lessonId,
+        currentTaskIndex: currentMethodIndex,
+        interactionType: 'close'
+      }).catch(error => {
+        console.error('Failed to track Sophia close interaction from wrapper:', error)
+      })
     }
   }
 
@@ -151,7 +199,7 @@ export const WorkspaceLayout: React.FC = () => {
                 {/* Sophia panel */}
                 {isQuestionPanelVisible && (
                   <Card className="absolute top-14 right-4 w-[400px] z-40 shadow-lg mt-6 mr-1">
-                    <SophiaWrapper onClose={onToggleSophia} />
+                    <SophiaWrapper onClose={onCloseSophia} />
                   </Card>
                 )}
               </div>
