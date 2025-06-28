@@ -14,6 +14,7 @@ import {
   recordTaskAttempt 
 } from '@/lib/actions/task-progress-actions'
 import { loadAllCodeSnapshots } from '@/lib/actions/code-snapshot-actions'
+import { getQuizQuestions } from '@/lib/actions/quiz-actions'  // ADD: Import quiz actions
 
 const FileContext = createContext<FileContextType | undefined>(undefined)
 
@@ -61,6 +62,10 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
 
   // State for storing the current code for each method 
   const [methodsCode, setMethodsCode] = useState<Record<string, string>>({})
+
+  // Quiz loading state
+  const [quizLoading, setQuizLoading] = useState(false)
+  const [quizData, setQuizData] = useState<any>(null)
 
   // Update student task when method changes
   useEffect(() => {
@@ -164,7 +169,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
       
       try {
         // Try to load from database first
-        const result = await getTaskProgressForSession()
+        const result = await getTaskProgressForSession(sessionId)
         
         if (result.success && result.data) {
           // Convert database format to local state format
@@ -296,6 +301,77 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     loadCodeSnapshots()
   }, [sessionData, sessionId, lessonId]) 
 
+  // Load quiz questions when lesson data is ready
+  useEffect(() => {
+    const loadQuizQuestions = async () => {
+      if (!lessonId || !sessionData) return
+      
+      console.log("Loading quiz questions for lesson", lessonId)
+      setQuizLoading(true)
+      
+      try {
+        const { data: quizQuestions } = await getQuizQuestions(lessonId)
+        
+        if (quizQuestions && quizQuestions.length > 0) {
+          // Format quiz data to match QuizModal expectations
+          const formattedQuiz = {
+            title: sessionData?.tasks[0]?.title || "Lesson Quiz", 
+            questions: quizQuestions.map((question, index) => ({
+              ...question,
+              id: question.id || `question-${lessonId}-${index}` 
+            }))
+          }
+          setQuizData(formattedQuiz)
+          console.log("Quiz questions loaded successfully")
+        } else {
+          // Fallback to mock data if no quiz questions found
+          console.warn('No quiz questions found for lesson:', lessonId)
+          setQuizData({
+            title: "Lesson Quiz",
+            questions: [
+              {
+                id: "mock-1",
+                question: "How would you rate your understanding of this lesson?",
+                options: [
+                  "I need more practice",
+                  "I understand the basics", 
+                  "I feel confident",
+                  "I could teach this to someone else"
+                ],
+                correctAnswer: 2,
+                explanation: "Great job completing this lesson! Continue practicing to build confidence."
+              }
+            ]
+          })
+        }
+      } catch (error) {
+        console.error('Error loading quiz questions:', error)
+        // Fallback to mock data on error
+        setQuizData({
+          title: "Lesson Quiz",
+          questions: [
+            {
+              id: "fallback-1",
+              question: "You've completed all the tasks! How do you feel?",
+              options: [
+                "Ready for more challenges",
+                "Need to review the concepts",
+                "Confident in my understanding", 
+                "Excited to continue learning"
+              ],
+              correctAnswer: 0,
+              explanation: "Excellent work! Keep up the great progress."
+            }
+          ]
+        })
+      } finally {
+        setQuizLoading(false)
+      }
+    }
+
+    loadQuizQuestions()
+  }, [lessonId, sessionData])
+
   // Update users code being displayed when they switch tasks
   useEffect(() => {
     if (!activeMethodId || !methodsCode[activeMethodId] || codeLoading) return
@@ -306,7 +382,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     updateCachedFileContent(currentMethodCode)
   }, [activeMethodId, methodsCode, codeLoading]) 
 
-  // Add this helper function to update methods code
+  // Helper function to update methods code
   const updateMethodsCode = (methodId: string, code: string) => {
     setMethodsCode(prev => ({
       ...prev,
@@ -506,6 +582,8 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         codeLoading,
         methodsCode,
         updateMethodsCode,
+        quizLoading,    
+        quizData,       
       }}>
       {children}
     </FileContext.Provider>
