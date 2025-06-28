@@ -107,9 +107,13 @@ export interface FileContextType {
   // New loading state for task progress
   isLoadingTaskProgress: boolean;
 
+  // Code loading and management
   codeLoading: boolean
   methodsCode: Record<string, string>
   updateMethodsCode: (methodId: string, code: string) => void
+
+  quizLoading: boolean
+  quizData: any
 }
 
 export type FolderContextType = {
