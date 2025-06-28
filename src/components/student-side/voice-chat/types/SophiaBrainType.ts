@@ -30,7 +30,6 @@ export interface SophiaBrainController {
   setError: (error: string | null) => void
   
   // Data actions
-  addMessage: (message: Message) => void
   updateStudentContext: (context: Partial<StudentContext>) => void
   setCurrentText: (text: string) => void
 }
