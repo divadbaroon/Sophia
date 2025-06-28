@@ -48,7 +48,7 @@ export async function signup(formData: FormData) {
 export async function signInAsGuest() {
   const supabase = await createClient()
 
-  const { data, error } = await supabase.auth.signInAnonymously()
+  const { error } = await supabase.auth.signInAnonymously()
 
   if (error) {
     console.error('Guest sign-in error:', error)
