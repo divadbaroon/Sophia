@@ -3,6 +3,8 @@
 import { useRef, useCallback } from 'react'
 import { useSophiaBrain } from '../hooks/useSophiaBrain'
 
+import { uploadAudioToSupabase } from '@/lib/actions/supabase-actions'
+
 export const DeepgramTranscriber = () => {
   const socketRef = useRef<WebSocket | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -10,7 +12,54 @@ export const DeepgramTranscriber = () => {
   const finalTranscriptRef = useRef('')
   const silenceTimeoutRef = useRef<number | null>(null)
 
+  // Audio recording refs
+  const audioRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+
   const brain = useSophiaBrain()
+
+  // Start audio recording
+  const startAudioRecording = useCallback((stream: MediaStream) => {
+    try {
+      console.log('🎤 Starting audio recording')
+      audioChunksRef.current = []
+      
+      const recorder = new MediaRecorder(stream, { 
+        mimeType: 'audio/webm',
+        audioBitsPerSecond: 128000
+      })
+      
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data)
+        }
+      }
+      
+      recorder.onstop = async () => {
+        console.log('⏹️ Audio recording stopped')
+        
+        if (audioChunksRef.current.length > 0) {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+          await uploadAudioToSupabase(audioBlob)
+          audioChunksRef.current = []
+        }
+      }
+      
+      recorder.start(100) // Collect data every 100ms
+      audioRecorderRef.current = recorder
+    } catch (error) {
+      console.error('❌ Failed to start audio recording:', error)
+    }
+  }, [])
+
+  // Stop audio recording
+  const stopAudioRecording = useCallback(() => {
+    if (audioRecorderRef.current && audioRecorderRef.current.state === 'recording') {
+      console.log('🛑 Stopping audio recording')
+      audioRecorderRef.current.stop()
+      audioRecorderRef.current = null
+    }
+  }, [])
 
   // Clear any existing silence timeout
   const clearSilenceTimeout = useCallback(() => {
@@ -30,6 +79,9 @@ export const DeepgramTranscriber = () => {
 
       console.log('🎙️ Deepgram: Processing transcript:', transcript)
 
+      // Stop audio recording
+      stopAudioRecording()
+
       // Clear existing transcription to avoid duplication
       finalTranscriptRef.current = ''
       brain.setCurrentText('')
@@ -37,7 +89,7 @@ export const DeepgramTranscriber = () => {
       // initiate thinking
       await brain.startThinking(transcript)
     }, 3000)
-  }, [clearSilenceTimeout, brain])
+  }, [clearSilenceTimeout, brain, stopAudioRecording])
 
   const startTranscription = useCallback(async () => {
     try {
@@ -55,6 +107,9 @@ export const DeepgramTranscriber = () => {
       // Request mic
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
+
+      // Start audio recording immediately
+      startAudioRecording(stream)
 
       // Start recording & socket
       const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
@@ -104,6 +159,7 @@ export const DeepgramTranscriber = () => {
         console.error('❌ WebSocket error:', err)
         brain.setError('Connection failed')
         clearSilenceTimeout()
+        stopAudioRecording()
       }
 
       socket.onclose = (event) => {
@@ -113,17 +169,22 @@ export const DeepgramTranscriber = () => {
         if (event.code !== 1000 && event.code !== 1005) {
           brain.setError(`Connection closed unexpectedly (${event.code})`)
         }
+        stopAudioRecording()
       }
     } catch (err) {
       console.error('❌ Failed to start transcription:', err)
       brain.setError((err as Error).message)
       clearSilenceTimeout()
+      stopAudioRecording()
     }
-  }, [brain, clearSilenceTimeout, startSilenceTimeout])
+  }, [brain, clearSilenceTimeout, startSilenceTimeout, startAudioRecording, stopAudioRecording])
 
   const stopTranscription = useCallback(() => {
     console.log('🛑 Stopping transcription')
     clearSilenceTimeout()
+
+    // Stop audio recording
+    stopAudioRecording()
 
     // Stop recording
     mediaRecorderRef.current?.stop()
@@ -142,7 +203,7 @@ export const DeepgramTranscriber = () => {
     // Clear transcript
     finalTranscriptRef.current = ''
     brain.setCurrentText('')
-  }, [brain, clearSilenceTimeout])
+  }, [brain, clearSilenceTimeout, stopAudioRecording])
 
   return {
     startTranscription,
