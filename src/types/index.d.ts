@@ -433,3 +433,26 @@ export type CodeEditorProps = {
   className?: string;
   readOnly?: boolean;
 };
+
+export interface Branch {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+}
+
+export interface MainConcept {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  branches: Branch[];
+}
+
+export interface Connection {
+  from: MainConcept | Branch;
+  to: Branch;
+  id: string;
+}
+
+export type ConceptItem = MainConcept | Branch;
