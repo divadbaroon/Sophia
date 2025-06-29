@@ -12,6 +12,7 @@
     "@ai-sdk/anthropic": "^1.2.12",
     "@ai-sdk/react": "^1.2.12",
     "@anthropic-ai/sdk": "^0.39.0",
+    "@codemirror/lang-java": "^6.0.2",
     "@codemirror/lang-javascript": "^6.2.3",
     "@codemirror/lang-python": "^6.1.7",
     "@deepgram/sdk": "^3.11.0",
