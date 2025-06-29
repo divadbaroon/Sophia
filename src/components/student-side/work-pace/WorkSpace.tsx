@@ -27,7 +27,7 @@ const CONSENT_STORAGE_KEY = 'sophia_user_consent'
 export const WorkspaceLayout: React.FC = () => {
   const { startTranscription, stopTranscription } = DeepgramTranscriber()
 
-  const { stopAllAudio } = useSophiaBrain() 
+  const { stopAudio } = useSophiaBrain() 
 
   const { sessionId, lessonId, currentMethodIndex, sessionData, codeLoading } = useFile()
 
@@ -58,7 +58,7 @@ export const WorkspaceLayout: React.FC = () => {
     if (isQuestionPanelVisible) {
       // Closing Sophia
       stopTranscription()
-      stopAllAudio()
+      stopAudio()
       setIsQuestionPanelVisible(false)
       
       // Track close interaction in background 
@@ -94,7 +94,7 @@ export const WorkspaceLayout: React.FC = () => {
   // Close handler 
   const onCloseSophia = () => {
     stopTranscription()
-    stopAllAudio()
+    stopAudio()
     setIsQuestionPanelVisible(false)
     
     // Track close interaction from wrapper 
