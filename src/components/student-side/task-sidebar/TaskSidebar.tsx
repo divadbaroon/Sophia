@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { ArrowLeft, ArrowRight, Target, ChevronRight, CheckCircle, Lock } from "lucide-react"
+import { ArrowLeft, ArrowRight, Target, ChevronRight, CheckCircle, Lock, Loader2 } from "lucide-react"
 
 import { QuizModal } from "@/components/lessons/components/quiz-modal"
 import { SurveyModal } from "@/components/lessons/components/survery-modal"
@@ -30,6 +30,7 @@ export default function TaskSidebar({
 }: TaskSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [currentConceptTitle, setCurrentConceptTitle] = useState("")
+  const [isLoadingSurvey, setIsLoadingSurvey] = useState(false)
 
   const {
     sessionData,
@@ -109,6 +110,9 @@ export default function TaskSidebar({
     setIsQuizModalOpen(false)
     setCurrentConceptTitle(conceptTitle)
     
+    // Show loading state while preparing survey
+    setIsLoadingSurvey(true)
+    
     if (lessonId) {
       try {
         console.log('📝 Updating lesson progress...', { lessonId, score })
@@ -125,6 +129,8 @@ export default function TaskSidebar({
     } else {
       console.warn('⚠️ No lessonId available to update progress')
     }
+    
+    setIsLoadingSurvey(false)
     
     // Continue with survey modal (optional for user)
     setIsSurveyModalOpen(true)
@@ -276,7 +282,7 @@ export default function TaskSidebar({
                     </div>
                     <p className="text-sm text-green-700 mt-2">
                       Congratulations! You&apos;ve successfully completed all tasks. Click &quot;Finished&quot; to take
-                      a quick quiz and provide feedback.
+                      a quick quiz, provide feedback, and <span className="font-semibold text-purple-700">spin the wheel for a chance to win a prize!</span> 🎰
                     </p>
                   </Card>
                 </div>
@@ -376,7 +382,7 @@ export default function TaskSidebar({
                 <TooltipContent>
                   <p>
                     {currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex)
-                      ? "Take quiz and complete survey"
+                      ? "Take quiz, complete survey, and spin the wheel for prizes!"
                       : !isTaskCompleted(currentMethodIndex)
                         ? "Complete all test cases to unlock the next task"
                         : currentMethodIndex === (sessionData?.tasks.length || 0) - 1
@@ -390,6 +396,25 @@ export default function TaskSidebar({
           </div>
         </div>
       </div>
+
+      {/* Loading Survey Modal */}
+      {isLoadingSurvey && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="p-8 max-w-md mx-4 bg-white">
+            <div className="text-center space-y-4">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Preparing Your Survey</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Almost done! We're preparing a quick survey for you. 
+                  <br />
+                  <span className="font-medium text-purple-600">Don't forget - you'll get to spin the prize wheel after! 🎁</span>
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Modals */}
       <QuizModal
