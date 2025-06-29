@@ -31,7 +31,7 @@ export interface SophiaBrainController {
   startSpeaking: () => void
   startThinking: (userMessage: string) => Promise<void>
   setError: (error: string | null) => void
-  stopAllAudio: () => void  
+  stopAudio: () => void  
   
   // Data actions
   setCurrentText: (text: string) => void
