@@ -13,12 +13,14 @@ import { Badge } from "@/components/ui/badge"
 import { UnlockedConceptCard } from "@/components/lessons/components/unlocked-concept-card"
 import { QuizModal } from "@/components/lessons/components/quiz-modal"
 import { InstructionsModal } from "@/components/lessons/components/instructions-modal"
+import { DemographicForm } from "./components/demographic-form"
 
 import { getUserClasses } from "@/lib/actions/class-actions"
 import { getClassLessons } from "@/lib/actions/lessons-actions"
 import { enrollInClass } from "@/lib/actions/class-actions"
 import { getQuizQuestions } from "@/lib/actions/quiz-actions"
 import { createLearningSession, getUserLearningSessions } from "@/lib/actions/learning-session-actions"
+import { checkDemographicCompletion } from "@/lib/actions/demographic-actions"
 
 import { Search, Filter, GraduationCap, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box, Plus, Target, ChevronDown, ChevronUp, Gift } from "lucide-react"
 
@@ -61,6 +63,9 @@ export default function ConceptLibrary() {
 
   const [isRewardsOpen, setIsRewardsOpen] = useState(false)
 
+  // Demographic form state
+  const [showDemographicForm, setShowDemographicForm] = useState(false)
+
   // Load completed lessons from database
   const loadCompletedLessons = async (classId?: string) => {
     try {
@@ -86,6 +91,15 @@ export default function ConceptLibrary() {
     if (classes && classes.length > 0) {
       setUserClasses(classes)
       setSelectedClass(classes[0])
+      
+      // Check if demographics are completed for the first class selected
+      const demographicResult = await checkDemographicCompletion((classes[0] as any).id)
+      if (demographicResult.success) {
+        // Show demographic form if not completed
+        if (!demographicResult.completed) {
+          setShowDemographicForm(true)
+        }
+      }
       
       // Get lessons for first class
       const { data: classLessons } = await getClassLessons((classes[0] as any).id)
@@ -127,6 +141,16 @@ export default function ConceptLibrary() {
     const newClass = userClasses.find(cls => cls.class_code === classCode)
     if (newClass) {
       setSelectedClass(newClass)
+      
+      // Check demographics for the new class
+      const demographicResult = await checkDemographicCompletion(newClass.id)
+      if (demographicResult.success) {
+        // Show demographic form if not completed
+        if (!demographicResult.completed) {
+          setShowDemographicForm(true)
+        }
+      }
+      
       const { data: classLessons } = await getClassLessons(newClass.id)
       
       // Fetch quiz questions for all lessons in the new class
@@ -181,6 +205,11 @@ export default function ConceptLibrary() {
       setJoinError('An unexpected error occurred. Please try again.')
       setIsJoining(false)
     }
+  }
+
+  // Add demographic form completion handler
+  const handleDemographicComplete = () => {
+    setShowDemographicForm(false)
   }
 
   const handleCardClick = async (lesson: any) => {
@@ -600,6 +629,13 @@ export default function ConceptLibrary() {
         onClose={() => setIsInstructionsModalOpen(false)}
         conceptTitle={currentConceptTitle}
         onContinue={handleInstructionsContinue}
+      />
+
+      {/* Demographic Form Modal */}
+      <DemographicForm
+        isOpen={showDemographicForm}
+        onSubmit={handleDemographicComplete}
+        classId={selectedClass?.id || ""}
       />
     </div>
   )
