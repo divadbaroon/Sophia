@@ -107,7 +107,7 @@ export default function ConceptLibrary() {
       // Fetch quiz questions for all lessons
       const lessonsWithQuiz = await Promise.all(
         (classLessons || []).map(async (lesson) => {
-          const { data: quizQuestions } = await getQuizQuestions(lesson.id)
+          const { data: quizQuestions } = await getQuizQuestions(lesson.id, 'pre')
 
           return {
             ...lesson,
@@ -156,7 +156,7 @@ export default function ConceptLibrary() {
       // Fetch quiz questions for all lessons in the new class
       const lessonsWithQuiz = await Promise.all(
         (classLessons || []).map(async (lesson) => {
-          const { data: quizQuestions } = await getQuizQuestions(lesson.id)
+          const { data: quizQuestions } = await getQuizQuestions(lesson.id, 'pre')
           return {
             ...lesson,
             quiz: {

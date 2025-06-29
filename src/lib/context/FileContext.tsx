@@ -14,7 +14,7 @@ import {
   recordTaskAttempt 
 } from '@/lib/actions/task-progress-actions'
 import { loadAllCodeSnapshots } from '@/lib/actions/code-snapshot-actions'
-import { getQuizQuestions } from '@/lib/actions/quiz-actions'  // ADD: Import quiz actions
+import { getQuizQuestions } from '@/lib/actions/quiz-actions'  
 
 const FileContext = createContext<FileContextType | undefined>(undefined)
 
@@ -310,7 +310,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
       setQuizLoading(true)
       
       try {
-        const { data: quizQuestions } = await getQuizQuestions(lessonId)
+        const { data: quizQuestions } = await getQuizQuestions(lessonId, 'post')
         
         if (quizQuestions && quizQuestions.length > 0) {
           // Format quiz data to match QuizModal expectations

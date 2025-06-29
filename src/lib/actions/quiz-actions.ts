@@ -2,7 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 
-export async function getQuizQuestions(lessonId: string) {
+export async function getQuizQuestions(lessonId: string, quizType: 'pre' | 'post') {
   const supabase = await createClient()
   
   try {
@@ -10,6 +10,7 @@ export async function getQuizQuestions(lessonId: string) {
       .from('quiz_questions')
       .select('*')
       .eq('lesson_id', lessonId)
+      .eq('quiz_type', quizType)  
       .order('question_order', { ascending: true })
 
     if (error) {
@@ -58,10 +59,10 @@ export async function saveQuizResponses(
     const quizResponses = responses.map(response => ({
       session_id: sessionId,
       question_id: response.questionId,
-      selected_answer: parseInt(response.selectedAnswer), // Convert to integer for database
+      selected_answer: parseInt(response.selectedAnswer),
       is_correct: response.isCorrect,
       quiz_type: quizType,
-      response_time_seconds: null // You can add timing later if needed
+      response_time_seconds: null
     }))
 
     // Insert all responses
