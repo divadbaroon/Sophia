@@ -6,6 +6,7 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowRight, AlertCircle } from "lucide-react"
 import { saveDemographicData } from "@/lib/actions/demographic-actions" 
@@ -14,6 +15,7 @@ import { DemographicData, DemographicFormProps } from "@/types"
 
 export function DemographicForm({ isOpen, onSubmit, classId }: DemographicFormProps) {
   const [formData, setFormData] = useState<DemographicData>({
+    name: "",
     age: "",
     gender: "",
     ethnicity: "",
@@ -85,6 +87,21 @@ export function DemographicForm({ isOpen, onSubmit, classId }: DemographicFormPr
               <h4 className="text-md font-semibold text-black border-b border-gray-200 pb-2">Basic Information</h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="name">Name (Optional)</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Enter your name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    className="border-2 border-gray-200 focus:border-gray-400 transition-colors"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Used for providing you with extra credit, per your professors request.
+                  </p>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="age">Age Range *</Label>
                   <Select value={formData.age} onValueChange={(value) => handleInputChange("age", value)}>
