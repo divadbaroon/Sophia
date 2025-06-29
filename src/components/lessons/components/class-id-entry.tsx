@@ -2,26 +2,20 @@
 
 import { useState } from "react"
 
-import { useRouter } from 'next/navigation'
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-
-import { DemographicForm } from "@/components/lessons/components/demographic-form"
 
 import { Users, ArrowRight, AlertCircle, CheckCircle } from "lucide-react"
 
 import { enrollInClass } from "@/lib/actions/class-actions"
 
 export function ClassIdEntry() {
-  const router = useRouter()
   const [classId, setClassId] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
-  const [showDemographicForm, setShowDemographicForm] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,36 +43,15 @@ export function ClassIdEntry() {
         return
       }
 
-      // Class is valid! Show demographic form
+      // Class is valid! 
+      setShowSuccess(true)
       setIsLoading(false)
-      setShowDemographicForm(true)
 
     } catch (error) {
       console.error('Class validation error:', error)
       setError('An unexpected error occurred. Please try again.')
       setIsLoading(false)
     }
-  }
-
-  const handleDemographicSubmit = async () => {
-    // Show success state
-    setShowDemographicForm(false)
-    setShowSuccess(true)
-    
-    // reroute back to concepts
-    router.push('/concepts')
- 
-  }
-
-  // Show demographic form
-  if (showDemographicForm) {
-    return (
-      <DemographicForm
-        isOpen={true}
-        onSubmit={handleDemographicSubmit}
-        classId={classId.trim()}
-      />
-    )
   }
 
   return (
