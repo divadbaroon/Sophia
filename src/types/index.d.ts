@@ -343,12 +343,13 @@ export interface ConceptProgress {
 }
 
 export interface DemographicData {
+  name?: string
   age: string
   gender: string
-  ethnicity: string
+  ethnicity?: string
   education: string
   major: string
-  programmingExperience: string
+  programmingExperience?: string
   yearsOfExperience: string
 }
 
