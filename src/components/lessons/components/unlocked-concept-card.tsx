@@ -9,7 +9,6 @@ interface UnlockedConceptCardProps {
   description: string
   icon: LucideIcon
   difficulty: string
-  xpReward: number
   estimatedTime: string
   isCompleted: boolean
   onClick: () => void
@@ -19,7 +18,6 @@ export function UnlockedConceptCard({
   title,
   description,
   icon: Icon,
-  xpReward,
   estimatedTime,
   isCompleted,
   onClick,

@@ -22,8 +22,6 @@ import { createLearningSession, getUserLearningSessions } from "@/lib/actions/le
 
 import { Search, Filter, GraduationCap, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box, Plus, Target, ChevronDown, ChevronUp, Gift } from "lucide-react"
 
-import type { UserProgress } from "@/types"
-
 export default function GamifiedConceptLibrary() {
   // Icon mapping for database icon names to Lucide components
   const iconMap: { [key: string]: any } = {
@@ -61,17 +59,6 @@ export default function GamifiedConceptLibrary() {
   const [isCreatingSession, setIsCreatingSession] = useState(false)
   const [sessionError, setSessionError] = useState<string | null>(null)
 
-  // Calculate XP and progress dynamically
-  const userProgress: UserProgress = {
-    completedConcepts: Array.from(completedLessons), // Convert Set to Array
-    totalXP: completedLessons.size * 100, // 100 XP per completed lesson
-    level: Math.floor((completedLessons.size * 100) / 500) + 1,
-  }
-
-  // Helper functions for XP calculations
-  const getLevel = (xp: number) => Math.floor(xp / 500) + 1
-  const getXPForNextLevel = (xp: number) => getLevel(xp) * 500 - xp
-  const getLevelProgress = (xp: number) => ((xp % 500) / 500) * 100
   const [isRewardsOpen, setIsRewardsOpen] = useState(false)
 
   // Load completed lessons from database
@@ -219,7 +206,6 @@ export default function GamifiedConceptLibrary() {
         description: lesson.description,
         difficulty: lesson.difficulty,
         estimatedTime: `${lesson.estimated_time_mins} min`,
-        xpReward: 100,
         quiz: lesson.quiz,
         sessionId: sessionResult.data.id 
       })
@@ -494,7 +480,6 @@ export default function GamifiedConceptLibrary() {
                 description={lesson.description || ""}
                 icon={iconMap[lesson.icon_name] || Variable} 
                 difficulty={lesson.difficulty || "Beginner"}
-                xpReward={100}
                 estimatedTime={`${lesson.estimated_time_mins || 10} min`}
                 isCompleted={isConceptCompleted(lesson.id)}
                 onClick={() => handleCardClick(lesson)}
