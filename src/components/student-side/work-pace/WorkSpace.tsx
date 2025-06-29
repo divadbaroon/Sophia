@@ -16,6 +16,7 @@ import ConsentModal from "@/components/student-side/consent/ConsentModal"
 import SophiaWrapper from "@/components/student-side/voice-chat/wrapper/SophiaWrapper"
 import { DeepgramTranscriber } from "@/components/student-side/voice-chat/stt/DeepgramTranscriber"
 import { trackSophiaInteraction } from "@/lib/actions/sophia-button-interaction-actions"
+import { useSophiaBrain } from "@/components/student-side/voice-chat/hooks/useSophiaBrain"
 
 import { useFile } from "@/lib/context/FileContext" 
 
@@ -25,6 +26,8 @@ const CONSENT_STORAGE_KEY = 'sophia_user_consent'
 
 export const WorkspaceLayout: React.FC = () => {
   const { startTranscription, stopTranscription } = DeepgramTranscriber()
+
+  const { stopAllAudio } = useSophiaBrain() 
 
   const { sessionId, lessonId, currentMethodIndex, sessionData, codeLoading } = useFile()
 
@@ -55,6 +58,7 @@ export const WorkspaceLayout: React.FC = () => {
     if (isQuestionPanelVisible) {
       // Closing Sophia
       stopTranscription()
+      stopAllAudio()
       setIsQuestionPanelVisible(false)
       
       // Track close interaction in background 
@@ -90,6 +94,7 @@ export const WorkspaceLayout: React.FC = () => {
   // Close handler 
   const onCloseSophia = () => {
     stopTranscription()
+    stopAllAudio()
     setIsQuestionPanelVisible(false)
     
     // Track close interaction from wrapper 
