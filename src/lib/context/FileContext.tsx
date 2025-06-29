@@ -35,6 +35,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [sessionId, setSessionId] = useState<string>('')
   const [lessonId, setLessonId] = useState<string>('')
   const [sessionData, setSessionData] = useState<TaskData | null>(null)
+
   const [isLoadingTasks, setIsLoadingTasks] = useState(true)
   const [currentMethodIndex, setCurrentMethodIndex] = useState<number>(0)
   const [activeMethodId, setActiveMethodId] = useState<string>('')
@@ -231,19 +232,25 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [sessionId, sessionData])
 
-  // Update active method ID and test cases when method index or session changes
-  useEffect(() => {
+    // Update active method ID and test cases when method index or session changes
+    useEffect(() => {
     if (sessionData?.tasks && sessionData.tasks[currentMethodIndex]) {
       const title = sessionData.tasks[currentMethodIndex].title
-      const match = title.match(/\d+\.\)\s+([a-zA-Z_]+)\(\)/)
+      console.log("🔍 Extracting methodId from title:", title)
+      
+      // Updated regex to handle both formats: "1.) methodName()" OR "methodName()"
+      const match = title.match(/(?:\d+\.\)\s+)?([a-zA-Z_]+)\(\)/)
       
       if (match) {
         const methodId = match[1]
+        console.log("✅ Found methodId:", methodId)
         setActiveMethodId(methodId)
         
         if (sessionData.testCases[methodId]) {
           setCurrentTestCases(sessionData.testCases[methodId])
         }
+      } else {
+        console.error("❌ Could not extract methodId from title:", title)
       }
     }
   }, [currentMethodIndex, sessionData])
