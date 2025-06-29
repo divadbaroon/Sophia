@@ -20,7 +20,7 @@ import { enrollInClass } from "@/lib/actions/class-actions"
 import { getQuizQuestions } from "@/lib/actions/quiz-actions"
 import { createLearningSession, getUserLearningSessions } from "@/lib/actions/learning-session-actions"
 
-import { Search, Filter, GraduationCap, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box, Plus, Zap, Target } from "lucide-react"
+import { Search, Filter, GraduationCap, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box, Plus, Target, ChevronDown, ChevronUp, Gift } from "lucide-react"
 
 import type { UserProgress } from "@/types"
 
@@ -72,6 +72,7 @@ export default function GamifiedConceptLibrary() {
   const getLevel = (xp: number) => Math.floor(xp / 500) + 1
   const getXPForNextLevel = (xp: number) => getLevel(xp) * 500 - xp
   const getLevelProgress = (xp: number) => ((xp % 500) / 500) * 100
+  const [isRewardsOpen, setIsRewardsOpen] = useState(false)
 
   // Load completed lessons from database
   const loadCompletedLessons = async (classId?: string) => {
@@ -273,7 +274,7 @@ export default function GamifiedConceptLibrary() {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-12 h-12 border-4 border-gray-200 border-t-black rounded-full animate-spin"></div>
-          <p className="text-gray-600">Loading your lessons...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     )
@@ -284,15 +285,15 @@ export default function GamifiedConceptLibrary() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-6 mt-14">
-          <h1 className="text-4xl font-bold text-black mb-4">Lessons</h1>
+          <h1 className="text-4xl font-bold text-black mb-4">Concepts</h1>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Explore your programming lessons. Each lesson is designed to build your skills step by step.
+            Assess your understanding of fundamental programming concepts.
           </p>
         </div>
 
         {/* Class Selection */}
         <div className="mb-6">
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center">
             <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
               <GraduationCap className="w-5 h-5 text-gray-600" />
               <span className="text-sm font-medium text-gray-700">Class:</span>
@@ -308,15 +309,16 @@ export default function GamifiedConceptLibrary() {
                   ))}
                 </SelectContent>
               </Select>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowJoinModal(true)}
+                className="border-2 border-gray-200 hover:border-black transition-colors p-2 h-8 w-8"
+              >
+                <Plus className="w-3 h-3" />
+              </Button>
             </div>
-            
-            <Button
-              variant="outline"
-              onClick={() => setShowJoinModal(true)}
-              className="border-2 border-gray-200 hover:border-black transition-colors flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
           </div>
         </div>
 
@@ -338,6 +340,75 @@ export default function GamifiedConceptLibrary() {
 
         {/* User stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {/* Rewards & Incentives */}
+          <Card className="border-2 border-gray-200 relative hover:border-gray-300 transition-colors">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Gift size={16}/>
+                Rewards & Incentives
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <div className="space-y-3">
+                <Button
+                  variant="ghost"
+                  onClick={() => setIsRewardsOpen(!isRewardsOpen)}
+                  className="w-full justify-between p-0 h-auto text-left hover:bg-gray-50 rounded-lg px-2 py-1"
+                >
+                  <div className="flex flex-col items-start">
+                    <span className="text-lg font-bold text-black">Multiple ways to earn</span>
+                    <div className="flex items-center gap-2 mt-3">
+                      <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border-purple-200">
+                        🎁 Prizes
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+                        💰 Cash
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+                        🎓 Credit
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  {isRewardsOpen ? (
+                    <ChevronUp size={20} className="text-gray-400" />
+                  ) : (
+                    <ChevronDown size={20} className="text-gray-400" />
+                  )}
+                </Button>
+
+                {/* Dropdown overlay - positioned outside card */}
+                {isRewardsOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-gray-200 rounded-lg shadow-lg z-10 p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-sm p-2 bg-purple-50 rounded-lg border border-purple-100">
+                        <span className="text-2xl">🎁</span>
+                        <div>
+                          <div className="font-medium text-gray-800">Prize spins for $10-$20</div>
+                          <div className="text-xs text-gray-600">After each lesson completion</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm p-2 bg-green-50 rounded-lg border border-green-100">
+                        <span className="text-2xl">💬</span>
+                        <div>
+                          <div className="font-medium text-gray-800">$10 for 30-min interview</div>
+                          <div className="text-xs text-gray-600">Contact dbarron410@vt.edu</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm p-2 bg-blue-50 rounded-lg border border-blue-100">
+                        <span className="text-2xl">🏆</span>
+                        <div>
+                          <div className="font-medium text-gray-800">Extra credit points</div>
+                          <div className="text-xs text-gray-600">Guaranteed from professor</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Progress */}
           <Card className="border-2 border-gray-200">
             <CardHeader className="pb-2">
@@ -350,7 +421,7 @@ export default function GamifiedConceptLibrary() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-2xl font-bold text-black">{completedLessons.size}</span>
-                  <span className="text-sm text-gray-500">/ {lessons.length} lessons</span>
+                  <span className="text-sm text-gray-500">/ {lessons.length} concepts</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
@@ -361,38 +432,7 @@ export default function GamifiedConceptLibrary() {
                 <p className="text-xs text-gray-600">
                   {completedLessons.size === lessons.length && lessons.length > 0
                     ? "🎉 All lessons completed!"
-                    : `${lessons.length - completedLessons.size} lessons remaining`}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Level & XP */}
-          <Card className="border-2 border-gray-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <Zap size={16} />
-                Level & XP
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-black">Level {getLevel(userProgress.totalXP)}</span>
-                  <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200 text-xs">
-                    {userProgress.totalXP} XP
-                  </Badge>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-black h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${getLevelProgress(userProgress.totalXP)}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-600">
-                  {getXPForNextLevel(userProgress.totalXP) === 0
-                    ? "🎉 Level up! Complete another concept to advance"
-                    : `${getXPForNextLevel(userProgress.totalXP)} XP to next level`}
+                    : `${lessons.length - completedLessons.size} concepts remaining`}
                 </p>
               </div>
             </CardContent>
@@ -406,7 +446,7 @@ export default function GamifiedConceptLibrary() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 type="text"
-                placeholder="Search lessons..."
+                placeholder="Search concepts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 border-2 border-gray-200 focus:border-black transition-colors"
@@ -462,7 +502,7 @@ export default function GamifiedConceptLibrary() {
             ))
           ) : (
             <div className="col-span-full text-center py-12">
-              <p className="text-gray-500 text-lg">No lessons found matching your search criteria.</p>
+              <p className="text-gray-500 text-lg">No concepts found matching your search criteria.</p>
               <p className="text-gray-400 text-sm mt-2">Try adjusting your search or filter options.</p>
             </div>
           )}
