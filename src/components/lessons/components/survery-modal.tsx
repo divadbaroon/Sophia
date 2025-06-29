@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent } from "@/components/ui/card"
-import { ClipboardList, ArrowRight } from "lucide-react"
+import { ClipboardList, ArrowRight, Gift } from "lucide-react"
 
 interface SurveyData {
   // Cognitive Load
@@ -114,14 +114,30 @@ export function SurveyModal({ isOpen, onClose, conceptTitle, onSubmit }: SurveyM
         <DialogHeader className="border-b border-gray-200 pb-4">
           <div className="flex items-center gap-3">
             <ClipboardList className="w-6 h-6 text-black" />
-            <div>
+            <div className="flex-1">
               <DialogTitle className="text-2xl font-bold text-black">Learning Experience Survey</DialogTitle>
-              <p className="text-gray-600 mt-1">Help us improve your learning experience with {conceptTitle}</p>
+              <p className="text-gray-600 mt-1">Help us improve your learning experience with Sophia</p>
             </div>
           </div>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-8 pt-4">
+          {/* Prize Incentive Banner */}
+          <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Gift className="w-8 h-8 text-purple-600" />
+                <div>
+                  <h3 className="text-lg font-semibold text-purple-800">🎉 You're Almost There!</h3>
+                  <p className="text-sm text-purple-700 mt-1">
+                    Complete this quick survey to unlock a spin of the <span className="font-semibold">prize wheel</span>! 
+                    Your feedback helps us make learning better for everyone.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Cognitive Load Section */}
           <Card className="border-2 border-gray-200">
             <CardContent className="p-6">
@@ -307,33 +323,7 @@ export function SurveyModal({ isOpen, onClose, conceptTitle, onSubmit }: SurveyM
             </CardContent>
           </Card>
 
-          {/* Open-ended Feedback Section */}
-          <Card className="border-2 border-gray-200">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
-                Interview Opportunity
-              </h3>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="improvements" className="text-sm font-medium text-gray-700">
-                    Please contact us if you would like an interview
-                  </Label>
-                  <Textarea
-                    id="improvements"
-                    placeholder="Please share any suggestions for improvement..."
-                    value={formData.improvements}
-                    onChange={(e) => handleInputChange("improvements", e.target.value)}
-                    className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
-                    rows={3}
-                  />
-                </div>
-
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Open-ended Feedback Section */}
+          {/* Additional Feedback Section */}
           <Card className="border-2 border-gray-200">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
@@ -341,20 +331,6 @@ export function SurveyModal({ isOpen, onClose, conceptTitle, onSubmit }: SurveyM
               </h3>
 
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="improvements" className="text-sm font-medium text-gray-700">
-                    What improvements would you suggest for this learning system?
-                  </Label>
-                  <Textarea
-                    id="improvements"
-                    placeholder="Please share any suggestions for improvement..."
-                    value={formData.improvements}
-                    onChange={(e) => handleInputChange("improvements", e.target.value)}
-                    className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
-                    rows={3}
-                  />
-                </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="additionalComments" className="text-sm font-medium text-gray-700">
                     Any additional comments about your learning experience?
@@ -372,12 +348,37 @@ export function SurveyModal({ isOpen, onClose, conceptTitle, onSubmit }: SurveyM
             </CardContent>
           </Card>
 
+               {/* Interview Opportunity Section */}
+          <Card className="border-2 border-gray-200">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
+                Interview Opportunity
+              </h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                 
+                  <p className="text-xs text-gray-600 mb-2">
+                    We'd love to hear more about your learning experience. Please share your email below if you're interested in participating in a brief 30-minute interview for $10 compensation.
+                  </p>
+                  <Textarea
+                    id="interview"
+                    placeholder="Enter your email if you're interested in a 30-minute interview for $10 (optional)..."
+                    value={formData.improvements}
+                    onChange={(e) => handleInputChange("improvements", e.target.value)}
+                    className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
+                    rows={2}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Submit Button */}
           <div className="pt-4 border-t border-gray-200 space-y-4">
             <Button
               type="submit"
               disabled={!isFormValid || isSubmitting}
-              className="w-full bg-black text-white hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 py-6 text-lg font-semibold"
             >
               {isSubmitting ? (
                 <>
@@ -386,14 +387,16 @@ export function SurveyModal({ isOpen, onClose, conceptTitle, onSubmit }: SurveyM
                 </>
               ) : (
                 <>
-                  Submit Survey
+                  <Gift className="w-5 h-5" />
+                  Complete Survey & Spin the Wheel!
                   <ArrowRight size={16} />
                 </>
               )}
             </Button>
 
             <p className="text-xs text-gray-500 text-center">
-              Your feedback helps us improve the learning experience for all students. Thank you for your time!
+              Thank you for your feedback!
+              <br />
             </p>
           </div>
         </form>
