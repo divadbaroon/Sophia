@@ -78,7 +78,7 @@ export function UnlockedConceptCard({
           </div>
           <div className="flex items-center gap-1">
             <Star size={12} />
-            <span>{xpReward} XP</span>
+            <span>1 Free Spin</span>
           </div>
         </div>
 
@@ -89,7 +89,7 @@ export function UnlockedConceptCard({
               isCompleted ? "text-gray-500 group-hover:text-black" : "text-gray-500 group-hover:text-black"
             }`}
           >
-            {isCompleted ? "Click to review →" : "Click to learn →"}
+            {isCompleted ? "Click to review →" : "Click to assess →"}
           </span>
         </div>
       </CardContent>
