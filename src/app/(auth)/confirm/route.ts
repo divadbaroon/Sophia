@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
             redirect(`/invitation/${classCode}?message=${encodeURIComponent(result.error || 'Failed to enroll in class')}`)
           }
         } catch (error) {
-          // Enrollment error, redirect to hom
+          console.log(error)
+          // Enrollment error, redirect to home
           redirect(`/`)
         }
       } else {

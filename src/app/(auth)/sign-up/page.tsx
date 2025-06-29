@@ -137,7 +137,7 @@ export default function SignupClient({ initialMessage }: { initialMessage?: stri
               <CardContent className="flex flex-col gap-6 text-center">
                 <div className="space-y-3">
                   <p className="text-gray-600">
-                    We've sent a verification link to:
+                    We&apos;ve sent a verification link to:
                   </p>
                   <p className="font-semibold text-gray-900 bg-gray-50 px-4 py-2 rounded-lg">
                     {userEmail}
@@ -176,7 +176,7 @@ export default function SignupClient({ initialMessage }: { initialMessage?: stri
                 </div>
 
                 <div className="text-xs text-gray-500">
-                  <p>Didn't receive the email? Check your spam folder or try resending.</p>
+                  <p>Didn&apos;t receive the email? Check your spam folder or try resending.</p>
                 </div>
               </CardContent>
             </Card>

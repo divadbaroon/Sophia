@@ -188,7 +188,7 @@ export default function InvitationLogin({ classCode, initialMessage }: Props) {
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">Check Your Email</h2>
                   <div className="space-y-3">
                     <p className="text-gray-600">
-                      We've sent a verification link to:
+                      We&apos;ve sent a verification link to:
                     </p>
                     <p className="font-semibold text-gray-900 bg-gray-50 px-4 py-3 rounded-lg">
                       {userEmail}
@@ -231,7 +231,7 @@ export default function InvitationLogin({ classCode, initialMessage }: Props) {
                 </div>
 
                 <div className="text-xs text-gray-500 bg-gray-50/50 p-3 rounded-lg">
-                  <p>Didn't receive the email? Check your spam folder or try resending.</p>
+                  <p>Didn&apos;t receive the email? Check your spam folder or try resending.</p>
                 </div>
               </CardContent>
             </Card>
