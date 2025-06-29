@@ -47,7 +47,7 @@ total_count = 0
 detailed_results = []
 `;
     }
-    
+
     return `
 import time
 import json
@@ -55,8 +55,9 @@ import json
 # Execute the user's code to define the functions
 ${fileContent}
 
-# Define test cases from database
-test_cases = ${JSON.stringify(currentTestCases)}
+# Define test cases from database - parse JSON properly
+test_cases_json = '''${JSON.stringify(currentTestCases)}'''
+test_cases = json.loads(test_cases_json)
 
 # Capture output
 import sys
@@ -82,8 +83,98 @@ for i, test in enumerate(test_cases):
     test_passed = False
     
     try:
-        # Simple approach: use **kwargs to pass all inputs as keyword arguments
-        actual_result = ${activeMethodId}(**test_input)
+        # Check if test specifies a function_name to use instead of activeMethodId
+        if test_input.get("function_name") or test_input.get("delete_key") is not None:
+            # Build tree from array representation for tree-based functions
+            def build_tree_from_array(nodes, index=0):
+                if not nodes or index >= len(nodes) or nodes[index] is None:
+                    return None
+                
+                root = Node(nodes[index])
+                root.left = build_tree_from_array(nodes, 2 * index + 1)
+                root.right = build_tree_from_array(nodes, 2 * index + 2)
+                return root
+            
+            # Build the tree
+            tree_nodes = test_input.get("tree_nodes", [])
+            root = build_tree_from_array(tree_nodes)
+            
+            # Check if this is a deleteNode test
+            if test_input.get("delete_key") is not None:
+                # Handle deleteNode specially
+                delete_key = test_input.get("delete_key")
+                
+                # Call deleteNode
+                new_root = deleteNode(root, delete_key)
+                
+                # Perform in-order traversal to get the result
+                result_values = []
+                
+                def collect_inorder(node):
+                    if node is None:
+                        return
+                    collect_inorder(node.left)
+                    result_values.append(node.value)
+                    collect_inorder(node.right)
+                
+                if new_root is not None:
+                    collect_inorder(new_root)
+                
+                actual_result = result_values
+                
+            else:
+                # Handle other function_name based tests
+                function_name = test_input.get("function_name")
+                
+                # Call the specified function
+                if function_name == "inOrder":
+                    # Special handling for inOrder since it prints instead of returning
+                    import io
+                    captured_output = io.StringIO()
+                    old_stdout = sys.stdout
+                    sys.stdout = captured_output
+                    inOrder(root)
+                    sys.stdout = old_stdout
+                    actual_output_str = captured_output.getvalue().strip()
+                    
+                    # Convert the printed output to a list of integers for comparison
+                    if actual_output_str:
+                        actual_result = [int(x) for x in actual_output_str.split()]
+                    else:
+                        actual_result = []
+                elif function_name == "findMin":
+                    result_node = findMin(root)
+                    actual_result = result_node.value if result_node else None
+                elif function_name == "findMax":
+                    result_node = findMax(root)
+                    actual_result = result_node.value if result_node else None
+                else:
+                    # For other tree functions that might be added later
+                    func = globals()[function_name]
+                    actual_result = func(root)
+        elif test_input.get("operation") in ["min", "max"]:
+            # Keep existing operation-based logic for backward compatibility
+            def build_tree_from_array(nodes, index=0):
+                if not nodes or index >= len(nodes) or nodes[index] is None:
+                    return None
+                
+                root = Node(nodes[index])
+                root.left = build_tree_from_array(nodes, 2 * index + 1)
+                root.right = build_tree_from_array(nodes, 2 * index + 2)
+                return root
+            
+            tree_nodes = test_input.get("tree_nodes", [])
+            root = build_tree_from_array(tree_nodes)
+            
+            if test_input.get("operation") == "min":
+                result_node = findMin(root)
+                actual_result = result_node.value if result_node else None
+            else:  # operation == "max"
+                result_node = findMax(root)
+                actual_result = result_node.value if result_node else None
+        else:
+            # Regular function call for other methods
+            actual_result = ${activeMethodId}(**test_input)
         
         # Check if result matches expected
         if isinstance(expected, float) and isinstance(actual_result, (int, float)):
@@ -119,8 +210,8 @@ for i, test in enumerate(test_cases):
     detailed_results.append({
         "testCaseIndex": i,
         "testInput": test_input,
-        "expectedOutput": expected,
-        "actualOutput": actual_result,
+        "expectedOutput": expected if expected is not None else "null",
+        "actualOutput": actual_result if actual_result is not None else "null",
         "passed": test_passed,
         "errorMessage": error_message,
         "executionTimeMs": execution_time_ms
