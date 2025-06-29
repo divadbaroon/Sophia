@@ -65,8 +65,8 @@ export function ClassIdEntry() {
     setShowDemographicForm(false)
     setShowSuccess(true)
     
-    // reroute back to lessons
-    router.push('/lessons')
+    // reroute back to concepts
+    router.push('/concepts')
  
   }
 

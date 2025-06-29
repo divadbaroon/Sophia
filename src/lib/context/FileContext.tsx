@@ -95,8 +95,8 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
 
   // Extract lesson ID and session ID from URL
   useEffect(() => {
-    // Match pattern: /lessons/[lessonId]/session/[sessionId]
-    const urlMatch = pathname?.match(/\/lessons\/([^\/]+)\/session\/([^\/]+)/)
+    // Match pattern: /concepts/[lessonId]/session/[sessionId]
+    const urlMatch = pathname?.match(/\/concepts\/([^\/]+)\/session\/([^\/]+)/)
     
     if (urlMatch) {
       const [, newLessonId, newSessionId] = urlMatch

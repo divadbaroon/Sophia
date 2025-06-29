@@ -18,7 +18,7 @@ export default async function InvitationPage({
   } = await supabase.auth.getUser()
 
   if (user) {
-    return redirect("/lessons")
+    return redirect("/concepts")
   }
 
   const resolvedParams = await searchParams

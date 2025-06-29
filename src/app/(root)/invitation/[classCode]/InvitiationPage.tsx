@@ -32,7 +32,7 @@ export default function InvitationLogin({ classCode, initialMessage }: Props) {
         if (result.classData?.name) {
           setClassName(result.classData.name)
         }
-        router.push('/lessons')
+        router.push('/concepts')
       } else {
         setMessage(result.error || 'Failed to enroll in class')
       }
@@ -53,7 +53,7 @@ export default function InvitationLogin({ classCode, initialMessage }: Props) {
         if (result.classData?.name) {
           setClassName(result.classData.name)
         }
-        router.push('/lessons')
+        router.push('/concepts')
       } else {
         setMessage(result.error || 'Failed to enroll in class')
       }
@@ -74,7 +74,7 @@ export default function InvitationLogin({ classCode, initialMessage }: Props) {
         if (result.classData?.name) {
           setClassName(result.classData.name)
         }
-        router.push('/lessons')
+        router.push('/concepts')
       } else {
         setMessage(result.error || 'Failed to enroll in class')
       }

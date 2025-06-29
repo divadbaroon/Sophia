@@ -133,8 +133,8 @@ export default function TaskSidebar({
   const handleSurveySubmit = (surveyData: any) => {
     console.log("Survey data submitted:", surveyData)
     setIsSurveyModalOpen(false)
-    // Redirect to lessons page after survey
-    window.location.href = "/lessons"
+    // Redirect to concepts page after survey
+    window.location.href = "/concepts"
   }
 
   // Add null checks since global loading guarantees sessionData exists

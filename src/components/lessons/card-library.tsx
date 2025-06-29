@@ -241,7 +241,7 @@ export default function GamifiedConceptLibrary() {
   };
 
   const handleInstructionsContinue = () => {
-    window.location.href = `/lessons/${selectedConcept.id}/session/${selectedConcept.sessionId}`
+    window.location.href = `/concepts/${selectedConcept.id}/session/${selectedConcept.sessionId}`
   }
 
   // Use real completion status from database
