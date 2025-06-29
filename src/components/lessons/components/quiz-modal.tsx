@@ -170,8 +170,8 @@ export function QuizModal({
                   disabled={isSaving}
                   className={`w-full p-4 text-left rounded-lg border-2 transition-all duration-200 ${
                     selectedAnswers[currentQuestion] === index
-                      ? "border-black bg-gray-50"
-                      : "border-gray-200 hover:border-gray-400 hover:bg-gray-50"
+                      ? "border-gray-500 bg-gray-50"  
+                      : "border-gray-200 hover:border-gray-500 hover:bg-gray-50"
                   } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center gap-3">
