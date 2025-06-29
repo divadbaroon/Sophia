@@ -22,7 +22,7 @@ import { createLearningSession, getUserLearningSessions } from "@/lib/actions/le
 
 import { Search, Filter, GraduationCap, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box, Plus, Target, ChevronDown, ChevronUp, Gift } from "lucide-react"
 
-export default function GamifiedConceptLibrary() {
+export default function ConceptLibrary() {
   // Icon mapping for database icon names to Lucide components
   const iconMap: { [key: string]: any } = {
     'Variable': Variable,
