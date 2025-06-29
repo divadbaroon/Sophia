@@ -62,15 +62,14 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     updateCachedFileContent, 
     setFileContent, 
     updateHighlightedText,
-    updateExecutionOutput,
-    setErrorContent,
     sessionId,
     activeMethodId,
     lessonId,
     currentMethodIndex,
     methodsCode,       
-    updateMethodsCode,  
+    updateMethodsCode,
   } = useFile();
+
   
   const editorViewRef = useRef<EditorView | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
@@ -277,21 +276,6 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [manualSave]);
-
-  // Handles task switching using context methodsCode
-  useEffect(() => {
-    if (!activeMethodId || !methodsCode[activeMethodId]) return;
-    
-    const currentMethodCode = generateCurrentMethodTemplate(methodsCode, activeMethodId);
-    setFileContent(currentMethodCode);
-    updateCachedFileContent(currentMethodCode);
-    
-    // Clear any previous results when switching methods
-    updateExecutionOutput('');
-    setErrorContent('');
-    
-    console.log("Switched to method:", activeMethodId);
-  }, [activeMethodId]); // Remove methodsCode dependency to prevent re-renders
 
   // Add event listener for wheel events to handle zooming
   useEffect(() => {
