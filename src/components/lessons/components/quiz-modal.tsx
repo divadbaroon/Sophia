@@ -195,7 +195,7 @@ export function QuizModal({
               onClick={handlePrevious}
               disabled={currentQuestion === 0 || isSaving}
               variant="outline"
-              className="border-2 border-gray-200 hover:border-black transition-colors disabled:opacity-50"
+              className="border-2 border-gray-200 hover:border-gray-600 transition-colors disabled:opacity-50"
             >
               Previous
             </Button>

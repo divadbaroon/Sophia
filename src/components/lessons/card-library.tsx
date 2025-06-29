@@ -300,7 +300,7 @@ export default function GamifiedConceptLibrary() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowJoinModal(true)}
-                className="border-2 border-gray-200 hover:border-black transition-colors p-2 h-8 w-8"
+                className="border-2 border-gray-200 hover:border-gray-600 transition-colors p-2 h-8 w-8"
               >
                 <Plus className="w-3 h-3" />
               </Button>
@@ -435,14 +435,14 @@ export default function GamifiedConceptLibrary() {
                 placeholder="Search concepts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 border-2 border-gray-200 focus:border-black transition-colors"
+                className="pl-10 border-2 border-gray-200 focus:border-gray-400 transition-colors"
               />
             </div>
 
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="border-2 border-gray-200 hover:border-black transition-colors flex items-center gap-2"
+              className="border-2 border-gray-200 hover:border-gray-600 transition-colors flex items-center gap-2"
             >
               <Filter className="w-4 h-4" />
               Filter
@@ -459,7 +459,7 @@ export default function GamifiedConceptLibrary() {
                     className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                       selectedFilter === filter
                         ? "bg-black text-white"
-                        : "bg-white text-gray-600 border border-gray-200 hover:border-black"
+                        : "bg-white text-gray-600 border border-gray-200 hover:border-gray-600"
                     }`}
                   >
                     {filter}
@@ -558,7 +558,7 @@ export default function GamifiedConceptLibrary() {
                   setClassCode("")
                   setJoinError(null)
                 }}
-                className="flex-1 border-2 border-gray-200 hover:border-black transition-colors"
+                className="flex-1 border-2 border-gray-200 hover:border-gray-600 transition-colors"
                 disabled={isJoining}
               >
                 Cancel

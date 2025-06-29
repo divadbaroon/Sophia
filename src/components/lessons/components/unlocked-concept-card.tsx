@@ -27,7 +27,7 @@ export function UnlockedConceptCard({
       className={`group cursor-pointer transition-all duration-300 border-2 bg-white relative overflow-hidden ${
         isCompleted
           ? "border-gray-300 bg-gray-50"
-          : "border-gray-200 hover:border-black hover:shadow-lg hover:scale-105"
+          : "border-gray-200 hover:border-gray-500 hover:shadow-lg hover:scale-105"
       }`}
       onClick={onClick}
     >

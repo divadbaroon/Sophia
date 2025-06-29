@@ -97,7 +97,7 @@ export function AddClassModal({ isOpen, onClose, onAddClass }: AddClassModalProp
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1 border-2 border-gray-200 hover:border-black transition-colors"
+              className="flex-1 border-2 border-gray-200 hover:border-gray-600 transition-colors"
             >
               Cancel
             </Button>
