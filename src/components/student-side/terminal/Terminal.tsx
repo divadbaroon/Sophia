@@ -33,7 +33,11 @@ const Terminal = () => {
   // RapidAPI Judge0 configuration
   const JUDGE0_API_URL = "https://judge0-ce.p.rapidapi.com"
   const JAVA_LANGUAGE_ID = 62 // Java (OpenJDK 13.0.1)
-  const RAPIDAPI_KEY = "a47d91602cmsh9bc3fa55dc76eaep1cf4e8jsn5f3fa0d7fa6e"
+  const RAPIDAPI_KEY = process.env.NEXT_PUBLIC_JUDGE0_API_KEY
+
+  if (!RAPIDAPI_KEY) {
+    throw new Error("RapidAPI key not configured...")
+  }
 
   const createJavaTestCode = (): string => {
     if (!activeMethodId || (!currentTestCases || currentTestCases.length === 0) && !supportedLinkedListMethods.includes(activeMethodId)) {
@@ -99,7 +103,7 @@ public class Main {
   const submitToJudge0 = async (sourceCode: string): Promise<string> => {
     try {
       console.log("Submitting code to Judge0...");
-      
+
       // Create submission
       const createResponse = await fetch(`${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`, {
         method: 'POST',
