@@ -196,6 +196,7 @@ public class Main {
           try {
             stdout = atob(result.stdout) // Decode base64
           } catch (e) {
+            console.log(e)
             stdout = result.stdout // Fallback if not base64
           }
         }
@@ -205,6 +206,7 @@ public class Main {
           try {
             stderr = atob(result.stderr)
           } catch (e) {
+            console.log(e)
             stderr = result.stderr
           }
         }
@@ -214,6 +216,7 @@ public class Main {
           try {
             compileOutput = atob(result.compile_output)
           } catch (e) {
+            console.log(e)
             compileOutput = result.compile_output
           }
         }
