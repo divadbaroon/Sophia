@@ -122,7 +122,7 @@ export async function saveSurveyResponse(
   }
 }
 
-export async function checkSurveyCompletion(sessionId: string) {
+export async function checkSurveyCompletion(lessonId: string) {
   const supabase = await createClient()
   
   try {
@@ -132,26 +132,29 @@ export async function checkSurveyCompletion(sessionId: string) {
       return { completed: false, error: "Not authenticated" }
     }
 
-    // Check if survey exists for this session and user
-    const { data: survey, error } = await supabase
+    const profileId = user.id
+
+    // Check if user has completed survey for this lesson (similar to quiz check)
+    const { data: responses, error } = await supabase
       .from('survey_responses')
-      .select('id, created_at')
-      .eq('session_id', sessionId)
-      .eq('profile_id', user.id)
-      .single()
+      .select(`
+        id,
+        created_at,
+        learning_sessions!inner(lesson_id)
+      `)
+      .eq('profile_id', profileId)
+      .eq('learning_sessions.lesson_id', lessonId)
+      .limit(1)
 
     if (error) {
-      if (error.code === 'PGRST116') { // No rows returned
-        return { completed: false, error: null }
-      }
       console.error('Error checking survey completion:', error)
       return { completed: false, error: error.message }
     }
 
     return { 
-      completed: true, 
+      completed: responses && responses.length > 0,
       error: null,
-      submittedAt: survey.created_at
+      submittedAt: responses?.[0]?.created_at || null
     }
 
   } catch (error) {
