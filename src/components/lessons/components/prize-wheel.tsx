@@ -134,8 +134,8 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
         return;
       }
       
-      if (!userEmail.includes("@") || !userEmail.includes(".")) {
-        setEmailError("Please enter a valid email address");
+      if (!userEmail.includes("@vt.edu") || !userEmail.includes(".")) {
+        setEmailError("Please enter a valid Virginia Tech email address");
         return;
       }
       
@@ -144,12 +144,6 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
       
       // Here you can save the email and prize info to your backend
       console.log("Prize claimed:", { email: userEmail, prize: winner });
-      
-      // call an API here:
-      // await fetch('/api/claim-prize', {
-      //   method: 'POST',
-      //   body: JSON.stringify({ email: userEmail, prize: winner, lessonId })
-      // });
     }
     
     setShowResult(false);
