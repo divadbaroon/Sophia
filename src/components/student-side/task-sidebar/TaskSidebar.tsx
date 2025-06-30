@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ArrowLeft, ArrowRight, Target, ChevronRight, CheckCircle, Lock, Loader2 } from "lucide-react"
 
 import { QuizModal } from "@/components/lessons/components/quiz-modal"
-import { SurveyModal } from "@/components/lessons/components/survery-modal"
+import { SurveyModal } from "@/components/lessons/components/survey-modal"
 import PrizeWheelModal from "@/components/lessons/components/prize-wheel" 
 
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
