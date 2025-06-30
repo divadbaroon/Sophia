@@ -333,7 +333,7 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({
                 ALREADY SPUN!
               </h2>
               <p className="text-gray-700 font-semibold">
-                You've already spun the wheel for this lesson
+                You&apos;ve already spun the wheel for this lesson
               </p>
             </div>
 
