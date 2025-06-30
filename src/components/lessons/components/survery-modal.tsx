@@ -348,11 +348,11 @@ export function SurveyModal({ isOpen, onClose, conceptTitle, onSubmit }: SurveyM
             </CardContent>
           </Card>
 
-               {/* Interview Opportunity Section */}
+          {/* Interview Opportunity Section */}
           <Card className="border-2 border-gray-200">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
-                Interview Opportunity
+                Interview Opportunity - $10 compensation 
               </h3>
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -362,7 +362,7 @@ export function SurveyModal({ isOpen, onClose, conceptTitle, onSubmit }: SurveyM
                   </p>
                   <Textarea
                     id="interview"
-                    placeholder="Enter your email if you're interested in a 30-minute interview for $10 (optional)..."
+                    placeholder="Please enter your email if you're interested"
                     value={formData.improvements}
                     onChange={(e) => handleInputChange("improvements", e.target.value)}
                     className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
