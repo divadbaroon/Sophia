@@ -15,7 +15,6 @@ export async function checkPrizeSpinEligibility(lessonId: string) {
     const profileId = user.id
 
     // Check if user has already spun for this LESSON (not session)
-    // FIXED: Added the lesson_id filter that was missing
     const { data: existingSpins, error } = await supabase
     .from('prize_spins')
     .select(`
