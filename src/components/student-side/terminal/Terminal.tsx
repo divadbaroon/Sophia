@@ -44,8 +44,8 @@ const Terminal = () => {
       return `
 public class Main {
     public static void main(String[] args) {
-        System.out.println("❌ No test cases available for function '${activeMethodId}'");
-        System.out.println("Please contact your instructor if you believe this is an error.");
+        System.out.println("⚠️ No test cases available for function '${activeMethodId}'");
+        System.out.println("Please try selecting a different function or try again.");
     }
 }`;
     }
@@ -460,17 +460,17 @@ public class Main {
 
         // Format API errors more user-friendly
         if (errorMessage.includes("Failed to create submission")) {
-          setOutput("❌ Connection Error\n\nUnable to connect to the code execution service.\nPlease check your internet connection and try again.")
+          setOutput("🔄 Connection Issue\n\nHaving trouble connecting to the code execution service.\nPlease try running your code again in a moment.")
         } else if (errorMessage.includes("Failed to get submission result")) {
-          setOutput("❌ Execution Service Error\n\nThe code execution service is temporarily unavailable.\nPlease try again in a few moments.")
+          setOutput("🔄 Service Busy\n\nThe code execution service is temporarily busy.\nPlease try again - this usually resolves quickly!")
         } else if (errorMessage.includes("Execution timeout")) {
-          setOutput("❌ Service Timeout\n\nThe code execution service took too long to respond.\nThis might be due to high server load. Please try again.")
+          setOutput("⏱️ Service Timeout\n\nThe service took longer than expected to respond.\nThis is usually temporary - please try running your code again.")
         } else {
-          setOutput(`❌ Service Error\n\n${errorMessage}\n\nIf this problem persists, please contact your instructor.`)
+          setOutput("🔄 Temporary Issue\n\nSomething didn't work as expected, but this is usually temporary.\nPlease try running your code again!")
         }
 
         updateExecutionOutput("")
-        setErrorContent(errorMessage)
+        setErrorContent("")  // Clear any previous errors to avoid popups
 
         // Save API error for tracking
         saveCodeError({
