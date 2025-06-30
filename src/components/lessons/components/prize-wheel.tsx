@@ -244,8 +244,8 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({
         return;
       }
       
-      if (!userEmail.includes("@") || !userEmail.includes(".")) {
-        setEmailError("Please enter a valid email address");
+      if (!userEmail.includes("@vt.edu") || !userEmail.includes(".")) {
+        setEmailError("Please enter a valid VT email address");
         return;
       }
       
@@ -478,7 +478,7 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({
                     {/* Email input for prize winners */}
                     <div className="space-y-2">
                       <label className="block text-sm font-bold text-gray-700 text-left">
-                        📧 Enter your email to claim your prize:
+                        📧 Enter your email to claim your prize (must be a valid VT email):
                       </label>
                       <input
                         type="email"
@@ -487,7 +487,7 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({
                           setUserEmail(e.target.value);
                           setEmailError(""); // Clear error when typing
                         }}
-                        placeholder="your.email@example.com"
+                        placeholder="example@vt.edu"
                         className={`w-full px-4 py-3 border-2 rounded-lg font-medium text-gray-800 ${
                           emailError 
                             ? 'border-red-400 bg-red-50' 
