@@ -16,6 +16,7 @@ import PrizeWheelModal from "@/components/lessons/components/prize-wheel"
 
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
 import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
+import { checkSurveyCompletion } from "@/lib/actions/survey-actions"
 
 import { useFile } from "@/lib/context/FileContext"
 
@@ -132,9 +133,27 @@ export default function TaskSidebar({
       console.warn('⚠️ No lessonId available to update progress')
     }
     
+    // Check if survey is already completed
+    if (lessonId) {
+      try {
+        console.log('🔍 Checking survey completion...')
+        const surveyResult = await checkSurveyCompletion(lessonId)
+        
+        if (surveyResult.completed) {
+          console.log('✅ Survey already completed, skipping to prize wheel')
+          setIsLoadingSurvey(false)
+          setShowPrizeWheel(true) // Skip directly to prize wheel
+          return // Exit early, don't show survey
+        }
+      } catch (error) {
+        console.error('❌ Error checking survey completion:', error)
+        // If check fails, proceed with showing survey (fail-safe)
+      }
+    }
+    
     setIsLoadingSurvey(false)
     
-    // Continue with survey modal (optional for user)
+    // Only show survey if not completed
     setIsSurveyModalOpen(true)
   }
 
@@ -464,7 +483,7 @@ export default function TaskSidebar({
         onSubmit={handleSurveySubmit}
       />
 
-      {/* Prize Wheel Modal - NEW! */}
+      {/* Prize Wheel Modal */}
       <PrizeWheelModal
         isOpen={showPrizeWheel}
         onClose={handlePrizeWheelClose}
