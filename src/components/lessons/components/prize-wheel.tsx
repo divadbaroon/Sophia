@@ -143,6 +143,7 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({
           borderWidth: 3,
           borderColor: '#000',
           overlayImage: overlayImage || undefined,
+          pointerAngle: 90,
           onRest: async (event: WheelEvent) => {
             setIsSpinning(false);
             if (event.currentIndex !== undefined) {
