@@ -75,8 +75,7 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
                     <div>
                       <h5 className="font-semibold text-black mb-1">Learn by Doing</h5>
                       <p className="text-sm text-gray-600">
-                        Practice makes perfect! Each task builds on what you&apos;ve learned and prepares you for real-world
-                        coding.
+                        Practice makes perfect! Each task builds on what you&apos;ve learned and prepares you for your exam.
                       </p>
                     </div>
                   </div>
