@@ -10,6 +10,7 @@ import { saveCodeError } from '@/lib/actions/code-errors-actions'
 import { useFile } from "@/lib/context/FileContext"
 import { TestCaseResult } from "@/types"
 import { linkedListTestCases, supportedLinkedListMethods, linkClassDefinition } from "@/utils/testCases/LinkedListsTestCases"
+import { binarySearchTreeTestCases, supportedBinarySearchTreeMethods, treeNodeClassDefinition } from "@/utils/testCases/BinarySearchTreeTestCases"
 
 const Terminal = () => {
   const [output, setOutput] = useState("")
@@ -33,14 +34,12 @@ const Terminal = () => {
   // RapidAPI Judge0 configuration
   const JUDGE0_API_URL = "https://judge0-ce.p.rapidapi.com"
   const JAVA_LANGUAGE_ID = 62 // Java (OpenJDK 13.0.1)
-  const RAPIDAPI_KEY = process.env.NEXT_PUBLIC_JUDGE0_API_KEY
-
-  if (!RAPIDAPI_KEY) {
-    throw new Error("RapidAPI key not configured...")
-  }
+  const RAPIDAPI_KEY = process.env.NEXT_PUBLIC_JUDGE0_API_KEY || "a47d91602cmsh9bc3fa55dc76eaep1cf4e8jsn5f3fa0d7fa6e"
 
   const createJavaTestCode = (): string => {
-    if (!activeMethodId || (!currentTestCases || currentTestCases.length === 0) && !supportedLinkedListMethods.includes(activeMethodId)) {
+    const allSupportedMethods = [...supportedLinkedListMethods, ...supportedBinarySearchTreeMethods]
+    
+    if (!activeMethodId || (!currentTestCases || currentTestCases.length === 0) && !allSupportedMethods.includes(activeMethodId)) {
       return `
 public class Main {
     public static void main(String[] args) {
@@ -50,17 +49,19 @@ public class Main {
 }`;
     }
 
-    // Clean the user's code and inject Link class definition if needed
+    // Clean the user's code and inject class definitions if needed
     let cleanedFileContent = fileContent
       .replace(/public\s+class\s+(\w+)/g, 'class $1') // Remove public from all classes
       .replace(/\/\/\s*Test method to demonstrate the solution[\s\S]*$/g, '') // Remove test methods and everything after
       .replace(/public\s+static\s+void\s+main\s*\([^)]*\)\s*\{[\s\S]*?\n\s*\}/g, '') // Remove any existing main methods
-      .replace(/\/\*\*[\s\S]*?\*\/\s*/g, '') // Remove the Link class definition comment
+      .replace(/\/\*\*[\s\S]*?\*\/\s*/g, '') // Remove class definition comments
       .trim() // Remove trailing whitespace
 
-    // Inject Link class definition for linked list methods
+    // Inject appropriate class definition based on method type
     if (supportedLinkedListMethods.includes(activeMethodId)) {
       cleanedFileContent = linkClassDefinition + cleanedFileContent
+    } else if (supportedBinarySearchTreeMethods.includes(activeMethodId)) {
+      cleanedFileContent = treeNodeClassDefinition + cleanedFileContent
     }
 
     let testCasesCode = ""
@@ -68,6 +69,8 @@ public class Main {
     // Check if we have hardcoded test cases for this method
     if (linkedListTestCases[activeMethodId]) {
       testCasesCode = linkedListTestCases[activeMethodId]
+    } else if (binarySearchTreeTestCases[activeMethodId]) {
+      testCasesCode = binarySearchTreeTestCases[activeMethodId]
     } else {
       // Use database test cases for other functions
       testCasesCode = `
@@ -82,7 +85,8 @@ public class Main {
 ${cleanedFileContent}
 
 public class Main {
-    // Helper method to print the list
+    ${supportedLinkedListMethods.includes(activeMethodId) ? `
+    // Helper method to print linked lists
     public static void printHelper(Link node) {
         Link current = node;
         while (current != null) {
@@ -92,7 +96,16 @@ public class Main {
                 System.out.print(" ");
             }
         }
-    }
+    }` : ''}
+    ${supportedBinarySearchTreeMethods.includes(activeMethodId) ? `
+    // Helper method to print tree in-order (for debugging)
+    public static void printInOrder(TreeNode node) {
+        if (node != null) {
+            printInOrder(node.left);
+            System.out.print(node.val + " ");
+            printInOrder(node.right);
+        }
+    }` : ''}
     
     public static void main(String[] args) {
         ${testCasesCode}
@@ -103,7 +116,12 @@ public class Main {
   const submitToJudge0 = async (sourceCode: string): Promise<string> => {
     try {
       console.log("Submitting code to Judge0...");
-
+      
+      // Check if API key is available
+      if (!RAPIDAPI_KEY) {
+        throw new Error("RapidAPI key not configured. Please check your environment variables.")
+      }
+      
       // Create submission
       const createResponse = await fetch(`${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`, {
         method: 'POST',
@@ -164,7 +182,6 @@ public class Main {
           try {
             stdout = atob(result.stdout) // Decode base64
           } catch (e) {
-            console.log(e)
             stdout = result.stdout // Fallback if not base64
           }
         }
@@ -174,7 +191,6 @@ public class Main {
           try {
             stderr = atob(result.stderr)
           } catch (e) {
-            console.log(e)
             stderr = result.stderr
           }
         }
@@ -184,7 +200,6 @@ public class Main {
           try {
             compileOutput = atob(result.compile_output)
           } catch (e) {
-            console.log(e)
             compileOutput = result.compile_output
           }
         }
