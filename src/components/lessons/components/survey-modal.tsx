@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent } from "@/components/ui/card"
-import { ClipboardList, ArrowRight, Gift } from "lucide-react"
+import { ClipboardList, ArrowRight, Gift, Loader2 } from "lucide-react"
 import { saveSurveyResponse, checkSurveyCompletion } from "@/lib/actions/survey-actions"
 
 interface SurveyData {
@@ -38,7 +38,7 @@ interface SurveyModalProps {
   conceptTitle: string
   sessionId?: string
   lessonId?: string
-  onSubmit: (data: SurveyData) => void
+  onComplete: () => void
 }
 
 export function SurveyModal({ 
@@ -46,7 +46,7 @@ export function SurveyModal({
   onClose, 
   sessionId,
   lessonId,
-  onSubmit 
+  onComplete 
 }: SurveyModalProps) {
   const [formData, setFormData] = useState<SurveyData>({
     mentalEffort: "",
@@ -63,29 +63,38 @@ export function SurveyModal({
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [isCheckingCompletion, setIsCheckingCompletion] = useState(true)
 
   // Check if survey is already completed when modal opens
   useEffect(() => {
     const checkAndSkip = async () => {
-      if (!isOpen || !sessionId) return
+      if (!isOpen || !lessonId) {
+        setIsCheckingCompletion(false)
+        return
+      }
 
+      setIsCheckingCompletion(true)
+      
       try {
-        const result = await checkSurveyCompletion(sessionId)
+        console.log('🔍 Checking survey completion...')
+        const result = await checkSurveyCompletion(lessonId)
         
         if (result.completed) {
-          console.log('Survey already completed, skipping...')
-          // Call onSubmit with empty data since it's already submitted
-          onSubmit(formData)
+          console.log('✅ Survey already completed, skipping to prize wheel')
+          // Survey already completed, skip 
+          onComplete()
           onClose()
         }
       } catch (error) {
+        console.error('❌ Error checking survey completion:', error)
         // If check fails, just proceed with survey
-        console.log('Survey completion check failed, proceeding with survey', error)
+      } finally {
+        setIsCheckingCompletion(false)
       }
     }
 
     checkAndSkip()
-  }, [isOpen, sessionId])
+  }, [isOpen, lessonId, onComplete, onClose])
 
   const handleInputChange = (field: keyof SurveyData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -114,9 +123,6 @@ export function SurveyModal({
         }
       }
 
-      // Call the parent onSubmit handler
-      onSubmit(formData)
-
       // Reset form
       setFormData({
         mentalEffort: "",
@@ -132,6 +138,9 @@ export function SurveyModal({
       })
 
       setIsSubmitting(false)
+      
+      // Call parent completion handler
+      onComplete()
       onClose()
 
     } catch (error) {
@@ -142,7 +151,7 @@ export function SurveyModal({
   }
 
   const handleClose = () => {
-    if (isSubmitting) return // Prevent closing while saving
+    if (isSubmitting || isCheckingCompletion) return // Prevent closing while saving or checking
 
     // Reset form and errors when closing
     setFormData({
@@ -183,6 +192,30 @@ export function SurveyModal({
     { value: "4", label: "High" },
     { value: "5", label: "Very High" },
   ]
+
+  // Show loading state while checking if survey is already completed
+  if (isCheckingCompletion && isOpen) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="max-w-md bg-white border-2 border-black">
+          <DialogHeader>
+            <DialogTitle className="sr-only">Loading Survey</DialogTitle>
+          </DialogHeader>
+          <div className="p-8">
+            <div className="text-center space-y-4">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Preparing Your Survey</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Almost done! We&apos;re preparing a quick survey for you.
+                </p>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
