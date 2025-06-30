@@ -11,6 +11,7 @@ import { useFile } from "@/lib/context/FileContext"
 import { TestCaseResult } from "@/types"
 import { linkedListTestCases, supportedLinkedListMethods, linkClassDefinition } from "@/utils/testCases/LinkedListsTestCases"
 import { binarySearchTreeTestCases, supportedBinarySearchTreeMethods, treeNodeClassDefinition } from "@/utils/testCases/BinarySearchTreeTestCases"
+import { sortingTestCases, supportedSortingMethods } from "@/utils/testCases/SortingTestCases"
 
 const Terminal = () => {
   const [output, setOutput] = useState("")
@@ -37,7 +38,7 @@ const Terminal = () => {
   const RAPIDAPI_KEY = process.env.NEXT_PUBLIC_JUDGE0_API_KEY || "a47d91602cmsh9bc3fa55dc76eaep1cf4e8jsn5f3fa0d7fa6e"
 
   const createJavaTestCode = (): string => {
-    const allSupportedMethods = [...supportedLinkedListMethods, ...supportedBinarySearchTreeMethods]
+    const allSupportedMethods = [...supportedLinkedListMethods, ...supportedBinarySearchTreeMethods, ...supportedSortingMethods]
     
     if (!activeMethodId || (!currentTestCases || currentTestCases.length === 0) && !allSupportedMethods.includes(activeMethodId)) {
       return `
@@ -63,6 +64,7 @@ public class Main {
     } else if (supportedBinarySearchTreeMethods.includes(activeMethodId)) {
       cleanedFileContent = treeNodeClassDefinition + cleanedFileContent
     }
+    // No special class definition needed for sorting algorithms
 
     let testCasesCode = ""
     
@@ -71,6 +73,8 @@ public class Main {
       testCasesCode = linkedListTestCases[activeMethodId]
     } else if (binarySearchTreeTestCases[activeMethodId]) {
       testCasesCode = binarySearchTreeTestCases[activeMethodId]
+    } else if (sortingTestCases[activeMethodId]) {
+      testCasesCode = sortingTestCases[activeMethodId]
     } else {
       // Use database test cases for other functions
       testCasesCode = `
@@ -98,12 +102,22 @@ public class Main {
         }
     }` : ''}
     ${supportedBinarySearchTreeMethods.includes(activeMethodId) ? `
-    // Helper method to print tree in-order (for debugging)
-    public static void printInOrder(TreeNode node) {
+    // Helper method to print tree in-order (for debugging and tests)
+    public static void printInOrderHelper(TreeNode node) {
         if (node != null) {
-            printInOrder(node.left);
+            printInOrderHelper(node.left);
             System.out.print(node.val + " ");
-            printInOrder(node.right);
+            printInOrderHelper(node.right);
+        }
+    }` : ''}
+    ${supportedSortingMethods.includes(activeMethodId) ? `
+    // Helper method to print arrays
+    public static void printArrayHelper(int[] array) {
+        for (int i = 0; i < array.length; i++) {
+            System.out.print(array[i]);
+            if (i < array.length - 1) {
+                System.out.print(" ");
+            }
         }
     }` : ''}
     
