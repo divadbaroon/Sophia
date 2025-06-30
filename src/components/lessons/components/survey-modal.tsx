@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent } from "@/components/ui/card"
 import { ClipboardList, ArrowRight, Gift } from "lucide-react"
-import { saveSurveyResponse, checkSurveyCompletion } from "@/lib/actions/survery-actions"
+import { saveSurveyResponse, checkSurveyCompletion } from "@/lib/actions/survey-actions"
 
 interface SurveyData {
   // Cognitive Load
