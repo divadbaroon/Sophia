@@ -459,6 +459,8 @@ export default function TaskSidebar({
         isOpen={isSurveyModalOpen}
         onClose={() => setIsSurveyModalOpen(false)}
         conceptTitle={currentConceptTitle}
+        sessionId={sessionId}        
+        lessonId={lessonId}          
         onSubmit={handleSurveySubmit}
       />
 
