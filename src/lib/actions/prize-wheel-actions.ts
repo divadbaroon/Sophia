@@ -12,37 +12,41 @@ export async function checkPrizeSpinEligibility(lessonId: string) {
       return { eligible: false, error: "Not authenticated" }
     }
 
+    const profileId = user.id
+
     // Check if user has already spun for this LESSON (not session)
-    const { data: existingSpin, error } = await supabase
-      .from('prize_spins')
-      .select(`
-        id, 
-        prize_won, 
-        spun_at,
-        learning_sessions!inner(lesson_id)
-      `)
-      .eq('profile_id', user.id)
-      .eq('learning_sessions.lesson_id', lessonId)
-      .single()
+    // FIXED: Added the lesson_id filter that was missing
+    const { data: existingSpins, error } = await supabase
+    .from('prize_spins')
+    .select(`
+      id, 
+      prize_won, 
+      spun_at
+    `)
+    .eq('profile_id', profileId)
+    .eq('lesson_id', lessonId)
+    .limit(1)
 
-    if (error) {
-      if (error.code === 'PGRST116') { // No rows returned
-        return { eligible: true, error: null }
-      }
-      console.error('Error checking prize spin eligibility:', error)
-      return { eligible: false, error: error.message }
-    }
+  if (error) {
+    console.error('Error checking prize spin eligibility:', error)
+    return { eligible: false, error: error.message }
+  }
 
-    // User has already spun for this lesson
-    return { 
-      eligible: false, 
-      error: null,
-      alreadySpun: true,
-      previousSpin: {
-        prize: existingSpin.prize_won,
-        spunAt: existingSpin.spun_at
-      }
+  // Check if array is empty
+  if (!existingSpins || existingSpins.length === 0) {
+    return { eligible: true, error: null }
+  }
+
+  const existingSpin = existingSpins[0]
+  return { 
+    eligible: false, 
+    error: null,
+    alreadySpun: true,
+    previousSpin: {
+      prize: existingSpin.prize_won, 
+      spunAt: existingSpin.spun_at
     }
+  }
 
   } catch (error) {
     console.error('Unexpected error checking prize spin eligibility:', error)
