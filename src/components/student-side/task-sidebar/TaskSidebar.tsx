@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { ArrowLeft, ArrowRight, Target, ChevronRight, CheckCircle, Lock, Loader2 } from "lucide-react"
+import { ArrowLeft, ArrowRight, Target, ChevronRight, CheckCircle, Lock } from "lucide-react"
 
 import { QuizModal } from "@/components/lessons/components/quiz-modal"
 import { SurveyModal } from "@/components/lessons/components/survey-modal"
@@ -16,7 +16,6 @@ import PrizeWheelModal from "@/components/lessons/components/prize-wheel"
 
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
 import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
-import { checkSurveyCompletion } from "@/lib/actions/survey-actions"
 
 import { useFile } from "@/lib/context/FileContext"
 
@@ -32,7 +31,6 @@ export default function TaskSidebar({
 }: TaskSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [currentConceptTitle, setCurrentConceptTitle] = useState("")
-  const [isLoadingSurvey, setIsLoadingSurvey] = useState(false)
   const [showPrizeWheel, setShowPrizeWheel] = useState(false) 
 
   const {
@@ -113,9 +111,6 @@ export default function TaskSidebar({
     setIsQuizModalOpen(false)
     setCurrentConceptTitle(conceptTitle)
     
-    // Show loading state while preparing survey
-    setIsLoadingSurvey(true)
-    
     if (lessonId) {
       try {
         console.log('📝 Updating lesson progress...', { lessonId, score })
@@ -133,35 +128,12 @@ export default function TaskSidebar({
       console.warn('⚠️ No lessonId available to update progress')
     }
     
-    // Check if survey is already completed
-    if (lessonId) {
-      try {
-        console.log('🔍 Checking survey completion...')
-        const surveyResult = await checkSurveyCompletion(lessonId)
-        
-        if (surveyResult.completed) {
-          console.log('✅ Survey already completed, skipping to prize wheel')
-          setIsLoadingSurvey(false)
-          setShowPrizeWheel(true) // Skip directly to prize wheel
-          return // Exit early, don't show survey
-        }
-      } catch (error) {
-        console.error('❌ Error checking survey completion:', error)
-        // If check fails, proceed with showing survey (fail-safe)
-      }
-    }
-    
-    setIsLoadingSurvey(false)
-    
-    // Only show survey if not completed
+    // Open survey modal
     setIsSurveyModalOpen(true)
   }
 
-  const handleSurveySubmit = (surveyData: any) => {
-    console.log("Survey data submitted:", surveyData)
+  const handleSurveyComplete = () => {
     setIsSurveyModalOpen(false)
-    
-    // Show the prize wheel instead of redirecting immediately
     setShowPrizeWheel(true)
   }
 
@@ -445,24 +417,6 @@ export default function TaskSidebar({
         </div>
       </div>
 
-      {/* Loading Survey Modal */}
-      {isLoadingSurvey && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="p-8 max-w-md mx-4 bg-white">
-            <div className="text-center space-y-4">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Preparing Your Survey</h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Almost done! We&apos;re preparing a quick survey for you. 
-                  <br />
-                </p>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
       {/* Modals */}
       <QuizModal
         isOpen={isQuizModalOpen}
@@ -480,7 +434,7 @@ export default function TaskSidebar({
         conceptTitle={currentConceptTitle}
         sessionId={sessionId}        
         lessonId={lessonId}          
-        onSubmit={handleSurveySubmit}
+        onComplete={handleSurveyComplete}
       />
 
       {/* Prize Wheel Modal */}
