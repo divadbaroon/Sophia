@@ -80,7 +80,7 @@ export function SurveyModal({
         }
       } catch (error) {
         // If check fails, just proceed with survey
-        console.log('Survey completion check failed, proceeding with survey')
+        console.log('Survey completion check failed, proceeding with survey', error)
       }
     }
 
