@@ -1,14 +1,23 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Trophy, DollarSign, Heart } from "lucide-react";
+import { X, Trophy, DollarSign, Heart, Loader2, AlertCircle } from "lucide-react";
 import { Wheel, WheelItem, WheelEvent } from "spin-wheel";
+import { checkPrizeSpinEligibility, savePrizeSpin } from "@/lib/actions/prize-wheel-actions";
 
 interface PrizeWheelModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPrizeWon: (prize: string) => void;
+  sessionId?: string;
+  lessonId?: string;
 }
 
-const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPrizeWon }) => {
+const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onPrizeWon,
+  sessionId,
+  lessonId 
+}) => {
   const wheelContainerRef = useRef<HTMLDivElement>(null);
   const wheelRef = useRef<Wheel | null>(null);
   const [winner, setWinner] = useState<string | null>(null);
@@ -17,6 +26,15 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
   const [overlayImage, setOverlayImage] = useState<HTMLImageElement | null>(null);
   const [userEmail, setUserEmail] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [hasSavedSpin, setHasSavedSpin] = useState(false); // Track if we've already saved
+  
+  // New states for eligibility and saving
+  const [isCheckingEligibility, setIsCheckingEligibility] = useState(true);
+  const [isEligible, setIsEligible] = useState(false);
+  const [eligibilityError, setEligibilityError] = useState<string | null>(null);
+  const [previousPrize, setPreviousPrize] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const prizes: WheelItem[] = [
     { label: "TRY AGAIN", weight: 15 },      // 15% 
@@ -33,6 +51,62 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
     { label: "$10 GIFT CARD", weight: 2.5 }  // 2.5%
   ];
 
+  // Check eligibility when modal opens
+  useEffect(() => {
+    // Reset states when modal closes
+    if (!isOpen) {
+      setIsCheckingEligibility(true);
+      setIsEligible(false);
+      setEligibilityError(null);
+      setPreviousPrize(null);
+      setShowResult(false);
+      setWinner(null);
+      setUserEmail("");
+      setEmailError("");
+      setSaveError(null);
+      setHasSavedSpin(false);
+      return;
+    }
+
+    const checkEligibility = async () => {
+      if (!lessonId) {
+        console.log('🔍 No lessonId provided');
+        setIsCheckingEligibility(false);
+        return;
+      }
+
+      setIsCheckingEligibility(true);
+      setEligibilityError(null);
+
+      try {
+        console.log('🔍 Checking prize eligibility for lesson:', lessonId);
+        const result = await checkPrizeSpinEligibility(lessonId);
+        console.log('🔍 Eligibility result:', result);
+        
+        if (result.error && result.error !== "Not authenticated") {
+          setEligibilityError(result.error);
+          setIsEligible(false);
+        } else if (result.alreadySpun && result.previousSpin) {
+          setIsEligible(false);
+          setPreviousPrize(result.previousSpin.prize);
+        } else if (result.eligible) {
+          setIsEligible(true);
+        } else {
+          setIsEligible(false);
+          setEligibilityError("Unable to verify eligibility");
+        }
+      } catch (error) {
+        console.error('Error checking eligibility:', error);
+        setEligibilityError("Failed to check eligibility");
+        setIsEligible(false);
+      } finally {
+        setIsCheckingEligibility(false);
+      }
+    };
+
+    checkEligibility();
+  }, [isOpen, lessonId]);
+
   // Load overlay image from public folder
   useEffect(() => {
     const img = new Image();
@@ -45,7 +119,7 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
   }, []);
 
   useEffect(() => {
-    if (isOpen && !showResult && wheelContainerRef.current && !wheelRef.current) {
+    if (isOpen && isEligible && !showResult && wheelContainerRef.current && !wheelRef.current) {
       try {
         wheelRef.current = new Wheel(wheelContainerRef.current, {
           items: prizes,
@@ -69,12 +143,21 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
           borderWidth: 3,
           borderColor: '#000',
           overlayImage: overlayImage || undefined,
-          onRest: (event: WheelEvent) => {
+          onRest: async (event: WheelEvent) => {
             setIsSpinning(false);
             if (event.currentIndex !== undefined) {
               const winningItem = prizes[event.currentIndex];
               const winnerLabel = winningItem.label || "Unknown Prize";
               setWinner(winnerLabel);
+              
+              // Save non-winning prizes immediately
+              if (sessionId && lessonId && winnerLabel.includes("TRY AGAIN") && !hasSavedSpin) {
+                const saved = await savePrizeSpinResult(winnerLabel);
+                if (saved) {
+                  setHasSavedSpin(true);
+                }
+              }
+              
               setShowResult(true);
               onPrizeWon(winnerLabel);
             }
@@ -86,7 +169,7 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
     }
 
     // Clean up wheel when showing results or modal closes
-    if (showResult || !isOpen) {
+    if (showResult || !isOpen || !isEligible) {
       if (wheelRef.current) {
         try {
           wheelRef.current.remove();
@@ -107,7 +190,32 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
         }
       }
     };
-  }, [isOpen, showResult, overlayImage]);
+  }, [isOpen, isEligible, showResult, overlayImage, sessionId, lessonId]);
+
+  const savePrizeSpinResult = async (prize: string, email?: string) => {
+    if (!sessionId || !lessonId) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const result = await savePrizeSpin(sessionId, lessonId, prize, email);
+      
+      if (!result.success) {
+        setSaveError(result.error || "Failed to save prize");
+        return false;
+      }
+      
+      console.log('✅ Prize spin saved successfully!', result.data);
+      return true;
+    } catch (error) {
+      console.error('Error saving prize spin:', error);
+      setSaveError("An unexpected error occurred");
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleSpin = () => {
     if (!wheelRef.current || isSpinning) return;
@@ -115,6 +223,7 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
     setIsSpinning(true);
     setShowResult(false);
     setWinner(null);
+    setSaveError(null);
 
     try {
       const duration = 3000;
@@ -126,31 +235,52 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
     }
   };
 
-  const handleClaim = () => {
-    if (isWinningPrize) {
+  const handleClaim = async () => {
+    if (isWinningPrize && sessionId && lessonId) {
       // Validate email for winning prizes
       if (!userEmail.trim()) {
         setEmailError("Email is required to claim your prize");
         return;
       }
       
-      if (!userEmail.includes("@vt.edu") || !userEmail.includes(".")) {
-        setEmailError("Please enter a valid Virginia Tech email address");
+      if (!userEmail.includes("@") || !userEmail.includes(".")) {
+        setEmailError("Please enter a valid email address");
         return;
       }
       
       // Clear any previous errors
       setEmailError("");
       
-      // Here you can save the email and prize info to your backend
+      // Save the winning prize with email (only if not already saved)
+      if (!hasSavedSpin) {
+        const success = await savePrizeSpinResult(winner!, userEmail);
+        if (!success) {
+          return; // Don't close if save failed
+        }
+        setHasSavedSpin(true);
+      }
+      
       console.log("Prize claimed:", { email: userEmail, prize: winner });
+    } else if (!isWinningPrize && sessionId && lessonId && !hasSavedSpin) {
+      // For non-winning prizes, ensure it's saved
+      const success = await savePrizeSpinResult(winner!);
+      if (!success) {
+        return; // Don't close if save failed
+      }
+      setHasSavedSpin(true);
     }
     
+    // Reset state
     setShowResult(false);
     setWinner(null);
     setUserEmail("");
     setEmailError("");
+    setHasSavedSpin(false);
     onClose();
+  };
+
+  const handleGoBack = () => {
+    window.location.href = "/concepts";
   };
 
   const getPrizeIcon = (prize: string) => {
@@ -171,6 +301,83 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
 
   if (!isOpen) return null;
 
+  // Loading state
+  if (isCheckingEligibility) {
+    return (
+      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center">
+          <Loader2 className="w-12 h-12 animate-spin mx-auto text-primary mb-4" />
+          <h3 className="text-lg font-semibold text-gray-800">Checking prize wheel eligibility...</h3>
+          <p className="text-sm text-gray-600 mt-2">Just a moment while we verify your spin.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Already spun state
+  if (!isEligible && previousPrize) {
+    return (
+      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div className="bg-gradient-to-br from-orange-100 via-yellow-50 to-blue-100 rounded-3xl p-8 max-w-lg w-full text-center relative overflow-hidden">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 z-20 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
+
+          <div className="relative z-10">
+            <div className="mb-6">
+              <div className="text-6xl mb-4">🎁</div>
+              <h2 className="text-3xl font-black text-gray-800 mb-2" style={{ fontFamily: 'Arial Black, Arial, sans-serif' }}>
+                ALREADY SPUN!
+              </h2>
+              <p className="text-gray-700 font-semibold">
+                You've already spun the wheel for this lesson
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <button
+                onClick={handleGoBack}
+                className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-black rounded-xl transition-all transform hover:scale-105 border-4 border-blue-700 text-lg"
+                style={{ fontFamily: 'Arial Black, Arial, sans-serif' }}
+              >
+                📚 GO BACK TO CONCEPTS
+              </button>
+
+              <p className="text-xs text-gray-600 font-semibold bg-blue-50 border border-blue-200 rounded-lg p-3">
+                🎓 <strong>Want another spin?</strong> 
+                <br />
+                Complete another lesson to earn your next chance at the prize wheel!
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (!isEligible && eligibilityError) {
+    return (
+      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Unable to Access Prize Wheel</h3>
+          <p className="text-sm text-gray-600 mb-4">{eligibilityError}</p>
+          <button
+            onClick={onClose}
+            className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-xl transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Main wheel content (only shown if eligible)
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
       <div className="bg-gradient-to-br from-orange-100 via-yellow-50 to-blue-100 rounded-3xl p-8 max-w-2xl w-full text-center relative overflow-hidden">
@@ -228,7 +435,7 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
               </button>
 
               <div className="text-sm text-gray-600 space-y-2 mt-8 font-semibold">
-                <p>🏆 PRIZES: GIFT CARDS, COFFEE, BADGES & MORE!</p>
+                <p>🏆 PRIZES: GIFT CARDS & MORE!</p>
               </div>
             </>
           ) : (
@@ -245,6 +452,13 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
                   {isWinningPrize ? "YOU WON AN AWESOME PRIZE:" : "Complete another lesson for another free spin!"}
                 </p>
               </div>
+
+              {/* Error Display */}
+              {saveError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-700 text-sm font-semibold">⚠️ {saveError}</p>
+                </div>
+              )}
 
               <div className="space-y-4">
                 {isWinningPrize ? (
@@ -286,10 +500,18 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
                     
                     <button
                       onClick={handleClaim}
-                      className="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-black rounded-xl transition-all transform hover:scale-105 border-4 border-green-700 text-lg"
+                      disabled={isSaving}
+                      className="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-black rounded-xl transition-all transform hover:scale-105 border-4 border-green-700 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ fontFamily: 'Arial Black, Arial, sans-serif' }}
                     >
-                      🎁 CLAIM PRIZE!
+                      {isSaving ? (
+                        <div className="flex items-center justify-center gap-3">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          SAVING...
+                        </div>
+                      ) : (
+                        '🎁 CLAIM PRIZE!'
+                      )}
                     </button>
                     
                     <p className="text-xs text-gray-600 font-semibold bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -302,10 +524,18 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({ isOpen, onClose, onPr
                   <>
                     <button
                       onClick={handleClaim}
-                      className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-black rounded-xl transition-all transform hover:scale-105 border-4 border-blue-700 text-lg"
+                      disabled={isSaving}
+                      className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-black rounded-xl transition-all transform hover:scale-105 border-4 border-blue-700 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ fontFamily: 'Arial Black, Arial, sans-serif' }}
                     >
-                      📚 GO BACK TO CONCEPTS
+                      {isSaving ? (
+                        <div className="flex items-center justify-center gap-3">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          SAVING...
+                        </div>
+                      ) : (
+                        '📚 GO BACK TO CONCEPTS'
+                      )}
                     </button>
                     <p className="text-xs text-gray-600 font-semibold bg-blue-50 border border-blue-200 rounded-lg p-3">
                       🎓 <strong>Earn more spins by completing lessons!</strong> 
