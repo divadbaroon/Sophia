@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { saveQuizResponses } from "@/lib/actions/quiz-actions"
+import { saveQuizResponses, checkQuizCompletion } from "@/lib/actions/quiz-actions"
 
 interface QuizQuestion {
   id: string 
@@ -21,6 +21,7 @@ interface QuizModalProps {
     questions: QuizQuestion[]
   } | null
   sessionId?: string 
+  lessonId?: string 
   quizType?: 'pre' | 'post' 
   onComplete?: (score: number, conceptTitle: string) => void
 }
@@ -30,6 +31,7 @@ export function QuizModal({
   onClose, 
   concept, 
   sessionId,
+  lessonId,
   quizType = 'pre',
   onComplete 
 }: QuizModalProps) {
@@ -38,13 +40,38 @@ export function QuizModal({
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
+  // Check if quiz is completed when modal opens
+  useEffect(() => {
+    const checkAndSkip = async () => {
+      if (!isOpen || !lessonId || !concept) return
+
+      try {
+        const result = await checkQuizCompletion(lessonId, quizType)
+        
+        if (result.completed) {
+          // Quiz is completed, skip it
+          console.log(`${quizType}-quiz already completed, skipping...`)
+          if (onComplete) {
+            onComplete(100, concept.title) // Use 100 as default score
+          }
+          onClose()
+        }
+      } catch (error) {
+        // If check fails, just proceed with the quiz
+        console.log('Quiz completion check failed, proceeding with quiz')
+      }
+    }
+
+    checkAndSkip()
+  }, [isOpen, lessonId, quizType, concept, onComplete, onClose])
+
   if (!concept) return null
 
   const handleAnswerSelect = (answerIndex: number) => {
     const newAnswers = [...selectedAnswers]
     newAnswers[currentQuestion] = answerIndex
     setSelectedAnswers(newAnswers)
-    setSaveError(null) // Clear any previous errors
+    setSaveError(null)
   }
 
   const handleNext = async () => {
@@ -111,7 +138,7 @@ export function QuizModal({
   }
 
   const handleClose = () => {
-    if (isSaving) return // Prevent closing while saving
+    if (isSaving) return
 
     // Reset quiz state when closing
     setCurrentQuestion(0)
