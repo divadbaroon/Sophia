@@ -442,6 +442,7 @@ export default function TaskSidebar({
         isOpen={showPrizeWheel}
         onClose={handlePrizeWheelClose}
         onPrizeWon={handlePrizeWon}
+        sessionId={sessionId}     
         lessonId={lessonId}     
       />
     </>
