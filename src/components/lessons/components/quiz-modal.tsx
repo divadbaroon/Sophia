@@ -58,7 +58,7 @@ export function QuizModal({
         }
       } catch (error) {
         // If check fails, just proceed with the quiz
-        console.log('Quiz completion check failed, proceeding with quiz')
+        console.warn('Quiz completion check failed, proceeding with quiz', error)
       }
     }
 

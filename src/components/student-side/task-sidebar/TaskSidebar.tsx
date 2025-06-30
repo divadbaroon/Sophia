@@ -435,7 +435,7 @@ export default function TaskSidebar({
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Preparing Your Survey</h3>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Almost done! We're preparing a quick survey for you. 
+                  Almost done! We&apos;re preparing a quick survey for you. 
                   <br />
                 </p>
               </div>

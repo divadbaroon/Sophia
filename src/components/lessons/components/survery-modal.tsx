@@ -38,7 +38,7 @@ interface SurveyModalProps {
   onSubmit: (data: SurveyData) => void
 }
 
-export function SurveyModal({ isOpen, onClose, conceptTitle, onSubmit }: SurveyModalProps) {
+export function SurveyModal({ isOpen, onClose, onSubmit }: SurveyModalProps) {
   const [formData, setFormData] = useState<SurveyData>({
     mentalEffort: "",
     difficulty: "",
@@ -128,7 +128,7 @@ export function SurveyModal({ isOpen, onClose, conceptTitle, onSubmit }: SurveyM
               <div className="flex items-center gap-3">
                 <Gift className="w-8 h-8 text-purple-600" />
                 <div>
-                  <h3 className="text-lg font-semibold text-purple-800">🎉 You're Almost There!</h3>
+                  <h3 className="text-lg font-semibold text-purple-800">🎉 You&apos;re Almost There!</h3>
                   <p className="text-sm text-purple-700 mt-1">
                     Complete this quick survey to unlock a spin of the <span className="font-semibold">prize wheel</span>! 
                     Your feedback helps us make learning better for everyone.
@@ -358,7 +358,7 @@ export function SurveyModal({ isOpen, onClose, conceptTitle, onSubmit }: SurveyM
                 <div className="space-y-2">
                  
                   <p className="text-xs text-gray-600 mb-2">
-                    We'd love to hear more about your learning experience. Please share your email below if you're interested in participating in a brief 30-minute interview for $10 compensation.
+                    We&apos;d love to hear more about your learning experience. Please share your email below if you&apos;re interested in participating in a brief 30-minute interview for $10 compensation.
                   </p>
                   <Textarea
                     id="interview"
