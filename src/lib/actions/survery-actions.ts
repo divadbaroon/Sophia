@@ -1,18 +1,31 @@
 "use server"
 
-import { createClient } from "@/utils/supabase/server"
+import { createClient } from '@/utils/supabase/server'
 
-// Save the end-of-session survey
-export async function saveLearningSessionSurvey(
+interface SurveyData {
+  // Cognitive Load
+  mentalEffort: string
+  difficulty: string
+  concentration: string
+
+  // System Effectiveness
+  misconceptionFocus: string
+  remediation: string
+  learningHelp: string
+
+  // Overall Experience
+  satisfaction: string
+  recommendation: string
+
+  // Open-ended feedback
+  improvements: string // This is the interview email field
+  additionalComments: string
+}
+
+export async function saveSurveyResponse(
   sessionId: string,
-  surveyData: {
-    difficulty_rating: number // 1-5 scale
-    engagement_rating: number // 1-5 scale
-    understanding_rating: number // 1-5 scale
-    ai_helpfulness_rating?: number // 1-5 scale
-    feedback_text?: string
-    would_recommend: boolean
-  }
+  lessonId: string,
+  surveyData: SurveyData
 ) {
   const supabase = await createClient()
   
@@ -23,37 +36,162 @@ export async function saveLearningSessionSurvey(
       return { success: false, error: "Not authenticated" }
     }
 
+    const profileId = user.id
+
+    // Convert string values to integers (handle empty strings)
+    const parseRating = (value: string): number | null => {
+      const parsed = parseInt(value)
+      return isNaN(parsed) ? null : parsed
+    }
+
+    // Prepare survey data for insertion
+    const surveyResponse = {
+      session_id: sessionId,
+      profile_id: profileId,
+      lesson_id: lessonId,
+      
+      // Cognitive Load (required fields)
+      mental_effort: parseRating(surveyData.mentalEffort),
+      difficulty: parseRating(surveyData.difficulty),
+      concentration: parseRating(surveyData.concentration),
+      
+      // System Effectiveness (required fields)
+      misconception_focus: parseRating(surveyData.misconceptionFocus),
+      remediation: parseRating(surveyData.remediation),
+      learning_help: parseRating(surveyData.learningHelp),
+      
+      // Overall Experience (optional fields)
+      satisfaction: parseRating(surveyData.satisfaction),
+      recommendation: parseRating(surveyData.recommendation),
+      
+      // Open-ended feedback (optional)
+      additional_comments: surveyData.additionalComments.trim() || null,
+      interview_email: surveyData.improvements.trim() || null, // This is the email field
+    }
+
+    // Validate required fields
+    if (!surveyResponse.mental_effort || !surveyResponse.difficulty || 
+        !surveyResponse.misconception_focus || !surveyResponse.remediation || 
+        !surveyResponse.learning_help) {
+      return { success: false, error: "Please complete all required fields" }
+    }
+
     // Insert survey response
-    const { error: insertError } = await supabase
-      .from('session_surveys')
-      .insert({
-        session_id: sessionId,
-        ...surveyData,
-        submitted_at: new Date().toISOString()
-      })
+    const { data, error: insertError } = await supabase
+      .from('survey_responses')
+      .insert(surveyResponse)
+      .select()
+      .single()
 
     if (insertError) {
-      console.error('Error saving survey:', insertError)
+      console.error('Error saving survey response:', insertError)
+      
+      // Handle duplicate submission
+      if (insertError.code === '23505') { // Unique constraint violation
+        return { success: false, error: "Survey already submitted for this session" }
+      }
+      
       return { success: false, error: insertError.message }
     }
 
-    // Update learning session to mark survey as completed
+    // Optionally update the learning session to mark survey as completed
     const { error: updateError } = await supabase
       .from('learning_sessions')
       .update({
-        survey_completed_at: new Date().toISOString(),
-        status: 'completed'
+        survey_completed: true,
+        updated_at: new Date().toISOString()
       })
       .eq('id', sessionId)
 
     if (updateError) {
-      console.error('Error updating session with survey completion:', updateError)
-      return { success: false, error: updateError.message }
+      console.warn('Failed to update session survey status:', updateError)
+      // Don't fail the entire operation for this
     }
 
-    return { success: true }
+    return { 
+      success: true, 
+      data: {
+        surveyId: data.id,
+        hasInterviewEmail: !!surveyResponse.interview_email
+      }
+    }
+
   } catch (error) {
-    console.error('Error in saveLearningSessionSurvey:', error)
-    return { success: false, error: "Failed to save survey" }
+    console.error('Error in saveSurveyResponse:', error)
+    return { success: false, error: "Failed to save survey response" }
   }
 }
+
+export async function checkSurveyCompletion(sessionId: string) {
+  const supabase = await createClient()
+  
+  try {
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { completed: false, error: "Not authenticated" }
+    }
+
+    // Check if survey exists for this session and user
+    const { data: survey, error } = await supabase
+      .from('survey_responses')
+      .select('id, created_at')
+      .eq('session_id', sessionId)
+      .eq('profile_id', user.id)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') { // No rows returned
+        return { completed: false, error: null }
+      }
+      console.error('Error checking survey completion:', error)
+      return { completed: false, error: error.message }
+    }
+
+    return { 
+      completed: true, 
+      error: null,
+      submittedAt: survey.created_at
+    }
+
+  } catch (error) {
+    console.error('Unexpected error checking survey completion:', error)
+    return { completed: false, error: 'Failed to check survey completion' }
+  }
+}
+
+export async function getSurveyResponse(sessionId: string) {
+  const supabase = await createClient()
+  
+  try {
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { data: null, error: "Not authenticated" }
+    }
+
+    // Get survey response for this session and user
+    const { data: survey, error } = await supabase
+      .from('survey_responses')
+      .select(`
+        *,
+        learning_sessions!inner(lesson_id),
+        lessons!inner(title, description)
+      `)
+      .eq('session_id', sessionId)
+      .eq('profile_id', user.id)
+      .single()
+
+    if (error) {
+      console.error('Error fetching survey response:', error)
+      return { data: null, error: error.message }
+    }
+
+    return { data: survey, error: null }
+
+  } catch (error) {
+    console.error('Unexpected error fetching survey response:', error)
+    return { data: null, error: 'Failed to fetch survey response' }
+  }
+}
+
