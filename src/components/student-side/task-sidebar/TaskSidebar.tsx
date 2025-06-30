@@ -302,7 +302,7 @@ export default function TaskSidebar({
                     </div>
                     <p className="text-sm text-green-700 mt-2">
                       Congratulations! You&apos;ve successfully completed all tasks. Click &quot;Finished&quot; to take
-                      a quick quiz, provide feedback, and <span className="font-semibold text-purple-700">spin the wheel for a chance to win a prize!</span> 🎰
+                      a quick quiz, provide feedback, and <span className="font-semibold text-purple-700">spin the wheel for a chance to win a prize!</span>
                     </p>
                   </Card>
                 </div>
