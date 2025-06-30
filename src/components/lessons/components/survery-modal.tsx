@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent } from "@/components/ui/card"
 import { ClipboardList, ArrowRight, Gift } from "lucide-react"
+import { saveSurveyResponse, checkSurveyCompletion } from "@/lib/actions/survery-actions"
 
 interface SurveyData {
   // Cognitive Load
@@ -35,10 +36,18 @@ interface SurveyModalProps {
   isOpen: boolean
   onClose: () => void
   conceptTitle: string
+  sessionId?: string
+  lessonId?: string
   onSubmit: (data: SurveyData) => void
 }
 
-export function SurveyModal({ isOpen, onClose, onSubmit }: SurveyModalProps) {
+export function SurveyModal({ 
+  isOpen, 
+  onClose, 
+  sessionId,
+  lessonId,
+  onSubmit 
+}: SurveyModalProps) {
   const [formData, setFormData] = useState<SurveyData>({
     mentalEffort: "",
     difficulty: "",
@@ -53,21 +62,89 @@ export function SurveyModal({ isOpen, onClose, onSubmit }: SurveyModalProps) {
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  // Check if survey is already completed when modal opens
+  useEffect(() => {
+    const checkAndSkip = async () => {
+      if (!isOpen || !sessionId) return
+
+      try {
+        const result = await checkSurveyCompletion(sessionId)
+        
+        if (result.completed) {
+          console.log('Survey already completed, skipping...')
+          // Call onSubmit with empty data since it's already submitted
+          onSubmit(formData)
+          onClose()
+        }
+      } catch (error) {
+        // If check fails, just proceed with survey
+        console.log('Survey completion check failed, proceeding with survey')
+      }
+    }
+
+    checkAndSkip()
+  }, [isOpen, sessionId])
 
   const handleInputChange = (field: keyof SurveyData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+    setSaveError(null) // Clear error when user types
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setSaveError(null)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    try {
+      // Save to database if sessionId and lessonId are provided
+      if (sessionId && lessonId) {
+        const result = await saveSurveyResponse(sessionId, lessonId, formData)
+        
+        if (!result.success) {
+          setSaveError(result.error || "Failed to save survey")
+          setIsSubmitting(false)
+          return
+        }
 
-    onSubmit(formData)
+        console.log('✅ Survey saved successfully!', result.data)
+        if (result.data?.hasInterviewEmail) {
+          console.log('📧 User provided email for interview')
+        }
+      }
 
-    // Reset form
+      // Call the parent onSubmit handler
+      onSubmit(formData)
+
+      // Reset form
+      setFormData({
+        mentalEffort: "",
+        difficulty: "",
+        concentration: "",
+        misconceptionFocus: "",
+        remediation: "",
+        learningHelp: "",
+        satisfaction: "",
+        recommendation: "",
+        improvements: "",
+        additionalComments: "",
+      })
+
+      setIsSubmitting(false)
+      onClose()
+
+    } catch (error) {
+      console.error('Error submitting survey:', error)
+      setSaveError('An unexpected error occurred. Please try again.')
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleClose = () => {
+    if (isSubmitting) return // Prevent closing while saving
+
+    // Reset form and errors when closing
     setFormData({
       mentalEffort: "",
       difficulty: "",
@@ -80,8 +157,7 @@ export function SurveyModal({ isOpen, onClose, onSubmit }: SurveyModalProps) {
       improvements: "",
       additionalComments: "",
     })
-
-    setIsSubmitting(false)
+    setSaveError(null)
     onClose()
   }
 
@@ -109,7 +185,7 @@ export function SurveyModal({ isOpen, onClose, onSubmit }: SurveyModalProps) {
   ]
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white border-2 border-black">
         <DialogHeader className="border-b border-gray-200 pb-4">
           <div className="flex items-center gap-3">
@@ -122,6 +198,13 @@ export function SurveyModal({ isOpen, onClose, onSubmit }: SurveyModalProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-8 pt-4">
+          {/* Error Display */}
+          {saveError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm">{saveError}</p>
+            </div>
+          )}
+
           {/* Prize Incentive Banner */}
           <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
             <CardContent className="p-4">
@@ -356,7 +439,6 @@ export function SurveyModal({ isOpen, onClose, onSubmit }: SurveyModalProps) {
               </h3>
               <div className="space-y-4">
                 <div className="space-y-2">
-                 
                   <p className="text-xs text-gray-600 mb-2">
                     We&apos;d love to hear more about your learning experience. Please share your email below if you&apos;re interested in participating in a brief 30-minute interview for $10 compensation.
                   </p>
@@ -378,12 +460,12 @@ export function SurveyModal({ isOpen, onClose, onSubmit }: SurveyModalProps) {
             <Button
               type="submit"
               disabled={!isFormValid || isSubmitting}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 py-6 text-lg font-semibold"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 py-6 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isSubmitting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Submitting Survey...
+                  Saving Survey...
                 </>
               ) : (
                 <>
