@@ -12,6 +12,7 @@ import { ArrowLeft, ArrowRight, Target, ChevronRight, CheckCircle, Lock, Loader2
 
 import { QuizModal } from "@/components/lessons/components/quiz-modal"
 import { SurveyModal } from "@/components/lessons/components/survery-modal"
+import PrizeWheelModal from "@/components/lessons/components/prize-wheel" 
 
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
 import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
@@ -31,6 +32,7 @@ export default function TaskSidebar({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [currentConceptTitle, setCurrentConceptTitle] = useState("")
   const [isLoadingSurvey, setIsLoadingSurvey] = useState(false)
+  const [showPrizeWheel, setShowPrizeWheel] = useState(false) 
 
   const {
     sessionData,
@@ -139,7 +141,34 @@ export default function TaskSidebar({
   const handleSurveySubmit = (surveyData: any) => {
     console.log("Survey data submitted:", surveyData)
     setIsSurveyModalOpen(false)
-    // Redirect to concepts page after survey
+    
+    // Show the prize wheel instead of redirecting immediately
+    setShowPrizeWheel(true)
+  }
+
+  const handlePrizeWon = (prize: string) => {
+    console.log("🎉 Prize won:", prize)
+    
+    // Here you can save the prize to your backend
+    // Example API call:
+    // await fetch('/api/user-prizes', {
+    //   method: 'POST',
+    //   body: JSON.stringify({ 
+    //     userId: user?.id, 
+    //     prize, 
+    //     lessonId,
+    //     timestamp: new Date().toISOString()
+    //   })
+    // });
+    
+    // You could also track this event for analytics
+    // analytics.track('prize_won', { prize, lessonId, userId });
+  }
+
+  const handlePrizeWheelClose = () => {
+    setShowPrizeWheel(false)
+    
+    // Now redirect to concepts page after the wheel
     window.location.href = "/concepts"
   }
 
@@ -408,7 +437,6 @@ export default function TaskSidebar({
                 <p className="text-sm text-muted-foreground mt-2">
                   Almost done! We're preparing a quick survey for you. 
                   <br />
-                  <span className="font-medium text-purple-600">Don't forget - you'll get to spin the prize wheel after! 🎁</span>
                 </p>
               </div>
             </div>
@@ -421,6 +449,9 @@ export default function TaskSidebar({
         isOpen={isQuizModalOpen}
         onClose={() => setIsQuizModalOpen(false)}
         concept={quizData} 
+        sessionId={sessionId}
+        lessonId={lessonId} 
+        quizType="post"
         onComplete={handleQuizComplete}
       />
 
@@ -429,6 +460,13 @@ export default function TaskSidebar({
         onClose={() => setIsSurveyModalOpen(false)}
         conceptTitle={currentConceptTitle}
         onSubmit={handleSurveySubmit}
+      />
+
+      {/* Prize Wheel Modal - NEW! */}
+      <PrizeWheelModal
+        isOpen={showPrizeWheel}
+        onClose={handlePrizeWheelClose}
+        onPrizeWon={handlePrizeWon}
       />
     </>
   )

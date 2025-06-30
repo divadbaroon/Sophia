@@ -616,13 +616,14 @@ export default function ConceptLibrary() {
 
       {/* Modals */}
       <QuizModal
-          isOpen={isQuizModalOpen}
-          onClose={() => setIsQuizModalOpen(false)}
-          concept={selectedConcept?.quiz || null}
-          sessionId={selectedConcept?.sessionId} 
-          quizType="pre" 
-          onComplete={handleQuizComplete}
-        />
+        isOpen={isQuizModalOpen}
+        onClose={() => setIsQuizModalOpen(false)}
+        concept={selectedConcept?.quiz || null}
+        sessionId={selectedConcept?.sessionId} 
+        lessonId={selectedConcept?.id} 
+        quizType="pre" 
+        onComplete={handleQuizComplete}
+      />
 
       <InstructionsModal
         isOpen={isInstructionsModalOpen}
