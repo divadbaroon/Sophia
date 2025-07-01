@@ -204,15 +204,7 @@ export function SurveyModal({
     { value: "2", label: "Low" },
     { value: "1", label: "Very Low" },
   ]
-
-  const timingScale = [
-    { value: "1", label: "Too Early" },
-    { value: "2", label: "Slightly Early" },
-    { value: "3", label: "Just Right" },
-    { value: "4", label: "Slightly Late" },
-    { value: "5", label: "Too Late" },
-  ]
-
+  
   // Show loading state while checking if survey is already completed
   if (isCheckingCompletion && isOpen) {
     return (
