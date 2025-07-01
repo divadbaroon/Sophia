@@ -374,19 +374,12 @@ The total response should be around 1 paragraph.
     );
   }
 
-  const { radarData, categoryChartData } = transformDataForRadar();
+  const { radarData } = transformDataForRadar();
 
   // Sort skills for development areas
   const developmentAreas = [...radarData]
     .sort((a, b) => a.value - b.value)
     .slice(0, 3);
-
-  const overviewConfig = {
-    proficiency: {
-      label: "Proficiency",
-      color: "hsl(215, 70%, 60%)",
-    },
-  } as ChartConfig;
 
   const detailedConfig = {
     proficiency: {
