@@ -114,10 +114,9 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   const [drawingWidth, setDrawingWidth] = useState<number>(2);
   
   // Stencil state
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedStencil, setSelectedStencil] = useState<StencilType | null>(null);
   const [stencilStart, setStencilStart] = useState<StencilPosition | null>(null);
-
-  console.log(setSelectedStencil)
   
   // Visualization state
   const [showVisualization, setShowVisualization] = useState<boolean>(() => {
