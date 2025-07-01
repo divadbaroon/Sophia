@@ -13,6 +13,7 @@ import { ArrowLeft, ArrowRight, Target, ChevronRight, CheckCircle, Lock } from "
 import { QuizModal } from "@/components/lessons/components/quiz-modal"
 import { SurveyModal } from "@/components/lessons/components/survey-modal"
 import PrizeWheelModal from "@/components/lessons/components/prize-wheel" 
+import KnowledgeRadarModal from "@/components/student-side/student-report/studentReport" 
 
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
 import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
@@ -32,6 +33,7 @@ export default function TaskSidebar({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [currentConceptTitle, setCurrentConceptTitle] = useState("")
   const [showPrizeWheel, setShowPrizeWheel] = useState(false) 
+  const [showKnowledgeRadar, setShowKnowledgeRadar] = useState(false) // Add state for radar modal
 
   const {
     sessionData,
@@ -128,7 +130,13 @@ export default function TaskSidebar({
       console.warn('⚠️ No lessonId available to update progress')
     }
     
-    // Open survey modal
+    // Show knowledge radar modal after quiz completion
+    setShowKnowledgeRadar(true)
+  }
+
+  const handleKnowledgeRadarContinue = () => {
+    setShowKnowledgeRadar(false)
+    // Open survey modal after radar modal
     setIsSurveyModalOpen(true)
   }
 
@@ -140,7 +148,6 @@ export default function TaskSidebar({
   const handlePrizeWon = (prize: string) => {
     console.log("🎉 Prize won:", prize)
     
-    // Here you can save the prize to your backend
     // Example API call:
     // await fetch('/api/user-prizes', {
     //   method: 'POST',
@@ -152,7 +159,6 @@ export default function TaskSidebar({
     //   })
     // });
     
-    // You could also track this event for analytics
     // analytics.track('prize_won', { prize, lessonId, userId });
   }
 
@@ -302,7 +308,7 @@ export default function TaskSidebar({
                     </div>
                     <p className="text-sm text-green-700 mt-2">
                       Congratulations! You&apos;ve successfully completed all tasks. Click &quot;Finished&quot; to take
-                      a quick quiz, provide feedback, and <span className="font-semibold text-purple-700">spin the wheel for a chance to win a prize!</span>
+                      a quick quiz, view your learning report, provide feedback, and <span className="font-semibold text-purple-700">spin the wheel for a chance to win a prize!</span>
                     </p>
                   </Card>
                 </div>
@@ -402,7 +408,7 @@ export default function TaskSidebar({
                 <TooltipContent>
                   <p>
                     {currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex)
-                      ? "Take quiz, complete survey, and spin the wheel for prizes!"
+                      ? "Take quiz, view your learning report, complete survey, and spin the wheel for prizes!"
                       : !isTaskCompleted(currentMethodIndex)
                         ? "Complete all test cases to unlock the next task"
                         : currentMethodIndex === (sessionData?.tasks.length || 0) - 1
@@ -426,6 +432,14 @@ export default function TaskSidebar({
         lessonId={lessonId} 
         quizType="post"
         onComplete={handleQuizComplete}
+      />
+
+      {/* Knowledge Radar Modal with Continue Button */}
+      <KnowledgeRadarModal
+        isOpen={showKnowledgeRadar}
+        onClose={() => setShowKnowledgeRadar(false)}
+        lessonId={lessonId}
+        onContinue={handleKnowledgeRadarContinue}
       />
 
       <SurveyModal
