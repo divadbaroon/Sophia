@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Try dynamic import first to debug
 export async function POST(req: NextRequest) {
   try {
     console.log('🚀 Concept map API called!');
@@ -17,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     console.log('📨 Received context for method:', context.methodName);
 
-    // Dynamic import to avoid build issues
+    // Dynamic import concept map agent
     const { ConceptMapAgent } = await import('@/lib/concept-map-agent');
     
     console.log('✅ ConceptMapAgent imported successfully');
