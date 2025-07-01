@@ -12,14 +12,17 @@ interface SurveyData {
   misconceptionFocus: string
   remediation: string
   learningHelp: string
+  visualHelpTiming: string
+  visualHelpClarity: string
 
   // Overall Experience
   satisfaction: string
   recommendation: string
 
   // Open-ended feedback
-  improvements: string // This is the interview email field
+  improvements: string
   additionalComments: string
+  interviewEmail: string
 }
 
 export async function saveSurveyResponse(
@@ -59,20 +62,24 @@ export async function saveSurveyResponse(
       misconception_focus: parseRating(surveyData.misconceptionFocus),
       remediation: parseRating(surveyData.remediation),
       learning_help: parseRating(surveyData.learningHelp),
+      visual_help_timing: parseRating(surveyData.visualHelpTiming),
+      visual_help_clarity: parseRating(surveyData.visualHelpClarity),
       
       // Overall Experience (optional fields)
       satisfaction: parseRating(surveyData.satisfaction),
       recommendation: parseRating(surveyData.recommendation),
       
       // Open-ended feedback (optional)
+      improvements: surveyData.improvements.trim() || null,
       additional_comments: surveyData.additionalComments.trim() || null,
-      interview_email: surveyData.improvements.trim() || null, // This is the email field
+      interview_email: surveyData.interviewEmail.trim() || null,
     }
 
     // Validate required fields
     if (!surveyResponse.mental_effort || !surveyResponse.difficulty || 
         !surveyResponse.misconception_focus || !surveyResponse.remediation || 
-        !surveyResponse.learning_help) {
+        !surveyResponse.learning_help || !surveyResponse.visual_help_timing ||
+        !surveyResponse.visual_help_clarity) {
       return { success: false, error: "Please complete all required fields" }
     }
 
@@ -197,4 +204,3 @@ export async function getSurveyResponse(sessionId: string) {
     return { data: null, error: 'Failed to fetch survey response' }
   }
 }
-
