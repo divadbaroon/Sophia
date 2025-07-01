@@ -35,11 +35,18 @@ export default function ConceptLibrary() {
     'Box': Box
   }
 
-  // Custom sorting order for lessons
+  // Custom sorting order for lessons with fixed IDs
   const lessonOrder = [
     'Singly Linked Lists',
     'Sorting Algorithms', 
     'Binary Search Trees'
+  ]
+
+  // Fixed ID mapping - first card always opens to first ID, etc.
+  const FIXED_LESSON_IDS = [
+    '0cff2209-b34f-45b4-8a79-9503d0066ab8', // First card
+    'ed1cd4fa-42bc-4f59-8a3c-fc3fae1c9176', // Second card  
+    '15af35b6-69c4-43d0-8403-a273ed587ee0'  // Third card
   ]
 
   // Database state
@@ -73,9 +80,9 @@ export default function ConceptLibrary() {
   // Demographic form state
   const [showDemographicForm, setShowDemographicForm] = useState(false)
 
-  // Function to sort lessons by custom order
+  // Function to sort lessons by custom order and assign fixed IDs
   const sortLessonsByOrder = (lessons: any[]) => {
-    return lessons.sort((a, b) => {
+    const sorted = lessons.sort((a, b) => {
       const indexA = lessonOrder.indexOf(a.title)
       const indexB = lessonOrder.indexOf(b.title)
       
@@ -91,6 +98,12 @@ export default function ConceptLibrary() {
       // If neither is in the array, maintain original order
       return 0
     })
+
+    // Assign fixed IDs based on position after sorting
+    return sorted.map((lesson, index) => ({
+      ...lesson,
+      fixedId: FIXED_LESSON_IDS[index] || lesson.id // Use fixed ID if available, fallback to original
+    }))
   }
 
   // Load completed lessons from database
@@ -130,36 +143,26 @@ export default function ConceptLibrary() {
       
       // Get lessons for first class
       const { data: classLessons } = await getClassLessons((classes[0] as any).id)
-
-      const LESSON_ID_MAP: { [key: string]: string } = {
-          'Singly Linked Lists': '0cff2209-b34f-45b4-8a79-9503d0066ab8',
-          'Binary Search Trees': 'ed1cd4fa-42bc-4f59-8a3c-fc3fae1c9176',
-          'Sorting Algorithms': '15af35b6-69c4-43d0-8403-a273ed587ee0'
-        }
               
       // Fetch quiz questions for all lessons
       const lessonsWithQuiz = await Promise.all(
         (classLessons || []).map(async (lesson) => {
-          // Use hardcoded ID if available, otherwise use database ID
-          const lessonId = LESSON_ID_MAP[lesson.title] || lesson.id
-          
-          const { data: quizQuestions } = await getQuizQuestions(lessonId, 'pre')
+          const { data: quizQuestions } = await getQuizQuestions(lesson.id, 'pre')
 
           return {
             ...lesson,
-            id: lessonId, // Override with hardcoded ID
             quiz: {
               title: lesson.title,
               questions: (quizQuestions || []).map((question, index) => ({
                 ...question,
-                id: question.id || `question-${lessonId}-${index}`
+                id: question.id || `question-${lesson.id}-${index}`
               }))
             }
           }
         })
       )
       
-      // Sort lessons by custom order before setting state
+      // Sort lessons by custom order and assign fixed IDs
       const sortedLessons = sortLessonsByOrder(lessonsWithQuiz)
       setLessons(sortedLessons)
       
@@ -209,7 +212,7 @@ export default function ConceptLibrary() {
         })
       )
       
-      // Sort lessons by custom order before setting state
+      // Sort lessons by custom order and assign fixed IDs
       const sortedLessons = sortLessonsByOrder(lessonsWithQuiz)
       setLessons(sortedLessons)
       
@@ -261,8 +264,11 @@ export default function ConceptLibrary() {
     setSessionError(null)
 
     try {
+      // Use the fixed ID for session creation
+      const lessonIdForSession = lesson.fixedId || lesson.id
+      
       // Create learning session first
-      const sessionResult = await createLearningSession(lesson.id, selectedClass.id)
+      const sessionResult = await createLearningSession(lessonIdForSession, selectedClass.id)
       
       if (!sessionResult.success) {
         setSessionError(sessionResult.error || "Failed to create learning session")
@@ -271,7 +277,7 @@ export default function ConceptLibrary() {
       }
 
       setSelectedConcept({
-        id: lesson.id,
+        id: lessonIdForSession, // Use fixed ID
         title: lesson.title,
         description: lesson.description,
         difficulty: lesson.difficulty,
@@ -315,9 +321,9 @@ export default function ConceptLibrary() {
 
     let matchesFilter = true
     if (selectedFilter === "Completed") {
-      matchesFilter = isConceptCompleted(lesson.id)
+      matchesFilter = isConceptCompleted(lesson.fixedId || lesson.id)
     } else if (selectedFilter === "Not Completed") {
-      matchesFilter = !isConceptCompleted(lesson.id)
+      matchesFilter = !isConceptCompleted(lesson.fixedId || lesson.id)
     } else if (selectedFilter !== "All") {
       matchesFilter = lesson.difficulty === selectedFilter
     }
@@ -551,7 +557,7 @@ export default function ConceptLibrary() {
                 icon={iconMap[lesson.icon_name] || Variable} 
                 difficulty={lesson.difficulty || "Beginner"}
                 estimatedTime={`${lesson.estimated_time_mins || 10} min`}
-                isCompleted={isConceptCompleted(lesson.id)}
+                isCompleted={isConceptCompleted(lesson.fixedId || lesson.id)}
                 onClick={() => handleCardClick(lesson)}
               />
             ))
