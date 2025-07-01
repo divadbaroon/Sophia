@@ -44,9 +44,9 @@ export default function ConceptLibrary() {
 
   // Fixed ID mapping - first card always opens to first ID, etc.
   const FIXED_LESSON_IDS = [
-    '0cff2209-b34f-45b4-8a79-9503d0066ab8', // First card
-    'ed1cd4fa-42bc-4f59-8a3c-fc3fae1c9176', // Second card  
-    '15af35b6-69c4-43d0-8403-a273ed587ee0'  // Third card
+    '0cff2209-b34f-45b4-8a79-9503d0066ab8', 
+    '15af35b6-69c4-43d0-8403-a273ed587ee0',  
+    'ed1cd4fa-42bc-4f59-8a3c-fc3fae1c9176',  
   ]
 
   // Database state
