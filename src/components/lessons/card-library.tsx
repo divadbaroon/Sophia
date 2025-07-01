@@ -35,6 +35,13 @@ export default function ConceptLibrary() {
     'Box': Box
   }
 
+  // Custom sorting order for lessons
+  const lessonOrder = [
+    'Singly Linked Lists',
+    'Sorting Algorithms', 
+    'Binary Search Trees'
+  ]
+
   // Database state
   const [userClasses, setUserClasses] = useState<any[]>([])
   const [lessons, setLessons] = useState<any[]>([])
@@ -65,6 +72,26 @@ export default function ConceptLibrary() {
 
   // Demographic form state
   const [showDemographicForm, setShowDemographicForm] = useState(false)
+
+  // Function to sort lessons by custom order
+  const sortLessonsByOrder = (lessons: any[]) => {
+    return lessons.sort((a, b) => {
+      const indexA = lessonOrder.indexOf(a.title)
+      const indexB = lessonOrder.indexOf(b.title)
+      
+      // If both titles are in the order array, sort by their position
+      if (indexA !== -1 && indexB !== -1) {
+        return indexA - indexB
+      }
+      
+      // If only one is in the array, prioritize it
+      if (indexA !== -1) return -1
+      if (indexB !== -1) return 1
+      
+      // If neither is in the array, maintain original order
+      return 0
+    })
+  }
 
   // Load completed lessons from database
   const loadCompletedLessons = async (classId?: string) => {
@@ -103,26 +130,38 @@ export default function ConceptLibrary() {
       
       // Get lessons for first class
       const { data: classLessons } = await getClassLessons((classes[0] as any).id)
-      
+
+      const LESSON_ID_MAP: { [key: string]: string } = {
+          'Singly Linked Lists': '0cff2209-b34f-45b4-8a79-9503d0066ab8',
+          'Binary Search Trees': 'ed1cd4fa-42bc-4f59-8a3c-fc3fae1c9176',
+          'Sorting Algorithms': '15af35b6-69c4-43d0-8403-a273ed587ee0'
+        }
+              
       // Fetch quiz questions for all lessons
       const lessonsWithQuiz = await Promise.all(
         (classLessons || []).map(async (lesson) => {
-          const { data: quizQuestions } = await getQuizQuestions(lesson.id, 'pre')
+          // Use hardcoded ID if available, otherwise use database ID
+          const lessonId = LESSON_ID_MAP[lesson.title] || lesson.id
+          
+          const { data: quizQuestions } = await getQuizQuestions(lessonId, 'pre')
 
           return {
             ...lesson,
+            id: lessonId, // Override with hardcoded ID
             quiz: {
               title: lesson.title,
               questions: (quizQuestions || []).map((question, index) => ({
                 ...question,
-                id: question.id || `question-${lesson.id}-${index}`
+                id: question.id || `question-${lessonId}-${index}`
               }))
             }
           }
         })
       )
       
-      setLessons(lessonsWithQuiz)
+      // Sort lessons by custom order before setting state
+      const sortedLessons = sortLessonsByOrder(lessonsWithQuiz)
+      setLessons(sortedLessons)
       
       // Load completed lessons for the first class
       await loadCompletedLessons((classes[0] as any).id)
@@ -170,7 +209,9 @@ export default function ConceptLibrary() {
         })
       )
       
-      setLessons(lessonsWithQuiz)
+      // Sort lessons by custom order before setting state
+      const sortedLessons = sortLessonsByOrder(lessonsWithQuiz)
+      setLessons(sortedLessons)
       
       // Load completed lessons for the new class
       await loadCompletedLessons(newClass.id)
