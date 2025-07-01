@@ -340,44 +340,6 @@ export function SurveyModal({
                     ))}
                   </RadioGroup>
                 </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    The visual aid + sketch made it easy for me to convey my conceptual understanding.*
-                  </Label>
-                  <RadioGroup
-                    value={formData.visualHelpTiming}
-                    onValueChange={(value) => handleInputChange("visualHelpTiming", value)}
-                  >
-                    {timingScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`timing-${option.value}`} />
-                        <Label htmlFor={`timing-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    The visual aids and explanations were clear and helpful. *
-                  </Label>
-                  <RadioGroup
-                    value={formData.visualHelpClarity}
-                    onValueChange={(value) => handleInputChange("visualHelpClarity", value)}
-                  >
-                    {likertScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`clarity-${option.value}`} />
-                        <Label htmlFor={`clarity-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
               </div>
             </CardContent>
           </Card>
