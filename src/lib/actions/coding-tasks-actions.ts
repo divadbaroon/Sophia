@@ -24,6 +24,7 @@ export async function getCodingTasksForLesson(lessonId: string) {
 
     // Transform to match the current TaskData structure
     const formattedTasks = tasks?.map(task => ({
+      id: task.id,        
       title: task.title,
       difficulty: task.difficulty,
       description: task.description,
@@ -33,7 +34,7 @@ export async function getCodingTasksForLesson(lessonId: string) {
           input: example.input_data,
           output: example.expected_output
         })) || [],
-      constraints: [] // We removed constraints table for now
+      constraints: [] 
     })) || []
 
     // Create method templates object
