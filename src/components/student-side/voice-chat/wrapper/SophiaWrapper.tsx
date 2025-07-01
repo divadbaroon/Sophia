@@ -95,8 +95,8 @@ const SophiaWrapper: React.FC<SophiaWrapperProps> = ({ onClose }) => {
                         {transcript}
                       </p>
                     ) : (
-                      <p className="text-sm text-muted-foreground">
-                        Start speaking...
+                      <p className="text-base text-muted-foreground">
+                        Share what's on your mind...
                       </p>
                     )}
                   </div>
