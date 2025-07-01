@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { HelpCircle } from "lucide-react"
+import { HelpCircle, Pencil, Trash2, Eye, EyeOff } from "lucide-react"
 
 import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader"
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
@@ -38,6 +38,12 @@ export const WorkspaceLayout: React.FC = () => {
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false)
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false)
   const [terminalHeight, setTerminalHeight] = useState(50)
+
+  // Drawing state to track drawing mode for button styling
+  const [isDrawingMode, setIsDrawingMode] = useState(false)
+  
+  // Visualization state
+  const [isVisualizationVisible, setIsVisualizationVisible] = useState(false)
 
   const codeEditorRef = useRef<CodeEditorRef>(null)
 
@@ -115,6 +121,26 @@ export const WorkspaceLayout: React.FC = () => {
     setTerminalHeight(Math.min(Math.max(newHeight, 5), 70))
   }
 
+  // Handle drawing mode toggle
+  const handleToggleDrawing = () => {
+    codeEditorRef.current?.toggleDrawing()
+    setIsDrawingMode((prev) => !prev)
+  }
+
+  // Handle clear drawing
+  const handleClearDrawing = () => {
+    codeEditorRef.current?.clearDrawing()
+  }
+
+  // Handle toggle visualization
+  const handleToggleVisualization = () => {
+    codeEditorRef.current?.toggleVisualization()
+    setIsVisualizationVisible((prev) => !prev)
+  }
+
+  // Determine if buttons should be hidden
+  const shouldHideButtons = isQuizModalOpen || isSurveyModalOpen
+
   // Show global loading state
   if (isLoading) {
     return (
@@ -169,33 +195,79 @@ export const WorkspaceLayout: React.FC = () => {
 
       <main className={`flex flex-col h-screen ${showConsentModal ? 'pointer-events-none opacity-50' : ''}`}>
         <div className="flex-1 flex relative">
+          {/* Drawing Controls - Show when quiz/survey are not open */}
+          {!shouldHideButtons && (
+            <div className="absolute top-3.5 right-[16rem] z-[9999] flex gap-3 mt-2">
+              {/* Visualization Button */}
+              <Button
+                variant={isVisualizationVisible ? "default" : "outline"}
+                size="sm"
+                className="gap-2 font-medium"
+                onClick={handleToggleVisualization}
+                disabled={showConsentModal}
+                title="Toggle binary tree visualization"
+              >
+                {isVisualizationVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {isVisualizationVisible ? "Hide Tree" : "Show Tree"}
+              </Button>
+
+              {/* Draw Button */}
+              <Button
+                variant={isDrawingMode ? "default" : "outline"}
+                size="sm"
+                className="gap-2 font-medium"
+                onClick={handleToggleDrawing}
+                disabled={showConsentModal}
+                title="Toggle drawing mode on code editor"
+              >
+                <Pencil className="h-5 w-5" />
+                {isDrawingMode ? "Exit Draw" : "Draw"}
+              </Button>
+
+              {/* Clear All Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 font-medium text-red-600 hover:text-red-700 hover:bg-red-50 mr-1"
+                onClick={handleClearDrawing}
+                disabled={showConsentModal}
+                title="Clear all drawings on code editor"
+              >
+                <Trash2 className="h-5 w-5" />
+                Clear All
+              </Button>
+            </div>
+          )}
+
           {/* Ask Sophia button with tooltip */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className={`absolute top-3.5 right-16 z-50 flex items-center gap-2 ${
-                    isQuestionPanelVisible ? 'bg-secondary' : 'bg-background hover:bg-secondary/80'
-                  }`}
-                  onClick={onToggleSophia}
-                  disabled={showConsentModal}
-                >
-                  <HelpCircle className="h-5 w-5" />
-                  {isQuestionPanelVisible ? 'Close Sophia' : 'Ask Sophia'}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  {isQuestionPanelVisible 
-                    ? 'Close your coding tutor' 
-                    : 'Get help from Sophia, your coding tutor'
-                  }
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {!shouldHideButtons && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className={`absolute top-3.5 right-16 z-50 flex items-center gap-2 ${
+                      isQuestionPanelVisible ? 'bg-secondary' : 'bg-background hover:bg-secondary/80'
+                    }`}
+                    onClick={onToggleSophia}
+                    disabled={showConsentModal}
+                  >
+                    <HelpCircle className="h-5 w-5" />
+                    {isQuestionPanelVisible ? 'Close Sophia' : 'Ask Sophia'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {isQuestionPanelVisible 
+                      ? 'Close your coding tutor' 
+                      : 'Get help from Sophia, your coding tutor'
+                    }
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
 
           <ResizablePanelGroup direction="horizontal">
             <ResizablePanel defaultSize={28} minSize={20} maxSize={40}>
