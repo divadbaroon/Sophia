@@ -14,7 +14,11 @@ import {
   recordTaskAttempt 
 } from '@/lib/actions/task-progress-actions'
 import { loadAllCodeSnapshots } from '@/lib/actions/code-snapshot-actions'
-import { getQuizQuestions } from '@/lib/actions/quiz-actions'  
+import { getQuizQuestions } from '@/lib/actions/quiz-actions'
+import { 
+  loadStudentConceptMapWithFallback,
+  saveStudentConceptMap 
+} from '@/lib/actions/student-concept-map-actions'
 
 const FileContext = createContext<FileContextType | undefined>(undefined)
 
@@ -67,6 +71,12 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   // Quiz loading state
   const [quizLoading, setQuizLoading] = useState(false)
   const [quizData, setQuizData] = useState<any>(null)
+
+  // Concept map state
+  const [lastConceptMapUpdate, setLastConceptMapUpdate] = useState<number>(Date.now())
+  const [isUpdatingConceptMap, setIsUpdatingConceptMap] = useState(false)
+  const [conceptMapsPerMethod, setConceptMapsPerMethod] = useState<Record<string, any>>({})
+  const [isLoadingConceptMaps, setIsLoadingConceptMaps] = useState(false)
 
   // Update student task when method changes
   useEffect(() => {
@@ -127,27 +137,13 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
             methodTemplates: result.data.methodTemplates,
             testCases: result.data.testCases,
             conceptMappings: result.data.conceptMappings,
-            conceptMap: {
-              categories: {
-                "Functions": {
-                  "Lambda Functions": {
-                    name: "Lambda Functions",
-                    value: 0,
-                    knowledgeState: {
-                      understandingLevel: 0,
-                      confidenceInAssessment: 0,
-                      reasoning: "",
-                      lastUpdated: "Just now"
-                    }
-                  }
-                }
-              }
-            },
             system: result.data.system
           }
           
           setSessionData(taskData)
-          setConceptMap(taskData.conceptMap)
+          
+          // Load concept maps for all methods
+          await loadConceptMapsForAllMethods(taskData.tasks)
         } else {
           console.error('Failed to load coding tasks:', result.error)
         }
@@ -160,6 +156,57 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
 
     loadCodingTasks()
   }, [lessonId])
+
+  // Load concept maps for all methods
+  const loadConceptMapsForAllMethods = async (tasks: any[]) => {
+    if (!tasks || tasks.length === 0) return
+    
+    setIsLoadingConceptMaps(true)
+    const conceptMaps: Record<string, any> = {}
+    
+    try {
+      for (const task of tasks) {
+        const methodId = extractMethodIdFromTitle(task.title)
+        if (!methodId) continue
+        
+        console.log(`📊 Loading concept map for ${methodId}`)
+        
+        const result = await loadStudentConceptMapWithFallback(
+          task.id, // codingTaskId
+          methodId  // methodTitle
+        )
+        
+        if (result.data) {
+          conceptMaps[methodId] = result.data
+          console.log(`✅ Loaded concept map for ${methodId} from ${result.source}`)
+        } else {
+          console.warn(`⚠️ No concept map available for ${methodId}:`, result.error)
+        }
+      }
+      
+      setConceptMapsPerMethod(conceptMaps)
+      
+      // Set the concept map for the first method (if available)
+      const firstTask = tasks[0]
+      if (firstTask) {
+        const firstMethodId = extractMethodIdFromTitle(firstTask.title)
+        if (firstMethodId && conceptMaps[firstMethodId]) {
+          setConceptMap(conceptMaps[firstMethodId])
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error loading concept maps:', error)
+    } finally {
+      setIsLoadingConceptMaps(false)
+    }
+  }
+
+  // Helper function to extract method ID from title
+  const extractMethodIdFromTitle = (title: string): string | null => {
+    const match = title.match(/(?:\d+\.\)\s+)?([a-zA-Z_]+)\(\)/)
+    return match ? match[1] : null
+  }
 
   // Load completion status from database when session changes
   useEffect(() => {
@@ -232,28 +279,32 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [sessionId, sessionData])
 
-    // Update active method ID and test cases when method index or session changes
-    useEffect(() => {
+  // Update active method ID and test cases when method index or session changes
+  useEffect(() => {
     if (sessionData?.tasks && sessionData.tasks[currentMethodIndex]) {
       const title = sessionData.tasks[currentMethodIndex].title
       console.log("🔍 Extracting methodId from title:", title)
       
-      // Updated regex to handle both formats: "1.) methodName()" OR "methodName()"
-      const match = title.match(/(?:\d+\.\)\s+)?([a-zA-Z_]+)\(\)/)
+      const methodId = extractMethodIdFromTitle(title)
       
-      if (match) {
-        const methodId = match[1]
+      if (methodId) {
         console.log("✅ Found methodId:", methodId)
         setActiveMethodId(methodId)
         
         if (sessionData.testCases[methodId]) {
           setCurrentTestCases(sessionData.testCases[methodId])
         }
+        
+        // Update concept map for the new method
+        if (conceptMapsPerMethod[methodId]) {
+          setConceptMap(conceptMapsPerMethod[methodId])
+          console.log(`📊 Switched to concept map for ${methodId}`)
+        }
       } else {
         console.error("❌ Could not extract methodId from title:", title)
       }
     }
-  }, [currentMethodIndex, sessionData])
+  }, [currentMethodIndex, sessionData, conceptMapsPerMethod])
 
   // Load code snapshots when session and lesson data are ready
   useEffect(() => {
@@ -473,20 +524,41 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     return { completed, total }
   }
   
-  const updateConversationHistory = (newHistory: ConversationMessage[]) => {
+  const updateConversationHistory = async (newHistory: ConversationMessage[]) => {
     setConversationHistory(newHistory)
+    
+    // Trigger concept map update if conversation has meaningful new content
+    if (newHistory.length > conversationHistory.length) {
+      const lastMessage = newHistory[newHistory.length - 1]
+      if (lastMessage.content.length > 10) { // Only for substantial messages
+        await updateConceptMapFromAPI('conversation')
+      }
+    }
   }
 
   const updateConceptMap = (newConceptMap: any) => {
     setConceptMap(newConceptMap)
+    
+    // Also update the per-method concept maps
+    if (activeMethodId) {
+      setConceptMapsPerMethod(prev => ({
+        ...prev,
+        [activeMethodId]: newConceptMap
+      }))
+    }
   }
 
   const updateHighlightedText = (text: string) => {
     setHighlightedText(text)
   }
 
-  const updateExecutionOutput = (output: string) => {
+  const updateExecutionOutput = async (output: string) => {
     setExecutionOutput(output)
+    
+    // Trigger concept map update after test execution
+    if (output.trim()) {
+      await updateConceptMapFromAPI('test_run')
+    }
   }
 
   const updateCachedFileContent = (content: string) => {
@@ -534,6 +606,91 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
 
   const getAllMethodTemplates = () => {
     return sessionData?.methodTemplates || {}
+  }
+
+  const shouldUpdateConceptMap = (): boolean => {
+    // Don't update if already updating or if data isn't ready
+    if (isUpdatingConceptMap || !sessionData || !activeMethodId || codeLoading || isLoadingConceptMaps) {
+      return false
+    }
+    
+    // Don't update too frequently (minimum 5 seconds between updates)
+    const timeSinceLastUpdate = Date.now() - lastConceptMapUpdate
+    return timeSinceLastUpdate > 5000
+  }
+
+  // Function to call the concept map API
+  const updateConceptMapFromAPI = async (trigger: 'test_run' | 'conversation') => {
+    if (!shouldUpdateConceptMap()) return
+    
+    setIsUpdatingConceptMap(true)
+    
+    try {
+      // Get current task data
+      const currentTask = sessionData?.tasks[currentMethodIndex]
+      if (!currentTask) return
+      
+      // Get current method template
+      const methodTemplate = sessionData?.methodTemplates[activeMethodId] || ''
+      
+      // Get the current concept map for this method
+      const currentMethodConceptMap = conceptMapsPerMethod[activeMethodId] || {}
+      
+      // Prepare context for the API
+      const context = {
+        taskName: currentTask.title,
+        methodName: activeMethodId,
+        methodTemplate: methodTemplate,
+        currentStudentCode: fileContent,
+        terminalOutput: executionOutput,
+        conversationHistory: conversationHistory,
+        currentConceptMap: currentMethodConceptMap,
+        sessionId: sessionId,
+      }
+      
+      // Call the concept map API route
+      const response = await fetch('/api/concept-map/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          context: context
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to update concept map: ${response.statusText}`)
+      }
+      
+      const result = await response.json()
+
+      // Log what concept map returned
+      console.log('🔍 Raw API response:', result)
+      console.log('📊 Updated concept map:', result.updatedConceptMap)
+      console.log('🔄 Previous concept map:', currentMethodConceptMap)
+      
+      // Update the concept map state
+      updateConceptMap(result.updatedConceptMap)
+      setLastConceptMapUpdate(Date.now())
+      
+      // Save updated concept map to database
+      if (currentTask.id) {
+        await saveStudentConceptMap(
+          lessonId,
+          currentTask.id,
+          activeMethodId,
+          result.updatedConceptMap
+        )
+      }
+      
+      console.log(`📊 Concept map updated for ${activeMethodId} (trigger: ${trigger})`)
+      
+    } catch (error) {
+      console.error('Failed to update concept map:', error)
+    } finally {
+      setIsUpdatingConceptMap(false)
+    }
   }
 
   return (
@@ -590,7 +747,9 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         methodsCode,
         updateMethodsCode,
         quizLoading,    
-        quizData,       
+        quizData,
+        isLoadingConceptMaps,
+        conceptMapsPerMethod,
       }}>
       {children}
     </FileContext.Provider>
