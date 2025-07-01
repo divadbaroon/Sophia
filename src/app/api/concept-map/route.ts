@@ -1,21 +1,42 @@
-import { anthropic } from '@ai-sdk/anthropic';
-import { streamText } from 'ai';
-import { prepareClaudePrompt } from '@/utils/claude/claudePromptCreation';
+import { NextRequest, NextResponse } from 'next/server';
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 30;
+// Try dynamic import first to debug
+export async function POST(req: NextRequest) {
+  try {
+    console.log('🚀 Concept map API called!');
+    
+    const body = await req.json();
+    const { context } = body;
 
-export async function POST(req: Request) {
-  const { messages, context } = await req.json();
+    if (!context) {
+      return NextResponse.json(
+        { error: 'Context is required' },
+        { status: 400 }
+      );
+    }
 
-  // Generate system prompt with current context
-  const systemPrompt = prepareClaudePrompt(context);
+    console.log('📨 Received context for method:', context.methodName);
 
-  const result = streamText({
-    model: anthropic('claude-3-7-sonnet-20250219'),
-    system: systemPrompt,
-    messages,
-  });
+    // Dynamic import to avoid build issues
+    const { ConceptMapAgent } = await import('@/lib/concept-map-agent');
+    
+    console.log('✅ ConceptMapAgent imported successfully');
 
-  return result.toDataStreamResponse();
+    // Call the concept map agent
+    const result = await ConceptMapAgent.assessConceptMap(context);
+
+    console.log('🎯 Concept map agent result:', result);
+
+    return NextResponse.json({
+      updatedConceptMap: result.updatedConceptMap
+    });
+
+  } catch (error) {
+    console.error('❌ Error in concept map API:', error);
+    
+    return NextResponse.json(
+      { error: `Failed to update concept map` },
+      { status: 500 }
+    );
+  }
 }
