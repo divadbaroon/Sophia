@@ -236,7 +236,7 @@ The total response should be around 1 paragraph.
       const taskTitle = taskInfo?.title || task.method_title;
       
       Object.entries(task.concept_data).forEach(([conceptName, conceptData]) => {
-        // Add to radar data (removed confidence filtering)
+        // Add to radar data
         radarData.push({
           subject: conceptName,
           value: Number.parseFloat((conceptData.understandingLevel * 100).toFixed(1)),
@@ -376,35 +376,7 @@ The total response should be around 1 paragraph.
 
   const { radarData } = transformDataForRadar();
 
-  // Don't render the main content until we have data
-  if (radarData.length === 0) {
-    return (
-      <div
-        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-        onClick={handleBackdropClick}
-      >
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl p-6 relative border border-gray-200 dark:border-gray-800">
-          <button
-            onClick={onClose}
-            className="absolute right-4 top-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors z-10"
-          >
-            <X className="h-5 w-5" />
-          </button>
-          <div className="flex flex-col items-center py-8">
-            <div className="text-gray-400 mb-4">
-              <X className="h-16 w-16" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">No Radar Data Available</h2>
-            <p className="text-gray-500 text-center">
-              No concept data available for radar visualization. This might indicate the data is still loading or no assessments have been completed.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Sort skills for development areas - only from filtered data
+  // Sort skills for development areas
   const developmentAreas = [...radarData]
     .sort((a, b) => a.value - b.value)
     .slice(0, 3);
@@ -462,99 +434,69 @@ The total response should be around 1 paragraph.
             </p>
           </div>
 
-          {/* Full Width Radar Chart */}
-          <Card className="shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-800 mb-6">
-            <CardHeader className="items-center pb-4">
-              <CardTitle className="text-xl text-center">
-                Detailed Concept Assessment
-              </CardTitle>
-              <CardDescription>
-                All concept proficiency levels
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pb-0">
-              {radarData && radarData.length > 0 ? (
-                <div className="w-full h-[500px] flex items-center justify-center">
-                  <ChartContainer
-                    config={detailedConfig}
-                    className="w-full h-full"
-                  >
-                    <RadarChart 
-                      data={radarData} 
-                      width={700} 
-                      height={450}
-                      margin={{ top: 20, right: 30, bottom: 20, left: 30 }}
-                    >
-                      <ChartTooltip
-                        cursor={false}
-                        content={<CustomTooltip />}
-                      />
-                      <PolarGrid 
-                        stroke="#e0e7ff" 
-                        strokeOpacity={0.3}
-                        className="dark:stroke-gray-600" 
-                      />
-                      <PolarAngleAxis
-                        dataKey="subject"
-                        tick={{ 
-                          fill: "currentColor", 
-                          fontSize: 10,
-                          textAnchor: "middle"
-                        }}
-                        tickFormatter={(value) => {
-                          // Truncate long concept names for better display
-                          return value.length > 12 ? value.substring(0, 12) + "..." : value;
-                        }}
-                      />
-                      <PolarRadiusAxis
-                        angle={90}
-                        domain={[0, 100]}
-                        tick={{ 
-                          fill: "currentColor", 
-                          fontSize: 8
-                        }}
-                        tickCount={5}
-                      />
-                      <Radar
-                        dataKey="value"
-                        name="Proficiency"
-                        fill="hsl(260, 70%, 60%)"
-                        fillOpacity={0.3}
-                        stroke="hsl(260, 70%, 60%)"
-                        strokeWidth={2}
-                        dot={{
-                          r: 3,
-                          fill: "hsl(260, 70%, 60%)",
-                          strokeWidth: 1,
-                          stroke: "#fff"
-                        }}
-                      />
-                    </RadarChart>
-                  </ChartContainer>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Detailed Skills Chart */}
+            <Card className="shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-800">
+              <CardHeader className="items-center pb-4">
+                <CardTitle className="text-xl text-center">
+                  Detailed Concept Assessment
+                </CardTitle>
+                <CardDescription>
+                  Individual concept proficiency levels
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pb-0">
+                <ChartContainer
+                  config={detailedConfig}
+                  className="mx-auto max-h-[350px]"
+                >
+                  <RadarChart data={radarData}>
+                    <ChartTooltip
+                      cursor={false}
+                      content={<CustomTooltip />}
+                      trigger="click"
+                    />
+                    <PolarGrid className="fill-[--color-proficiency] opacity-20" />
+                    <PolarAngleAxis
+                      dataKey="subject"
+                      tick={{ fill: "currentColor", fontSize: 11 }}
+                    />
+                    <PolarRadiusAxis
+                      domain={[0, 100]}
+                      tick={{ fill: "currentColor", fontSize: 10 }}
+                    />
+                    <Radar
+                      dataKey="value"
+                      name="Skill Proficiency"
+                      fill="var(--color-proficiency)"
+                      fillOpacity={0.6}
+                      stroke="var(--color-proficiency)"
+                      strokeWidth={2}
+                      dot={{
+                        r: 4,
+                        fill: "var(--color-proficiency)",
+                        cursor: "pointer",
+                        strokeWidth: 0,
+                      }}
+                      activeDot={{
+                        r: 6,
+                        strokeWidth: 1,
+                        stroke: "#fff",
+                      }}
+                    />
+                  </RadarChart>
+                </ChartContainer>
+              </CardContent>
+              <CardFooter className="flex-col gap-2 text-sm">
+                <div className="flex items-center gap-2 leading-none text-muted-foreground">
+                  last updated: {new Date().toLocaleDateString()}
                 </div>
-              ) : (
-                <div className="w-full h-[500px] flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-gray-400 mb-4">
-                      <X className="h-16 w-16 mx-auto" />
-                    </div>
-                    <h3 className="text-lg font-medium mb-2">No Chart Data</h3>
-                    <p className="text-gray-500">
-                      Radar chart data is not available yet.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex-col gap-2 text-sm">
-              <div className="flex items-center gap-2 leading-none text-muted-foreground">
-                Showing {radarData.length} concepts • last updated: {new Date().toLocaleDateString()}
-              </div>
-            </CardFooter>
-          </Card>
+              </CardFooter>
+            </Card>
+          </div>
 
           {/* Text Overview Section */}
-          <Card className="shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-800">
+          <Card className="mt-6 shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-800">
             <CardHeader className="pb-4">
               <CardTitle className="text-xl flex items-center gap-2">
                 Skills Assessment Overview
@@ -621,7 +563,7 @@ The total response should be around 1 paragraph.
             </CardContent>
           </Card>
 
-          {/* Skill Breakdown Table - Show all concepts */}
+          {/* Skill Breakdown Table */}
           <Card className="mt-6 shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-800">
             <CardHeader className="items-center pb-4">
               <CardTitle className="text-xl flex items-center gap-2">
@@ -632,89 +574,83 @@ The total response should be around 1 paragraph.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {radarData && radarData.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-gray-50 dark:bg-gray-800/50">
-                        <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
-                          Task
-                        </th>
-                        <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
-                          Concept
-                        </th>
-                        <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
-                          Proficiency
-                        </th>
-                        <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
-                          Level
-                        </th>
-                        <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
-                          System Confidence
-                        </th>
-                        <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
-                          Reasoning
-                        </th>
-                        <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
-                          Last Updated
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {radarData.map((item, index) => {
-                        const level = getSkillLevel(item.value);
-                        const levelColor = getLevelColor(item.value);
-                        const textColor = getLevelTextColor(item.value);
-                        return (
-                          <tr
-                            key={index}
-                            className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                          >
-                            <td className="border border-gray-200 dark:border-gray-700 p-2">
-                              {item.category}
-                            </td>
-                            <td className="border border-gray-200 dark:border-gray-700 p-2">
-                              {item.subject}
-                            </td>
-                            <td className="border border-gray-200 dark:border-gray-700 p-2">
-                              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                                <div
-                                  className={`h-2.5 rounded-full ${levelColor}`}
-                                  style={{ width: `${item.value}%` }}
-                                ></div>
-                              </div>
-                            </td>
-                            <td className="border border-gray-200 dark:border-gray-700 p-2">
-                              <Badge
-                                className={`${textColor
-                                  .replace("text-", "bg-")
-                                  .replace("500", "100")} ${textColor}`}
-                              >
-                                {level}
-                              </Badge>
-                            </td>
-                            <td className="border border-gray-200 dark:border-gray-700 p-2">
-                              {Math.round(item.knowledgeState.confidenceInAssessment * 100)}%
-                            </td>
-                            <td className="border border-gray-200 dark:border-gray-700 p-2 max-w-xs">
-                              <div className="truncate" title={item.knowledgeState.reasoning}>
-                                {item.knowledgeState.reasoning}
-                              </div>
-                            </td>
-                            <td className="border border-gray-200 dark:border-gray-700 p-2">
-                              {new Date(item.knowledgeState.lastUpdated).toLocaleDateString()}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No concept data available for the table.</p>
-                </div>
-              )}
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-gray-800/50">
+                      <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
+                        Task
+                      </th>
+                      <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
+                        Concept
+                      </th>
+                      <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
+                        Proficiency
+                      </th>
+                      <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
+                        Level
+                      </th>
+                      <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
+                        System Confidence
+                      </th>
+                      <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
+                        Reasoning
+                      </th>
+                      <th className="border border-gray-200 dark:border-gray-700 p-2 text-left">
+                        Last Updated
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {radarData.map((item, index) => {
+                      const level = getSkillLevel(item.value);
+                      const levelColor = getLevelColor(item.value);
+                      const textColor = getLevelTextColor(item.value);
+                      return (
+                        <tr
+                          key={index}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                        >
+                          <td className="border border-gray-200 dark:border-gray-700 p-2">
+                            {item.category}
+                          </td>
+                          <td className="border border-gray-200 dark:border-gray-700 p-2">
+                            {item.subject}
+                          </td>
+                          <td className="border border-gray-200 dark:border-gray-700 p-2">
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                              <div
+                                className={`h-2.5 rounded-full ${levelColor}`}
+                                style={{ width: `${item.value}%` }}
+                              ></div>
+                            </div>
+                          </td>
+                          <td className="border border-gray-200 dark:border-gray-700 p-2">
+                            <Badge
+                              className={`${textColor
+                                .replace("text-", "bg-")
+                                .replace("500", "100")} ${textColor}`}
+                            >
+                              {level}
+                            </Badge>
+                          </td>
+                          <td className="border border-gray-200 dark:border-gray-700 p-2">
+                            {Math.round(item.knowledgeState.confidenceInAssessment * 100)}%
+                          </td>
+                          <td className="border border-gray-200 dark:border-gray-700 p-2 max-w-xs">
+                            <div className="truncate" title={item.knowledgeState.reasoning}>
+                              {item.knowledgeState.reasoning}
+                            </div>
+                          </td>
+                          <td className="border border-gray-200 dark:border-gray-700 p-2">
+                            {new Date(item.knowledgeState.lastUpdated).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
 
