@@ -94,16 +94,10 @@ Analyze the provided student context and return a COMPLETE updated concept map w
 - **Questions asked**: What they're confused about or seeking clarification on
 - **Misconceptions expressed**: Incorrect statements about how algorithms work
 - **Insights shared**: Moments of understanding or "aha" moments
+- **CRITICAL: Dependency on explanations** - If student needed fundamental concepts explained before coding correctly, this indicates lower understanding regardless of final code quality
+- **Independence level** - Students who solve problems after hints vs. those who need core concepts explained
 
 ## UPDATE RULES
-
-### Increase Understanding When:
-- Tests pass after being broken
-- Code shows correct algorithmic thinking
-- Student explains concepts accurately in conversation
-- Student fixes their own mistakes through reasoning
-- Student handles edge cases correctly
-- Code demonstrates efficiency awareness
 
 ### Decrease Understanding When:
 - Tests fail due to algorithmic errors (not syntax)
@@ -112,6 +106,18 @@ Analyze the provided student context and return a COMPLETE updated concept map w
 - Repeated same mistakes across attempts
 - Missing or incorrect edge case handling
 - Inefficient approaches when better ones are obvious
+- **Student requires explanation of core concepts before implementing correctly - needing the answer explained indicates lack of independent understanding**
+- **Student implements correctly ONLY after being given direct guidance or hints about the approach**
+
+### Increase Understanding When:
+- Tests pass after being broken
+- Code shows correct algorithmic thinking
+- Student explains concepts accurately in conversation
+- Student fixes their own mistakes through reasoning
+- Student handles edge cases correctly
+- Code demonstrates efficiency awareness
+- **Student arrives at correct solution independently without needing concept explanations**
+- **Student can explain their reasoning BEFORE implementing, not just after**
 
 ### Increase Confidence When:
 - Multiple evidence sources align (code + voice + tests)
@@ -133,6 +139,7 @@ Write specific, evidence-based reasoning that references:
 - Particular test results and what they reveal
 - Key phrases or explanations from conversation
 - Changes since last assessment
+- **IMPORTANT: If student required explanation of basic concepts (e.g., "BST properties mean left < root < right") before implementing correctly, this should significantly lower understanding level - correct implementation after explanation ≠ true understanding**
 
 ## OUTPUT FORMAT
 Return ONLY a valid JSON object with this structure:
