@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { HelpCircle, Pencil, Trash2, Eye, EyeOff } from "lucide-react"
+import { HelpCircle, Pencil, Trash2 } from "lucide-react"
 
 import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader"
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
@@ -29,7 +29,17 @@ export const WorkspaceLayout: React.FC = () => {
 
   const { stopAudio } = useSophiaBrain() 
 
-  const { sessionId, lessonId, currentMethodIndex, sessionData, codeLoading } = useFile()
+  const { 
+    sessionId, 
+    lessonId, 
+    currentMethodIndex, 
+    sessionData, 
+    codeLoading,
+    executionOutput,
+    currentTestCases,
+    activeMethodId,
+    isTaskCompleted
+  } = useFile()
 
   // Panel & UI state
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
@@ -43,12 +53,74 @@ export const WorkspaceLayout: React.FC = () => {
   const [isDrawingMode, setIsDrawingMode] = useState(false)
   
   // Visualization state
-  const [isVisualizationVisible, setIsVisualizationVisible] = useState(false)
+
+  // Test case monitoring state
+  const [allTestsPassed, setAllTestsPassed] = useState(false)
+  const [shouldFlash, setShouldFlash] = useState(false)
+  const [flashToggle, setFlashToggle] = useState(false)
 
   const codeEditorRef = useRef<CodeEditorRef>(null)
 
   // Check if essential data is loaded
   const isLoading = !sessionData || !sessionId || !lessonId || currentMethodIndex === undefined || codeLoading
+
+  // Get current task info
+  const currentTask = sessionData?.tasks?.[currentMethodIndex]
+  const currentTaskTitle = currentTask?.title || 'Task'
+
+  // Monitor execution output for test results
+  useEffect(() => {
+    if (!executionOutput || !currentTestCases || currentTestCases.length === 0) {
+      setAllTestsPassed(false)
+      return
+    }
+
+    // Parse test results from execution output
+    // Look for patterns like "Test passed" or "Test failed" or specific test case indicators
+    const testPassedMatches = executionOutput.match(/test.*passed/gi) || []
+    const testFailedMatches = executionOutput.match(/test.*failed/gi) || []
+    const allPassedMatch = executionOutput.match(/all tests passed/gi) || []
+    
+    // Also check for specific test case patterns (e.g., "✓" or "✗")
+    const checkmarkMatches = executionOutput.match(/✓/g) || []
+    const crossMatches = executionOutput.match(/✗/g) || []
+    
+    // Calculate passed tests
+    const passedFromMatches = testPassedMatches.length
+    const passedFromCheckmarks = checkmarkMatches.length
+    const totalTests = currentTestCases.length
+    
+    // Use the maximum of the different counting methods
+    const passedCount = Math.max(passedFromMatches, passedFromCheckmarks)
+    
+    // Check if all tests passed
+    const allPassed = allPassedMatch.length > 0 || 
+                     (passedCount === totalTests && totalTests > 0) ||
+                     (testFailedMatches.length === 0 && crossMatches.length === 0 && passedCount > 0)
+    
+    setAllTestsPassed(allPassed)
+    
+    // Log test results for debugging
+    console.log('📋 Test Results:', {
+      currentMethod: activeMethodId,
+      taskIndex: currentMethodIndex,
+      taskTitle: currentTaskTitle,
+      totalTests,
+      passedCount,
+      allPassed,
+      isTaskAlreadyCompleted: isTaskCompleted(currentMethodIndex)
+    })
+
+    // Start flashing if all tests passed and task isn't already completed
+    if (allPassed && !isTaskCompleted(currentMethodIndex)) {
+      setShouldFlash(true)
+      // Stop flashing after 5 seconds
+      const timer = setTimeout(() => setShouldFlash(false), 5000)
+      return () => clearTimeout(timer)
+    } else {
+      setShouldFlash(false)
+    }
+  }, [executionOutput, currentTestCases, activeMethodId, currentMethodIndex, isTaskCompleted, currentTaskTitle])
 
   // Consent check on mount
   useEffect(() => {
@@ -59,6 +131,23 @@ export const WorkspaceLayout: React.FC = () => {
       setShowConsentModal(true)
     }
   }, [])
+
+  // Flash toggle effect - THIS IS THE MISSING PIECE!
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null
+    
+    if (shouldFlash) {
+      interval = setInterval(() => {
+        setFlashToggle(false)
+      }, 500) // Toggle every 500ms
+    } else {
+      setFlashToggle(false)
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [shouldFlash])
 
   const onToggleSophia = () => {
     if (isQuestionPanelVisible) {
@@ -132,12 +221,6 @@ export const WorkspaceLayout: React.FC = () => {
     codeEditorRef.current?.clearDrawing()
   }
 
-  // Handle toggle visualization
-  const handleToggleVisualization = () => {
-    codeEditorRef.current?.toggleVisualization()
-    setIsVisualizationVisible((prev) => !prev)
-  }
-
   // Determine if buttons should be hidden
   const shouldHideButtons = isQuizModalOpen || isSurveyModalOpen
 
@@ -198,19 +281,7 @@ export const WorkspaceLayout: React.FC = () => {
           {/* Drawing Controls - Show when quiz/survey are not open */}
           {!shouldHideButtons && (
             <div className="absolute top-3.5 right-[16rem] z-[9999] flex gap-3 mt-2">
-              {/* Visualization Button */}
-              <Button
-                variant={isVisualizationVisible ? "default" : "outline"}
-                size="sm"
-                className="gap-2 font-medium"
-                onClick={handleToggleVisualization}
-                disabled={showConsentModal}
-                title="Toggle binary tree visualization"
-              >
-                {isVisualizationVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                {isVisualizationVisible ? "Hide Tree" : "Show Tree"}
-              </Button>
-
+             
               {/* Draw Button */}
               <Button
                 variant={isDrawingMode ? "default" : "outline"}
@@ -228,7 +299,7 @@ export const WorkspaceLayout: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 font-medium text-red-600 hover:text-red-700 hover:bg-red-50 mr-1"
+                className="gap-2 font-medium text-red-600 hover:text-red-700 hover:bg-red-50 -mr-3"
                 onClick={handleClearDrawing}
                 disabled={showConsentModal}
                 title="Clear all drawings on code editor"
@@ -239,7 +310,7 @@ export const WorkspaceLayout: React.FC = () => {
             </div>
           )}
 
-          {/* Ask Sophia button with tooltip */}
+          {/* Ask Sophia button with tooltip - now with conditional flashing */}
           {!shouldHideButtons && (
             <TooltipProvider>
               <Tooltip>
@@ -247,10 +318,17 @@ export const WorkspaceLayout: React.FC = () => {
                   <Button
                     variant="outline"
                     size="lg"
-                    className={`absolute top-3.5 right-16 z-50 flex items-center gap-2 ${
-                      isQuestionPanelVisible ? 'bg-secondary' : 'bg-background hover:bg-secondary/80'
-                    }`}
-                    onClick={onToggleSophia}
+                    className="absolute top-3.5 right-16 z-50 flex items-center gap-2"
+                    style={{
+                      backgroundColor: shouldFlash && flashToggle ? '#fbbf24' : isQuestionPanelVisible ? 'hsl(var(--secondary))' : 'hsl(var(--background))',
+                      borderColor: shouldFlash && flashToggle ? '#f59e0b' : undefined,
+                      color: shouldFlash && flashToggle ? '#000' : undefined,
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => {
+                      console.log('🔘 Button clicked - shouldFlash:', shouldFlash, 'flashToggle:', flashToggle)
+                      onToggleSophia()
+                    }}
                     disabled={showConsentModal}
                   >
                     <HelpCircle className="h-5 w-5" />
@@ -259,9 +337,11 @@ export const WorkspaceLayout: React.FC = () => {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>
-                    {isQuestionPanelVisible 
-                      ? 'Close your coding tutor' 
-                      : 'Get help from Sophia, your coding tutor'
+                    {allTestsPassed && !isTaskCompleted(currentMethodIndex) 
+                      ? '🎉 All tests passed! Click to discuss with Sophia' 
+                      : isQuestionPanelVisible 
+                        ? 'Close your coding tutor' 
+                        : 'Get help from Sophia, your coding tutor'
                     }
                   </p>
                 </TooltipContent>
