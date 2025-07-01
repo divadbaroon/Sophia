@@ -22,18 +22,28 @@ import { useFile } from "@/lib/context/FileContext"
 
 import { conceptIcons } from "@/lib/data/conceptIcons"
 
-import { TaskSidebarProps } from "@/types"
+// Updated interface to include knowledge radar props
+interface TaskSidebarProps {
+  isQuizModalOpen: boolean
+  setIsQuizModalOpen: (open: boolean) => void
+  isSurveyModalOpen: boolean
+  setIsSurveyModalOpen: (open: boolean) => void
+  showKnowledgeRadar: boolean
+  setShowKnowledgeRadar: (open: boolean) => void
+}
 
 export default function TaskSidebar({ 
   isQuizModalOpen, 
   setIsQuizModalOpen, 
   isSurveyModalOpen, 
-  setIsSurveyModalOpen 
+  setIsSurveyModalOpen,
+  showKnowledgeRadar,
+  setShowKnowledgeRadar
 }: TaskSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [currentConceptTitle, setCurrentConceptTitle] = useState("")
   const [showPrizeWheel, setShowPrizeWheel] = useState(false) 
-  const [showKnowledgeRadar, setShowKnowledgeRadar] = useState(false) // Add state for radar modal
+  // Removed local showKnowledgeRadar state since it's now passed as props
 
   const {
     sessionData,
@@ -130,12 +140,12 @@ export default function TaskSidebar({
       console.warn('⚠️ No lessonId available to update progress')
     }
     
-    // Show knowledge radar modal after quiz completion
+    // Show knowledge radar modal after quiz completion - now uses props
     setShowKnowledgeRadar(true)
   }
 
   const handleKnowledgeRadarContinue = () => {
-    setShowKnowledgeRadar(false)
+    setShowKnowledgeRadar(false) // Uses props instead of local state
     // Open survey modal after radar modal
     setIsSurveyModalOpen(true)
   }
@@ -270,7 +280,6 @@ export default function TaskSidebar({
 
               <Separator />
 
-              
               {/* Examples */}
               <div className="space-y-4">
                 <h3 className="font-semibold text-foreground">Examples</h3>
@@ -302,23 +311,6 @@ export default function TaskSidebar({
                 <div className="space-y-3">
                   <Separator />
                   <Card className="p-4 bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
-                    <div className="flex items-center gap-2 text-green-800">
-                      <CheckCircle className="h-6 w-6" />
-                      <p className="text-base font-bold">🎉 All Tasks Completed!</p>
-                    </div>
-                    <p className="text-sm text-green-700 mt-2">
-                      Congratulations! You&apos;ve successfully completed all tasks. Click &quot;Finished&quot; to take
-                      a quick quiz, view your learning report, provide feedback, and <span className="font-semibold text-purple-700">spin the wheel for a chance to win a prize!</span>
-                    </p>
-                  </Card>
-                </div>
-              )}
-
-              {/* Individual Task Completion Status */}
-              {isTaskCompleted(currentMethodIndex) && !allTasksCompleted && (
-                <div className="space-y-3">
-                  <Separator />
-                  <Card className="p-4 bg-green-50 border-green-200">
                     <div className="flex items-center gap-2 text-green-800">
                       <CheckCircle className="h-5 w-5" />
                       <p className="text-sm font-medium">Task Completed!</p>
@@ -434,7 +426,7 @@ export default function TaskSidebar({
         onComplete={handleQuizComplete}
       />
 
-      {/* Knowledge Radar Modal with Continue Button */}
+      {/* Knowledge Radar Modal with Continue Button - now uses props */}
       <KnowledgeRadarModal
         isOpen={showKnowledgeRadar}
         onClose={() => setShowKnowledgeRadar(false)}
