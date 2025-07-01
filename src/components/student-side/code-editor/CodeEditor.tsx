@@ -116,6 +116,8 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
   // Stencil state
   const [selectedStencil, setSelectedStencil] = useState<StencilType | null>(null);
   const [stencilStart, setStencilStart] = useState<StencilPosition | null>(null);
+
+  console.log(setSelectedStencil)
   
   // Visualization state
   const [showVisualization, setShowVisualization] = useState<boolean>(() => {
@@ -291,29 +293,6 @@ const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '',
     setDrawingWidth: setDrawingWidthRef,
     toggleVisualization
   }), [highlightLineByNumber, clearHighlightedLine, zoomIn, zoomOut, resetZoom, manualSave, toggleDrawing, clearDrawing, setDrawingColorRef, setDrawingWidthRef, toggleVisualization]);
-
-  // Canvas drawing functions
-  const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-    
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    };
-  };
-
-  // Clear all drawings
-  const clearCanvas = useCallback(() => {
-    if (canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
-    }
-  }, []);
 
   // Start drawing
   const startDrawing = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
