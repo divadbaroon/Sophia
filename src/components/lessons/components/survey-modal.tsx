@@ -187,9 +187,7 @@ export function SurveyModal({
     formData.difficulty &&
     formData.misconceptionFocus &&
     formData.remediation &&
-    formData.learningHelp &&
-    formData.visualHelpTiming &&
-    formData.visualHelpClarity
+    formData.learningHelp 
 
   const likertScale = [
     { value: "5", label: "Strongly Agree" },

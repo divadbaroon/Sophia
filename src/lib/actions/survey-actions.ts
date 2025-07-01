@@ -62,8 +62,8 @@ export async function saveSurveyResponse(
       misconception_focus: parseRating(surveyData.misconceptionFocus),
       remediation: parseRating(surveyData.remediation),
       learning_help: parseRating(surveyData.learningHelp),
-      visual_help_timing: parseRating(surveyData.visualHelpTiming),
-      visual_help_clarity: parseRating(surveyData.visualHelpClarity),
+      visual_help_timing: 1,
+      visual_help_clarity: 1,
       
       // Overall Experience (optional fields)
       satisfaction: parseRating(surveyData.satisfaction),
