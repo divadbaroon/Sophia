@@ -434,7 +434,7 @@ The total response should be around 1 paragraph.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             {/* Detailed Skills Chart */}
             <Card className="shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-800">
               <CardHeader className="items-center pb-4">
