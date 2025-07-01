@@ -434,6 +434,13 @@ export interface CodeEditorRef {
   zoomOut: () => void;
   resetZoom: () => void;
   saveCode: () => Promise<void>;
+  // Drawing methods
+  toggleDrawing: () => void;
+  clearDrawing: () => void;
+  setDrawingColor: (color: string) => void;
+  setDrawingWidth: (width: number) => void;
+  // Visualization methods
+  toggleVisualization: () => void;
 }
 
 export type CodeEditorProps = {
