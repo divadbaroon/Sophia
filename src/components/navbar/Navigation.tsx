@@ -56,7 +56,6 @@ export default function Navigation({ user }: NavigationProps) {
     : user
       ? [
           { name: "Concepts", href: "/concepts" },
-          { name: "Progress", href: "/progress" },
         ]
       : ["How It Works", "Features", "Contact"]
 
