@@ -5,26 +5,65 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react'
-import { FileContextType, TestCase, TaskData, ConversationMessage } from '@/types'
+import {
+  FileContextType,
+  TestCase,
+  TaskData,
+  ConversationMessage,
+} from '@/types'
 import { usePathname } from 'next/navigation'
 import { getCodingTasksForLesson } from '@/lib/actions/coding-tasks-actions'
-import { 
-  getTaskProgressForSession, 
+import {
+  getTaskProgressForSession,
   markTaskCompleted as dbMarkTaskCompleted,
-  recordTaskAttempt 
+  recordTaskAttempt,
 } from '@/lib/actions/task-progress-actions'
 import { loadAllCodeSnapshots } from '@/lib/actions/code-snapshot-actions'
 import { getQuizQuestions } from '@/lib/actions/quiz-actions'
-import { 
+import {
   loadStudentConceptMapWithFallback,
-  saveStudentConceptMap 
+  saveStudentConceptMap,
 } from '@/lib/actions/student-concept-map-actions'
 
+/* ----------------------------------------------------------------------
+ * Additional local helper types for visualisation + drawing
+ * --------------------------------------------------------------------*/
+export interface DrawingPoint {
+  x: number
+  y: number
+}
+
+export interface DrawingStroke {
+  points: DrawingPoint[]
+  color: string
+  width: number
+}
+
+interface DrawingContextState {
+  strokes: DrawingStroke[]
+  /** node‑ids currently selected (for click‑to‑select interactions) */
+  selectedNodes: string[]
+  /** is the canvas in free‑draw mode */
+  isDrawing: boolean
+}
+
+interface VisualisationState {
+  /** true if the overlay is visible */
+  visible: boolean
+  /** which visualisation is active e.g. "binaryTree", "linkedList" */
+  type: string | null
+}
+
+/* ----------------------------------------------------------------------*/
 const FileContext = createContext<FileContextType | undefined>(undefined)
 
 export const FileProvider = ({ children }: { children: ReactNode }) => {
+  /* =====================================================================================
+   * ORIGINAL STATE ──────────────────────────────────────────────────────────────────────
+   * (everything until the comment "NEW visualisation & drawing state" was lifted intact)
+   * ===================================================================================*/
   const pathname = usePathname()
-  
+
   const [fileContent, setFileContent] = useState<string>('')
   const [cachedFileContent, setCachedFileContent] = useState<string>('')
 
@@ -34,8 +73,8 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [studentTask, setStudentTask] = useState<string>('')
 
   const [lineNumber, setLineNumber] = useState<number | null>(null)
-  
-  // Session-related state
+
+  // ── session level ────────────────────────────────────────────────
   const [sessionId, setSessionId] = useState<string>('')
   const [lessonId, setLessonId] = useState<string>('')
   const [sessionData, setSessionData] = useState<TaskData | null>(null)
@@ -44,39 +83,67 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [currentMethodIndex, setCurrentMethodIndex] = useState<number>(0)
   const [activeMethodId, setActiveMethodId] = useState<string>('')
   const [currentTestCases, setCurrentTestCases] = useState<TestCase[]>([])
-  
-  // Concept map and pivot state
-  const [conceptMapConfidenceMet, setConceptMapConfidenceMet] = useState<boolean>(false)
-  const [latestPivotMessage, setLatestPivotMessage] = useState<string | null>(null)
 
+  // ── concept‑map, pivots, conversation ───────────────────────────
+  const [conceptMapConfidenceMet, setConceptMapConfidenceMet] = useState(false)
+  const [latestPivotMessage, setLatestPivotMessage] = useState<string | null>(null)
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([])
   const [conceptMap, setConceptMap] = useState<any>(null)
+  const [showReport, setShowReport] = useState(false)
+  const [pivotQueue, setPivotQueue] = useState<Array<{ concept: string; category: string; confidence: number }>>([])
+  const [conceptMapInitializing, setConceptMapInitializing] = useState(false)
 
-  const [showReport, setShowReport] = useState<boolean>(false)
-
-  const [pivotQueue, setPivotQueue] = useState<Array<{concept: string, category: string, confidence: number}>>([])
-
-  const [conceptMapInitializing, setConceptMapInitializing] = useState<boolean>(false)
-
-  // completion tracking state 
+  // ── progress & code snapshots ───────────────────────────────────
   const [taskCompletionStatus, setTaskCompletionStatus] = useState<Record<string, Record<number, boolean>>>({})
   const [isLoadingTaskProgress, setIsLoadingTaskProgress] = useState(false)
-
-  // State for loading in code
   const [codeLoading, setCodeLoading] = useState(true)
-
-  // State for storing the current code for each method 
   const [methodsCode, setMethodsCode] = useState<Record<string, string>>({})
 
-  // Quiz loading state
+  // ── quiz & concept‑map fetch states ─────────────────────────────
   const [quizLoading, setQuizLoading] = useState(false)
   const [quizData, setQuizData] = useState<any>(null)
-
-  // Concept map state
   const [lastConceptMapUpdate, setLastConceptMapUpdate] = useState<number>(Date.now())
   const [isUpdatingConceptMap, setIsUpdatingConceptMap] = useState(false)
   const [conceptMapsPerMethod, setConceptMapsPerMethod] = useState<Record<string, any>>({})
   const [isLoadingConceptMaps, setIsLoadingConceptMaps] = useState(false)
+
+  /* =====================================================================================
+   * NEW visualisation & drawing state
+   * ===================================================================================*/
+  const [visualisation, setVisualisation] = useState<VisualisationState>({
+    visible: false,
+    type: null,
+  })
+
+  const [drawingCtx, setDrawingCtx] = useState<DrawingContextState>({
+    strokes: [],
+    selectedNodes: [],
+    isDrawing: false,
+  })
+
+  /* helper methods ------------------------------------------------*/
+  /** expose show/hide/toggle so UI can control overlay */
+  const showVisualisation = (type: string) => setVisualisation({ visible: true, type })
+  const hideVisualisation = () => setVisualisation({ visible: false, type: null })
+  const toggleVisualisation = (type?: string) =>
+    setVisualisation((prev) => {
+      if (type && prev.type !== type) return { visible: true, type }
+      return { ...prev, visible: !prev.visible }
+    })
+
+  /** drawing helpers */
+  const addStroke = (stroke: DrawingStroke) =>
+    setDrawingCtx((prev) => ({ ...prev, strokes: [...prev.strokes, stroke] }))
+  const clearDrawing = () => setDrawingCtx((prev) => ({ ...prev, strokes: [] }))
+  const toggleNodeSelected = (nodeId: string) =>
+    setDrawingCtx((prev) => {
+      const exists = prev.selectedNodes.includes(nodeId)
+      const sel = exists ? prev.selectedNodes.filter((id) => id !== nodeId) : [...prev.selectedNodes, nodeId]
+      return { ...prev, selectedNodes: sel }
+    })
+  const setDrawingContext = (ctx: Partial<DrawingContextState>) =>
+    setDrawingCtx((prev) => ({ ...prev, ...ctx }))
+
 
   // Update student task when method changes
   useEffect(() => {
@@ -696,6 +763,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   return (
     <FileContext.Provider
       value={{
+        /* original props */
         fileContent,
         cachedFileContent,
         updateCachedFileContent,
@@ -737,29 +805,39 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         conceptMapInitializing,
         updateConceptMapInitializing,
         markTaskCompleted,
-        recordAttempt, 
+        recordAttempt,
         isTaskCompleted,
         isTaskUnlocked,
         canGoToNext,
         getCompletionStats,
-        isLoadingTaskProgress, 
+        isLoadingTaskProgress,
         codeLoading,
         methodsCode,
         updateMethodsCode,
-        quizLoading,    
+        quizLoading,
         quizData,
         isLoadingConceptMaps,
         conceptMapsPerMethod,
-      }}>
+
+        /*  NEW additions  */
+        visualisation,
+        showVisualisation,
+        hideVisualisation,
+        toggleVisualisation,
+        drawingCtx,
+        addStroke,
+        clearDrawing,
+        toggleNodeSelected,
+        setDrawingContext,
+      }}
+    >
       {children}
     </FileContext.Provider>
   )
 }
 
 export const useFile = () => {
-  const context = useContext(FileContext)
-  if (!context) {
-    throw new Error('useFile must be used within a FileProvider')
-  }
-  return context
+  const ctx = useContext(FileContext)
+  if (!ctx) throw new Error('useFile must be used within a FileProvider')
+  return ctx
 }

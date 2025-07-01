@@ -48,77 +48,150 @@ export interface TaskData {
   system: string
 }
 
+/* ════════════════════════════════════════════════════════════════════════════
+ *  Drawing / visualisation helpers
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+export interface DrawingPoint {
+  x: number
+  y: number
+}
+
+export interface DrawingStroke {
+  points: DrawingPoint[]
+  color: string
+  width: number
+}
+
+export interface DrawingContextState {
+  strokes: DrawingStroke[]
+  /** ids of nodes the learner has clicked / selected in the visual */
+  selectedNodes: string[]
+  /** free-draw (true)  vs. pointer/selection (false) */
+  isDrawing: boolean
+}
+
+export interface VisualisationState {
+  visible: boolean
+  /** e.g. `'binaryTree' | 'linkedList' | null` */
+  type: string | null
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ *  File-context (mega-store) shape
+ * ══════════════════════════════════════════════════════════════════════════ */
+
 export interface FileContextType {
+  /* ───────────── editor state ─────────────────────────────────────────── */
   fileContent: string
   cachedFileContent: string
   updateCachedFileContent: (content: string) => void
   setFileContent: React.Dispatch<React.SetStateAction<string>>
+
   errorContent: string
   setErrorContent: React.Dispatch<React.SetStateAction<string>>
+
   executionOutput: string
-  updateExecutionOutput: (output: string) => Promise<void> 
+  updateExecutionOutput: (output: string) => Promise<void>
+
   isSaved: () => boolean
+
   highlightedText: string
   updateHighlightedText: (text: string) => void
+
   studentTask: string
   updateStudentTask: (task: string) => void
+
   lineNumber: number | null
   updateLineNumber: (line: number | null) => void
+
+  /* ───────────── concept-map / pivot controls ─────────────────────────── */
   conceptMapConfidenceMet: boolean
   updateConceptMapConfidence: (isConfident: boolean) => void
+
   latestPivotMessage: string | null
   updateLatestPivotMessage: (message: string | null) => void
-  
-  // Task-related properties
+
+  /* ───────────── task / session navigation ────────────────────────────── */
   sessionId: string
-  lessonId: string 
+  lessonId: string
   sessionData: TaskData | null
-  isLoadingTasks: boolean 
+  isLoadingTasks: boolean
+
   currentMethodIndex: number
   activeMethodId: string
   currentTestCases: TestCase[]
+
   goToNextMethod: () => void
   goToPrevMethod: () => void
+
   getCurrentMethodTemplate: () => string
   getAllMethodTemplates: () => Record<string, string>
 
-  // Conversation and concept maps
+  /* ───────────── conversation & concept maps ──────────────────────────── */
   conversationHistory: ConversationMessage[]
-  updateConversationHistory: (newHistory: ConversationMessage[]) => Promise<void> 
-  conceptMap: any 
+  updateConversationHistory: (newHistory: ConversationMessage[]) => Promise<void>
+
+  conceptMap: any
   updateConceptMap: (newConceptMap: any) => void
 
+  /* ───────────── UI flags ─────────────────────────────────────────────── */
   showReport: boolean
   setShowReport: React.Dispatch<React.SetStateAction<boolean>>
 
-  pivotQueue?: Array<{concept: string, category: string, confidence: number}> | null
-  updatePivotQueue?: (queue: Array<{concept: string, category: string, confidence: number}>) => void
-
+  /* ───────────── adaptive pivot queue ─────────────────────────────────── */
+  pivotQueue?: Array<{ concept: string; category: string; confidence: number }> | null
+  updatePivotQueue?: (
+    queue: Array<{ concept: string; category: string; confidence: number }>
+  ) => void
   conceptMapInitializing: boolean
   updateConceptMapInitializing: (isInitializing: boolean) => void
 
-  // Updated task completion methods with database integration
-  markTaskCompleted: (taskIndex: number, testCasesPassed?: number, totalTestCases?: number) => Promise<void>
-  recordAttempt: (taskIndex: number, testCasesPassed: number, totalTestCases: number) => Promise<void>
+  /* ───────────── task progress helpers ────────────────────────────────── */
+  markTaskCompleted: (
+    taskIndex: number,
+    testCasesPassed?: number,
+    totalTestCases?: number
+  ) => Promise<void>
+  recordAttempt: (
+    taskIndex: number,
+    testCasesPassed: number,
+    totalTestCases: number
+  ) => Promise<void>
   isTaskCompleted: (taskIndex: number) => boolean
   isTaskUnlocked: (taskIndex: number) => boolean
   canGoToNext: () => boolean
   getCompletionStats: () => { completed: number; total: number }
-  
-  // Loading states
   isLoadingTaskProgress: boolean
 
-  // Code loading and management
+  /* ───────────── code snapshots per method ────────────────────────────── */
   codeLoading: boolean
   methodsCode: Record<string, string>
   updateMethodsCode: (methodId: string, code: string) => void
 
-  // Quiz state
+  /* ───────────── quiz state ───────────────────────────────────────────── */
   quizLoading: boolean
   quizData: any
 
+  /* ───────────── concept-map cache ────────────────────────────────────── */
   isLoadingConceptMaps: boolean
   conceptMapsPerMethod: Record<string, any>
+
+  /* ════════════ NEW ─ visualisation & drawing support ═══════════════════ */
+
+  /** runtime visual overlay state */
+  visualisation: VisualisationState
+  showVisualisation: (type: string) => void
+  hideVisualisation: () => void
+  toggleVisualisation: (type?: string) => void
+
+  /** free-draw + node-selection canvas state */
+  drawingCtx: DrawingContextState
+  addStroke: (stroke: DrawingStroke) => void
+  clearDrawing: () => void
+  toggleNodeSelected: (nodeId: string) => void
+  /** update any part of the drawingCtx (colour/width/isDrawing etc.) */
+  setDrawingContext: (ctx: Partial<DrawingContextState>) => void
 }
 
 export type FolderContextType = {
