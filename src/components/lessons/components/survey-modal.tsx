@@ -1,35 +1,45 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent } from "@/components/ui/card"
 import { ClipboardList, ArrowRight, Gift, Loader2 } from "lucide-react"
-import { saveSurveyResponse, checkSurveyCompletion } from "@/lib/actions/survey-actions"
+import {
+  saveSurveyResponse,
+  checkSurveyCompletion,
+} from "@/lib/actions/survey-actions"
 
 interface SurveyData {
-  // Cognitive Load
+  /* Cognitive load */
   mentalEffort: string
   difficulty: string
   concentration: string
 
-  // System Effectiveness
+  /* System effectiveness */
   misconceptionFocus: string
   remediation: string
   learningHelp: string
+  visualHelpTiming: string
+  visualHelpClarity: string
 
-  // Overall Experience
+  /* Overall experience */
   satisfaction: string
   recommendation: string
 
-  // Open-ended feedback
+  /* Open-ended + interview */
   improvements: string
   additionalComments: string
+  interviewEmail: string
 }
 
 interface SurveyModalProps {
@@ -41,131 +51,87 @@ interface SurveyModalProps {
   onComplete: () => void
 }
 
-export function SurveyModal({ 
-  isOpen, 
-  onClose, 
+const EMPTY_FORM: SurveyData = {
+  mentalEffort: "",
+  difficulty: "",
+  concentration: "",
+  misconceptionFocus: "",
+  remediation: "",
+  learningHelp: "",
+  visualHelpTiming: "",
+  visualHelpClarity: "",
+  satisfaction: "",
+  recommendation: "",
+  improvements: "",
+  additionalComments: "",
+  interviewEmail: "",
+}
+
+export function SurveyModal({
+  isOpen,
+  onClose,
   sessionId,
   lessonId,
-  onComplete 
+  onComplete,
 }: SurveyModalProps) {
-  const [formData, setFormData] = useState<SurveyData>({
-    mentalEffort: "",
-    difficulty: "",
-    concentration: "",
-    misconceptionFocus: "",
-    remediation: "",
-    learningHelp: "",
-    satisfaction: "",
-    recommendation: "",
-    improvements: "",
-    additionalComments: "",
-  })
-
+  const [formData, setFormData] = useState<SurveyData>(EMPTY_FORM)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [isCheckingCompletion, setIsCheckingCompletion] = useState(true)
 
-  // Check if survey is already completed when modal opens
   useEffect(() => {
-    const checkAndSkip = async () => {
+    const check = async () => {
       if (!isOpen || !lessonId) {
         setIsCheckingCompletion(false)
         return
       }
-
-      setIsCheckingCompletion(true)
-      
       try {
-        console.log('🔍 Checking survey completion...')
-        const result = await checkSurveyCompletion(lessonId)
-        
-        if (result.completed) {
-          console.log('✅ Survey already completed, skipping to prize wheel')
-          // Survey already completed, skip 
+        const res = await checkSurveyCompletion(lessonId)
+        if (res.completed) {
           onComplete()
           onClose()
+          return
         }
-      } catch (error) {
-        console.error('❌ Error checking survey completion:', error)
-        // If check fails, just proceed with survey
+      } catch (e) {
+        console.error("[Survey] completion check failed", e)
       } finally {
         setIsCheckingCompletion(false)
       }
     }
-
-    checkAndSkip()
+    check()
   }, [isOpen, lessonId, onComplete, onClose])
 
-  const handleInputChange = (field: keyof SurveyData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    setSaveError(null) // Clear error when user types
+  const handleInput = (field: keyof SurveyData, v: string) => {
+    setFormData((prev) => ({ ...prev, [field]: v }))
+    setSaveError(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!sessionId || !lessonId) return
     setIsSubmitting(true)
     setSaveError(null)
-
     try {
-      // Save to database if sessionId and lessonId are provided
-      if (sessionId && lessonId) {
-        const result = await saveSurveyResponse(sessionId, lessonId, formData)
-        
-        if (!result.success) {
-          setSaveError(result.error || "Failed to save survey")
-          setIsSubmitting(false)
-          return
-        }
-
-        console.log('✅ Survey saved successfully!', result.data)
-        if (result.data?.hasInterviewEmail) {
-          console.log('📧 User provided email for interview')
-        }
+      const res = await saveSurveyResponse(sessionId, lessonId, formData)
+      if (!res.success) {
+        setSaveError(res.error || "Failed to save survey")
+        setIsSubmitting(false)
+        return
       }
-
-      // Reset form
-      setFormData({
-        mentalEffort: "",
-        difficulty: "",
-        concentration: "",
-        misconceptionFocus: "",
-        remediation: "",
-        learningHelp: "",
-        satisfaction: "",
-        recommendation: "",
-        improvements: "",
-        additionalComments: "",
-      })
-
+      setFormData(EMPTY_FORM)
       setIsSubmitting(false)
-      
-      // Call parent completion handler
       onComplete()
       onClose()
-
-    } catch (error) {
-      console.error('Error submitting survey:', error)
-      setSaveError('An unexpected error occurred. Please try again.')
+    } catch (err) {
+      console.error("[Survey] submit error", err)
+      setSaveError("An unexpected error occurred. Please try again.")
       setIsSubmitting(false)
     }
   }
 
   const handleClose = () => {
-    if (isSubmitting || isCheckingCompletion) return // Prevent closing while saving or checking
-
-    // Reset form and errors when closing
-    setFormData({
-      mentalEffort: "",
-      difficulty: "",
-      concentration: "",
-      misconceptionFocus: "",
-      remediation: "",
-      learningHelp: "",
-      satisfaction: "",
-      recommendation: "",
-      improvements: "",
-      additionalComments: "",
-    })
+    if (isSubmitting || isCheckingCompletion) return
+    setFormData(EMPTY_FORM)
     setSaveError(null)
     onClose()
   }
@@ -175,330 +141,248 @@ export function SurveyModal({
     formData.difficulty &&
     formData.misconceptionFocus &&
     formData.remediation &&
-    formData.learningHelp
+    formData.learningHelp &&
+    formData.visualHelpTiming &&
+    formData.visualHelpClarity
 
-  const likertScale = [
+  const likert = [
     { value: "1", label: "Strongly Disagree" },
     { value: "2", label: "Disagree" },
     { value: "3", label: "Neutral" },
     { value: "4", label: "Agree" },
     { value: "5", label: "Strongly Agree" },
-  ]
+  ] as const
 
-  const effortScale = [
+  const effort = [
     { value: "1", label: "Very Low" },
     { value: "2", label: "Low" },
     { value: "3", label: "Moderate" },
     { value: "4", label: "High" },
     { value: "5", label: "Very High" },
-  ]
+  ] as const
 
-  // Show loading state while checking if survey is already completed
-  if (isCheckingCompletion && isOpen) {
+  if (isCheckingCompletion && isOpen)
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-md bg-white border-2 border-black">
           <DialogHeader>
             <DialogTitle className="sr-only">Loading Survey</DialogTitle>
           </DialogHeader>
-          <div className="p-8">
-            <div className="text-center space-y-4">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Preparing Your Survey</h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Almost done! We&apos;re preparing a quick survey for you.
-                </p>
-              </div>
+          <div className="p-8 text-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">
+                Preparing your survey…
+              </h3>
+              <p className="text-sm text-muted-foreground mt-2">
+                Almost done!
+              </p>
             </div>
           </div>
         </DialogContent>
       </Dialog>
     )
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white border-2 border-black">
+        {/* --- header --- */}
         <DialogHeader className="border-b border-gray-200 pb-4">
           <div className="flex items-center gap-3">
             <ClipboardList className="w-6 h-6 text-black" />
             <div className="flex-1">
-              <DialogTitle className="text-2xl font-bold text-black">Learning Experience Survey</DialogTitle>
-              <p className="text-gray-600 mt-1">Help us improve your learning experience with Sophia</p>
+              <DialogTitle className="text-2xl font-bold text-black">
+                Learning Experience Survey
+              </DialogTitle>
+              <p className="text-gray-600 mt-1">
+                Help us improve your learning experience with Sophia
+              </p>
             </div>
           </div>
         </DialogHeader>
 
+        {/* --- form --- */}
         <form onSubmit={handleSubmit} className="space-y-8 pt-4">
-          {/* Error Display */}
+          {/* error */}
           {saveError && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-700 text-sm">{saveError}</p>
             </div>
           )}
 
-          {/* Prize Incentive Banner */}
+          {/* banner */}
           <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Gift className="w-8 h-8 text-purple-600" />
-                <div>
-                  <h3 className="text-lg font-semibold text-purple-800">🎉 You&apos;re Almost There!</h3>
-                  <p className="text-sm text-purple-700 mt-1">
-                    Complete this quick survey to unlock a spin of the <span className="font-semibold">prize wheel</span>! 
-                    Your feedback helps us make learning better for everyone.
-                  </p>
-                </div>
+            <CardContent className="p-4 flex items-center gap-3">
+              <Gift className="w-8 h-8 text-purple-600" />
+              <div>
+                <h3 className="text-lg font-semibold text-purple-800">
+                  🎉 You’re Almost There!
+                </h3>
+                <p className="text-sm text-purple-700 mt-1">
+                  Complete this quick survey to unlock a spin of the{" "}
+                  <span className="font-semibold">prize wheel</span>!
+                </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Cognitive Load Section */}
+          {/* ---- Cognitive Load ---- */}
           <Card className="border-2 border-gray-200">
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
+              <h3 className="text-lg font-semibold mb-4 border-b pb-2">
                 Cognitive Load & Mental Effort
               </h3>
 
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    How much mental effort did you invest in learning this concept? *
-                  </Label>
-                  <RadioGroup
-                    value={formData.mentalEffort}
-                    onValueChange={(value) => handleInputChange("mentalEffort", value)}
-                  >
-                    {effortScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`effort-${option.value}`} />
-                        <Label htmlFor={`effort-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
+              {/* mental effort */}
+              <ScaleQuestion
+                label="How much mental effort did you invest in learning this concept? *"
+                field="mentalEffort"
+                value={formData.mentalEffort}
+                scale={effort}
+                onChange={handleInput}
+              />
 
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    How difficult was it to understand this concept? *
-                  </Label>
-                  <RadioGroup
-                    value={formData.difficulty}
-                    onValueChange={(value) => handleInputChange("difficulty", value)}
-                  >
-                    {effortScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`difficulty-${option.value}`} />
-                        <Label htmlFor={`difficulty-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
+              {/* difficulty */}
+              <ScaleQuestion
+                label="How difficult was it to understand this concept? *"
+                field="difficulty"
+                value={formData.difficulty}
+                scale={effort}
+                onChange={handleInput}
+              />
 
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    How well were you able to concentrate during the lesson?
-                  </Label>
-                  <RadioGroup
-                    value={formData.concentration}
-                    onValueChange={(value) => handleInputChange("concentration", value)}
-                  >
-                    {effortScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`concentration-${option.value}`} />
-                        <Label htmlFor={`concentration-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-              </div>
+              {/* concentration */}
+              <ScaleQuestion
+                label="How well were you able to concentrate during the lesson?"
+                field="concentration"
+                value={formData.concentration}
+                scale={effort}
+                onChange={handleInput}
+              />
             </CardContent>
           </Card>
 
-          {/* System Effectiveness Section */}
+          {/* ---- System Effectiveness ---- */}
           <Card className="border-2 border-gray-200">
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
+              <h3 className="text-lg font-semibold mb-4 border-b pb-2">
                 System Effectiveness
               </h3>
 
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    How well did the system focus on your misconceptions? *
-                  </Label>
-                  <RadioGroup
-                    value={formData.misconceptionFocus}
-                    onValueChange={(value) => handleInputChange("misconceptionFocus", value)}
-                  >
-                    {likertScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`misconception-${option.value}`} />
-                        <Label htmlFor={`misconception-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
+              <ScaleQuestion
+                label="The system focused on my misconceptions. *"
+                field="misconceptionFocus"
+                value={formData.misconceptionFocus}
+                scale={likert}
+                onChange={handleInput}
+              />
 
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    How effectively did the system help remediate your understanding? *
-                  </Label>
-                  <RadioGroup
-                    value={formData.remediation}
-                    onValueChange={(value) => handleInputChange("remediation", value)}
-                  >
-                    {likertScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`remediation-${option.value}`} />
-                        <Label htmlFor={`remediation-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
+              <ScaleQuestion
+                label="The system helped remediate my understanding effectively. *"
+                field="remediation"
+                value={formData.remediation}
+                scale={likert}
+                onChange={handleInput}
+              />
 
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Did the system help you learn this concept effectively? *
-                  </Label>
-                  <RadioGroup
-                    value={formData.learningHelp}
-                    onValueChange={(value) => handleInputChange("learningHelp", value)}
-                  >
-                    {likertScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`learning-${option.value}`} />
-                        <Label htmlFor={`learning-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-              </div>
+              <ScaleQuestion
+                label="Overall, the system helped me learn this concept. *"
+                field="learningHelp"
+                value={formData.learningHelp}
+                scale={likert}
+                onChange={handleInput}
+              />
+
+              <ScaleQuestion
+                label="The sketch/visualization appeared at a helpful moment. *"
+                field="visualHelpTiming"
+                value={formData.visualHelpTiming}
+                scale={likert}
+                onChange={handleInput}
+              />
+
+              <ScaleQuestion
+                label="The sketch/visualization made the concept clearer. *"
+                field="visualHelpClarity"
+                value={formData.visualHelpClarity}
+                scale={likert}
+                onChange={handleInput}
+              />
             </CardContent>
           </Card>
 
-          {/* Overall Experience Section */}
+          {/* ---- Overall Experience ---- */}
           <Card className="border-2 border-gray-200">
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
+              <h3 className="text-lg font-semibold mb-4 border-b pb-2">
                 Overall Experience
               </h3>
 
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    How satisfied are you with your learning experience?
-                  </Label>
-                  <RadioGroup
-                    value={formData.satisfaction}
-                    onValueChange={(value) => handleInputChange("satisfaction", value)}
-                  >
-                    {likertScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`satisfaction-${option.value}`} />
-                        <Label htmlFor={`satisfaction-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
+              <ScaleQuestion
+                label="How satisfied are you with your learning experience?"
+                field="satisfaction"
+                value={formData.satisfaction}
+                scale={likert}
+                onChange={handleInput}
+              />
 
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Would you recommend this learning system to other students?
-                  </Label>
-                  <RadioGroup
-                    value={formData.recommendation}
-                    onValueChange={(value) => handleInputChange("recommendation", value)}
-                  >
-                    {likertScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`recommendation-${option.value}`} />
-                        <Label htmlFor={`recommendation-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-              </div>
+              <ScaleQuestion
+                label="Would you recommend this learning system to other students?"
+                field="recommendation"
+                value={formData.recommendation}
+                scale={likert}
+                onChange={handleInput}
+              />
             </CardContent>
           </Card>
 
-          {/* Additional Feedback Section */}
+          {/* ---- Additional feedback ---- */}
           <Card className="border-2 border-gray-200">
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
+              <h3 className="text-lg font-semibold mb-4 border-b pb-2">
                 Additional Feedback
               </h3>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="additionalComments" className="text-sm font-medium text-gray-700">
-                    Any additional comments about your learning experience?
-                  </Label>
-                  <Textarea
-                    id="additionalComments"
-                    placeholder="Share any other thoughts or feedback..."
-                    value={formData.additionalComments}
-                    onChange={(e) => handleInputChange("additionalComments", e.target.value)}
-                    className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
-                    rows={3}
-                  />
-                </div>
-              </div>
+              <TextareaField
+                id="additionalComments"
+                label="Any additional comments about your learning experience?"
+                rows={3}
+                value={formData.additionalComments}
+                onChange={(v) => handleInput("additionalComments", v)}
+              />
             </CardContent>
           </Card>
 
-          {/* Interview Opportunity Section */}
+          {/* ---- interview ---- */}
           <Card className="border-2 border-gray-200">
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
-                Interview Opportunity - $10 compensation 
+              <h3 className="text-lg font-semibold mb-4 border-b pb-2">
+                Interview Opportunity – $10 compensation
               </h3>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-xs text-gray-600 mb-2">
-                    We&apos;d love to hear more about your learning experience. Please share your email below if you&apos;re interested in participating in a brief 30-minute interview for $10 compensation.
-                  </p>
-                  <Textarea
-                    id="interview"
-                    placeholder="Please enter your email if you're interested"
-                    value={formData.improvements}
-                    onChange={(e) => handleInputChange("improvements", e.target.value)}
-                    className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
-                    rows={2}
-                  />
-                </div>
-              </div>
+              <p className="text-xs text-gray-600 mb-2">
+                We’d love to hear more! Drop your email if you’re interested in
+                a 30-minute interview.
+              </p>
+              <TextareaField
+                id="interviewEmail"
+                label="Email (optional)"
+                rows={2}
+                value={formData.interviewEmail}
+                onChange={(v) => handleInput("interviewEmail", v)}
+              />
             </CardContent>
           </Card>
 
-          {/* Submit Button */}
+          {/* ---- submit ---- */}
           <div className="pt-4 border-t border-gray-200 space-y-4">
             <Button
               type="submit"
               disabled={!isFormValid || isSubmitting}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 py-6 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all flex items-center justify-center gap-2 py-6 text-lg font-semibold disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Saving Survey...
+                  Saving…
                 </>
               ) : (
                 <>
@@ -508,10 +392,8 @@ export function SurveyModal({
                 </>
               )}
             </Button>
-
             <p className="text-xs text-gray-500 text-center">
               Thank you for your feedback!
-              <br />
             </p>
           </div>
         </form>
@@ -519,3 +401,60 @@ export function SurveyModal({
     </Dialog>
   )
 }
+
+interface ScaleProps {
+  label: string
+  field: keyof SurveyData
+  value: string
+  scale: readonly { value: string; label: string }[]
+  onChange: (field: keyof SurveyData, v: string) => void
+}
+const ScaleQuestion: React.FC<ScaleProps> = ({
+  label,
+  field,
+  value,
+  scale,
+  onChange,
+}) => (
+  <div className="space-y-3">
+    <Label className="text-sm font-medium text-gray-700">{label}</Label>
+    <RadioGroup value={value} onValueChange={(v) => onChange(field, v)}>
+      {scale.map((opt) => (
+        <div key={opt.value} className="flex items-center space-x-2">
+          <RadioGroupItem value={opt.value} id={`${field}-${opt.value}`} />
+          <Label htmlFor={`${field}-${opt.value}`} className="text-sm">
+            {opt.value} – {opt.label}
+          </Label>
+        </div>
+      ))}
+    </RadioGroup>
+  </div>
+)
+
+interface TextFieldProps {
+  id: string
+  label: string
+  rows: number
+  value: string
+  onChange: (v: string) => void
+}
+const TextareaField: React.FC<TextFieldProps> = ({
+  id,
+  label,
+  rows,
+  value,
+  onChange,
+}) => (
+  <div className="space-y-2">
+    <Label htmlFor={id} className="text-sm font-medium text-gray-700">
+      {label}
+    </Label>
+    <Textarea
+      id={id}
+      rows={rows}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="border-2 border-gray-200 focus:border-black resize-none"
+    />
+  </div>
+)
