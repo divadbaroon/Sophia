@@ -44,7 +44,7 @@ export interface TaskData {
   methodTemplates: Record<string, string>
   testCases: Record<string, TestCase[]>
   conceptMappings: Record<number, string[]>
-  conceptMap?: ConceptMap  
+  conceptMap?: ConceptMap 
   system: string
 }
 
@@ -56,7 +56,7 @@ export interface FileContextType {
   errorContent: string
   setErrorContent: React.Dispatch<React.SetStateAction<string>>
   executionOutput: string
-  updateExecutionOutput: (output: string) => void
+  updateExecutionOutput: (output: string) => Promise<void> 
   isSaved: () => boolean
   highlightedText: string
   updateHighlightedText: (text: string) => void
@@ -82,38 +82,43 @@ export interface FileContextType {
   getCurrentMethodTemplate: () => string
   getAllMethodTemplates: () => Record<string, string>
 
-  conversationHistory: ConversationMessage[];
-  updateConversationHistory: (newHistory: ConversationMessage[]) => void;
-  conceptMap: any; 
-  updateConceptMap: (newConceptMap: any) => void;
+  // Conversation and concept maps
+  conversationHistory: ConversationMessage[]
+  updateConversationHistory: (newHistory: ConversationMessage[]) => Promise<void> 
+  conceptMap: any 
+  updateConceptMap: (newConceptMap: any) => void
 
-  showReport: boolean;
-  setShowReport: React.Dispatch<React.SetStateAction<boolean>>;
+  showReport: boolean
+  setShowReport: React.Dispatch<React.SetStateAction<boolean>>
 
-  pivotQueue?: Array<{concept: string, category: string, confidence: number}> | null;
-  updatePivotQueue?: (queue: Array<{concept: string, category: string, confidence: number}>) => void;
+  pivotQueue?: Array<{concept: string, category: string, confidence: number}> | null
+  updatePivotQueue?: (queue: Array<{concept: string, category: string, confidence: number}>) => void
 
-  conceptMapInitializing: boolean;
-  updateConceptMapInitializing: (isInitializing: boolean) => void;
+  conceptMapInitializing: boolean
+  updateConceptMapInitializing: (isInitializing: boolean) => void
 
   // Updated task completion methods with database integration
-  markTaskCompleted: (taskIndex: number, testCasesPassed?: number, totalTestCases?: number) => Promise<void>;
-  recordAttempt: (taskIndex: number, testCasesPassed: number, totalTestCases: number) => Promise<void>;
-  isTaskCompleted: (taskIndex: number) => boolean;
-  isTaskUnlocked: (taskIndex: number) => boolean;
-  canGoToNext: () => boolean;
-  getCompletionStats: () => { completed: number; total: number };
+  markTaskCompleted: (taskIndex: number, testCasesPassed?: number, totalTestCases?: number) => Promise<void>
+  recordAttempt: (taskIndex: number, testCasesPassed: number, totalTestCases: number) => Promise<void>
+  isTaskCompleted: (taskIndex: number) => boolean
+  isTaskUnlocked: (taskIndex: number) => boolean
+  canGoToNext: () => boolean
+  getCompletionStats: () => { completed: number; total: number }
   
-  // New loading state for task progress
-  isLoadingTaskProgress: boolean;
+  // Loading states
+  isLoadingTaskProgress: boolean
 
   // Code loading and management
   codeLoading: boolean
   methodsCode: Record<string, string>
   updateMethodsCode: (methodId: string, code: string) => void
 
+  // Quiz state
   quizLoading: boolean
   quizData: any
+
+  isLoadingConceptMaps: boolean
+  conceptMapsPerMethod: Record<string, any>
 }
 
 export type FolderContextType = {
@@ -130,6 +135,7 @@ export interface User {
 }
 
 export interface TaskProps {
+  id: string 
   title: string
   difficulty: "Easy" | "Medium" | "Hard"
   description: string
