@@ -47,13 +47,12 @@ export const WorkspaceLayout: React.FC = () => {
   const [consentProcessing, setConsentProcessing] = useState(false)
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false)
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false)
+  const [showKnowledgeRadar, setShowKnowledgeRadar] = useState(false)
   const [terminalHeight, setTerminalHeight] = useState(50)
 
   // Drawing state to track drawing mode for button styling
   const [isDrawingMode, setIsDrawingMode] = useState(false)
   
-  // Visualization state
-
   // Test case monitoring state
   const [allTestsPassed, setAllTestsPassed] = useState(false)
   const [shouldFlash, setShouldFlash] = useState(false)
@@ -132,7 +131,7 @@ export const WorkspaceLayout: React.FC = () => {
     }
   }, [])
 
-  // Flash toggle effect - THIS IS THE MISSING PIECE!
+  // Flash toggle effect
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null
     
@@ -221,8 +220,8 @@ export const WorkspaceLayout: React.FC = () => {
     codeEditorRef.current?.clearDrawing()
   }
 
-  // Determine if buttons should be hidden
-  const shouldHideButtons = isQuizModalOpen || isSurveyModalOpen
+  // Determine if buttons should be hidden - now includes knowledge radar
+  const shouldHideButtons = isQuizModalOpen || isSurveyModalOpen || showKnowledgeRadar
 
   // Show global loading state
   if (isLoading) {
@@ -278,10 +277,9 @@ export const WorkspaceLayout: React.FC = () => {
 
       <main className={`flex flex-col h-screen ${showConsentModal ? 'pointer-events-none opacity-50' : ''}`}>
         <div className="flex-1 flex relative">
-          {/* Drawing Controls - Show when quiz/survey are not open */}
+          {/* Drawing Controls - Hide when quiz/survey/knowledge radar are open */}
           {!shouldHideButtons && (
             <div className="absolute top-3.5 right-[16rem] z-[9999] flex gap-3 mt-2">
-             
               {/* Draw Button */}
               <Button
                 variant={isDrawingMode ? "default" : "outline"}
@@ -356,6 +354,8 @@ export const WorkspaceLayout: React.FC = () => {
                 setIsQuizModalOpen={setIsQuizModalOpen}
                 isSurveyModalOpen={isSurveyModalOpen}
                 setIsSurveyModalOpen={setIsSurveyModalOpen}
+                showKnowledgeRadar={showKnowledgeRadar}
+                setShowKnowledgeRadar={setShowKnowledgeRadar}
               />
             </ResizablePanel>
 
