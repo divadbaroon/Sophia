@@ -236,21 +236,24 @@ The total response should be around 1 paragraph.
       const taskTitle = taskInfo?.title || task.method_title;
       
       Object.entries(task.concept_data).forEach(([conceptName, conceptData]) => {
-        // Add to radar data
-        radarData.push({
-          subject: conceptName,
-          value: Number.parseFloat((conceptData.understandingLevel * 100).toFixed(1)),
-          category: taskTitle,
-          fullMark: 100,
-          knowledgeState: conceptData,
-        });
+        // Only include concepts with confidence above 0.6
+        if (conceptData.confidenceInAssessment > 0.6) {
+          // Add to radar data
+          radarData.push({
+            subject: conceptName,
+            value: Number.parseFloat((conceptData.understandingLevel * 100).toFixed(1)),
+            category: taskTitle,
+            fullMark: 100,
+            knowledgeState: conceptData,
+          });
 
-        // Calculate category averages
-        if (!categoryAverages[taskTitle]) {
-          categoryAverages[taskTitle] = { sum: 0, count: 0 };
+          // Calculate category averages
+          if (!categoryAverages[taskTitle]) {
+            categoryAverages[taskTitle] = { sum: 0, count: 0 };
+          }
+          categoryAverages[taskTitle].sum += conceptData.understandingLevel;
+          categoryAverages[taskTitle].count += 1;
         }
-        categoryAverages[taskTitle].sum += conceptData.understandingLevel;
-        categoryAverages[taskTitle].count += 1;
       });
     });
 
@@ -376,7 +379,7 @@ The total response should be around 1 paragraph.
 
   const { radarData } = transformDataForRadar();
 
-  // Sort skills for development areas
+  // Sort skills for development areas - only from filtered data
   const developmentAreas = [...radarData]
     .sort((a, b) => a.value - b.value)
     .slice(0, 3);
@@ -434,69 +437,67 @@ The total response should be around 1 paragraph.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Detailed Skills Chart */}
-            <Card className="shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-800">
-              <CardHeader className="items-center pb-4">
-                <CardTitle className="text-xl text-center">
-                  Detailed Concept Assessment
-                </CardTitle>
-                <CardDescription>
-                  Individual concept proficiency levels
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pb-0">
-                <ChartContainer
-                  config={detailedConfig}
-                  className="mx-auto max-h-[350px]"
-                >
-                  <RadarChart data={radarData}>
-                    <ChartTooltip
-                      cursor={false}
-                      content={<CustomTooltip />}
-                      trigger="click"
-                    />
-                    <PolarGrid className="fill-[--color-proficiency] opacity-20" />
-                    <PolarAngleAxis
-                      dataKey="subject"
-                      tick={{ fill: "currentColor", fontSize: 11 }}
-                    />
-                    <PolarRadiusAxis
-                      domain={[0, 100]}
-                      tick={{ fill: "currentColor", fontSize: 10 }}
-                    />
-                    <Radar
-                      dataKey="value"
-                      name="Skill Proficiency"
-                      fill="var(--color-proficiency)"
-                      fillOpacity={0.6}
-                      stroke="var(--color-proficiency)"
-                      strokeWidth={2}
-                      dot={{
-                        r: 4,
-                        fill: "var(--color-proficiency)",
-                        cursor: "pointer",
-                        strokeWidth: 0,
-                      }}
-                      activeDot={{
-                        r: 6,
-                        strokeWidth: 1,
-                        stroke: "#fff",
-                      }}
-                    />
-                  </RadarChart>
-                </ChartContainer>
-              </CardContent>
-              <CardFooter className="flex-col gap-2 text-sm">
-                <div className="flex items-center gap-2 leading-none text-muted-foreground">
-                  last updated: {new Date().toLocaleDateString()}
-                </div>
-              </CardFooter>
-            </Card>
-          </div>
+          {/* Full Width Radar Chart */}
+          <Card className="shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-800 mb-6">
+            <CardHeader className="items-center pb-4">
+              <CardTitle className="text-xl text-center">
+                Detailed Concept Assessment
+              </CardTitle>
+              <CardDescription>
+                Your personalized proficiency levels
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pb-0">
+              <ChartContainer
+                config={detailedConfig}
+                className="mx-auto w-full max-h-[500px]"
+              >
+                <RadarChart data={radarData} width={800} height={500}>
+                  <ChartTooltip
+                    cursor={false}
+                    content={<CustomTooltip />}
+                    trigger="click"
+                  />
+                  <PolarGrid className="fill-[--color-proficiency] opacity-20" />
+                  <PolarAngleAxis
+                    dataKey="subject"
+                    tick={{ fill: "currentColor", fontSize: 11 }}
+                  />
+                  <PolarRadiusAxis
+                    domain={[0, 100]}
+                    tick={{ fill: "currentColor", fontSize: 10 }}
+                  />
+                  <Radar
+                    dataKey="value"
+                    name="Skill Proficiency"
+                    fill="var(--color-proficiency)"
+                    fillOpacity={0.6}
+                    stroke="var(--color-proficiency)"
+                    strokeWidth={2}
+                    dot={{
+                      r: 4,
+                      fill: "var(--color-proficiency)",
+                      cursor: "pointer",
+                      strokeWidth: 0,
+                    }}
+                    activeDot={{
+                      r: 6,
+                      strokeWidth: 1,
+                      stroke: "#fff",
+                    }}
+                  />
+                </RadarChart>
+              </ChartContainer>
+            </CardContent>
+            <CardFooter className="flex-col gap-2 text-sm">
+              <div className="flex items-center gap-2 leading-none text-muted-foreground">
+                last updated: {new Date().toLocaleDateString()}
+              </div>
+            </CardFooter>
+          </Card>
 
           {/* Text Overview Section */}
-          <Card className="mt-6 shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-800">
+          <Card className="shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-800">
             <CardHeader className="pb-4">
               <CardTitle className="text-xl flex items-center gap-2">
                 Skills Assessment Overview
@@ -563,14 +564,14 @@ The total response should be around 1 paragraph.
             </CardContent>
           </Card>
 
-          {/* Skill Breakdown Table */}
+          {/* Skill Breakdown Table - Only show high confidence concepts */}
           <Card className="mt-6 shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-800">
             <CardHeader className="items-center pb-4">
               <CardTitle className="text-xl flex items-center gap-2">
-                Concept Knowledge Breakdown
+                High-Confidence Concept Breakdown
               </CardTitle>
               <CardDescription>
-                Detailed view of all assessed concepts with reasoning, system confidence, and update timestamps
+                Detailed view of concepts with system confidence above 60%
               </CardDescription>
             </CardHeader>
             <CardContent>
