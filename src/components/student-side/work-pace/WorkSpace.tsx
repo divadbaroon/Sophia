@@ -1,13 +1,10 @@
 'use client'
-
 import React, { useState, useEffect, useRef } from "react"
-
 import { Card } from "@/components/ui/card"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { HelpCircle, Pencil, Trash2 } from "lucide-react"
-
 import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader"
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
 import CodeEditor from "@/components/student-side/code-editor/CodeEditor"
@@ -17,18 +14,14 @@ import SophiaWrapper from "@/components/student-side/voice-chat/wrapper/SophiaWr
 import { DeepgramTranscriber } from "@/components/student-side/voice-chat/stt/DeepgramTranscriber"
 import { trackSophiaInteraction } from "@/lib/actions/sophia-button-interaction-actions"
 import { useSophiaBrain } from "@/components/student-side/voice-chat/hooks/useSophiaBrain"
-
 import { useFile } from "@/lib/context/FileContext" 
-
 import { CodeEditorRef } from "@/types"
 
 const CONSENT_STORAGE_KEY = 'sophia_user_consent'
 
 export const WorkspaceLayout: React.FC = () => {
   const { startTranscription, stopTranscription } = DeepgramTranscriber()
-
   const { stopAudio } = useSophiaBrain() 
-
   const { 
     sessionId, 
     lessonId, 
@@ -49,7 +42,7 @@ export const WorkspaceLayout: React.FC = () => {
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false)
   const [showKnowledgeRadar, setShowKnowledgeRadar] = useState(false)
   const [terminalHeight, setTerminalHeight] = useState(50)
-
+  
   // Drawing state to track drawing mode for button styling
   const [isDrawingMode, setIsDrawingMode] = useState(false)
   
@@ -57,7 +50,10 @@ export const WorkspaceLayout: React.FC = () => {
   const [allTestsPassed, setAllTestsPassed] = useState(false)
   const [shouldFlash, setShouldFlash] = useState(false)
   const [flashToggle, setFlashToggle] = useState(false)
-
+  
+  // Initialization tooltip state
+  const [showInitTooltip, setShowInitTooltip] = useState(false)
+  
   const codeEditorRef = useRef<CodeEditorRef>(null)
 
   // Check if essential data is loaded
@@ -66,6 +62,25 @@ export const WorkspaceLayout: React.FC = () => {
   // Get current task info
   const currentTask = sessionData?.tasks?.[currentMethodIndex]
   const currentTaskTitle = currentTask?.title || 'Task'
+
+  // Initialize tooltip on component mount (after loading is complete)
+  useEffect(() => {
+    if (!isLoading && !showConsentModal) {
+      // Show the tooltip after a short delay to ensure everything is rendered
+      const timer = setTimeout(() => {
+        setShowInitTooltip(true)
+        
+        // Auto-hide the tooltip after 5 seconds
+        const hideTimer = setTimeout(() => {
+          setShowInitTooltip(false)
+        }, 5000)
+        
+        return () => clearTimeout(hideTimer)
+      }, 500)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [isLoading, showConsentModal])
 
   // Monitor execution output for test results
   useEffect(() => {
@@ -149,6 +164,9 @@ export const WorkspaceLayout: React.FC = () => {
   }, [shouldFlash])
 
   const onToggleSophia = () => {
+    // Hide the init tooltip when user interacts with the button
+    setShowInitTooltip(false)
+    
     if (isQuestionPanelVisible) {
       // Closing Sophia
       stopTranscription()
@@ -308,10 +326,10 @@ export const WorkspaceLayout: React.FC = () => {
             </div>
           )}
 
-          {/* Ask Sophia button with tooltip - now with conditional flashing */}
+          {/* Ask Sophia button with tooltip - now with conditional flashing and initialization tooltip */}
           {!shouldHideButtons && (
             <TooltipProvider>
-              <Tooltip>
+              <Tooltip open={showInitTooltip} onOpenChange={setShowInitTooltip}>
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
@@ -333,13 +351,15 @@ export const WorkspaceLayout: React.FC = () => {
                     {isQuestionPanelVisible ? 'Close Sophia' : 'Ask Sophia'}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="bottom" className="max-w-xs">
                   <p>
-                    {allTestsPassed && !isTaskCompleted(currentMethodIndex) 
-                      ? '🎉 All tests passed! Click to discuss with Sophia' 
-                      : isQuestionPanelVisible 
-                        ? 'Close your coding tutor' 
-                        : 'Get help from Sophia, your coding tutor'
+                    {showInitTooltip 
+                      ? '💡 Click here when you need help or get stuck!'
+                      : allTestsPassed && !isTaskCompleted(currentMethodIndex) 
+                        ? '🎉 All tests passed! Click to discuss with Sophia' 
+                        : isQuestionPanelVisible 
+                          ? 'Close your coding tutor' 
+                          : 'Get help from Sophia, your coding tutor'
                     }
                   </p>
                 </TooltipContent>
@@ -388,6 +408,7 @@ export const WorkspaceLayout: React.FC = () => {
                       const deltaPercent = (deltaY / containerHeight) * 100
                       updateTerminalHeight(startHeight + deltaPercent)
                     }
+
                     const handleMouseUp = () => {
                       document.removeEventListener("mousemove", handleMouseMove)
                       document.removeEventListener("mouseup", handleMouseUp)
