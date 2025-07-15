@@ -325,7 +325,7 @@ export const WorkspaceLayout: React.FC = () => {
                   <Button
                     variant="outline"
                     size="lg"
-                    className="absolute top-3.5 right-16 z-50 flex items-center gap-2"
+                    className="absolute top-3.5 right-16 z-50 flex items-center gap-2 mr-1.5"
                     style={{
                       backgroundColor: shouldFlash && flashToggle ? '#fbbf24' : isQuestionPanelVisible ? 'hsl(var(--secondary))' : 'hsl(var(--background))',
                       borderColor: shouldFlash && flashToggle ? '#f59e0b' : undefined,
