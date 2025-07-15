@@ -11,82 +11,111 @@ interface SophiaConversationalAIProps {
   onClose: () => void
 }
 
+interface ConversationMessage {
+  id: string
+  type: 'user' | 'assistant'
+  content: string
+  timestamp: Date
+}
+
 async function requestMicrophonePermission() {
+  console.log("🎤 Requesting microphone permission...")
   try {
     await navigator.mediaDevices.getUserMedia({ audio: true });
+    console.log("✅ Microphone permission granted")
     return true;
-  } catch {
-    console.error("Microphone permission denied");
+  } catch (error) {
+    console.error("❌ Microphone permission denied:", error);
     return false;
   }
 }
 
 async function getSignedUrl(): Promise<string> {
-  const response = await fetch("/api/elevenlabs/signed-url");
-  if (!response.ok) {
-    throw Error("Failed to get signed url");
+  console.log("🔗 Fetching signed URL...")
+  try {
+    const response = await fetch("/api/elevenlabs/signed-url");
+    if (!response.ok) {
+      throw Error(`HTTP ${response.status}: Failed to get signed url`);
+    }
+    const data = await response.json();
+    console.log("✅ Signed URL obtained:", data.signedUrl ? "URL received" : "No URL");
+    return data.signedUrl;
+  } catch (error) {
+    console.error("❌ Failed to get signed URL:", error);
+    throw error;
   }
-  const data = await response.json();
-  return data.signedUrl;
 }
 
 const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({ onClose }) => {
-  const [conversationHistory, setConversationHistory] = useState<Array<{
-    role: 'user' | 'assistant'
-    content: string
-    timestamp: number
-  }>>([])
   const [error, setError] = useState<string | null>(null)
   const [isInitializing, setIsInitializing] = useState(true)
+  const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([])
+
+  console.log("🔄 SophiaConversationalAI component rendered")
 
   const conversation = useConversation({
     onConnect: () => {
-      console.log("Sophia connected");
+      console.log("🔗 Sophia connected successfully");
       setError(null)
       setIsInitializing(false)
     },
     onDisconnect: () => {
-      console.log("Sophia disconnected");
+      console.log("🔌 Sophia disconnected");
     },
     onError: (errorMessage: string, context?: any) => {
-      console.error("Sophia conversation error:", errorMessage, context);
+      console.error("❌ Sophia conversation error:", errorMessage, context);
       setError(errorMessage || "Connection failed. Please try again.");
       setIsInitializing(false)
     },
     onMessage: (props: any) => {
-      console.log("Sophia message:", props);
+      console.log("📨 Sophia message received:", props);
       
-      // The useConversation hook provides simplified message props
-      // with just the message text and source (user/assistant)
-      const messageEntry = {
-        role: props.source,
-        content: props.message,
-        timestamp: Date.now()
+      // Add message to history
+      const newMessage: ConversationMessage = {
+        id: Date.now().toString(),
+        type: props.source === 'user' ? 'user' : 'assistant',
+        content: props.message || props.text || 'Message received',
+        timestamp: new Date()
       }
       
-      setConversationHistory(prev => [...prev, messageEntry])
+      setConversationHistory(prev => [...prev, newMessage])
     },
+    onModeChange: (mode: any) => {
+      console.log("🔄 Mode changed:", mode);
+    },
+    onStatusChange: (status: any) => {
+      console.log("📊 Status changed:", status);
+    }
   });
 
   // Auto-start conversation when component mounts
   useEffect(() => {
+    console.log("🚀 Starting conversation initialization...")
+    
     const initializeConversation = async () => {
       try {
+        console.log("🔄 Setting initialization state...")
         setIsInitializing(true)
         setError(null)
         
+        console.log("🎤 Checking microphone permissions...")
         const hasPermission = await requestMicrophonePermission();
         if (!hasPermission) {
+          console.log("❌ Microphone permission required, stopping initialization")
           setError("Microphone permission is required to chat with Sophia");
           setIsInitializing(false)
           return;
         }
         
+        console.log("🔗 Getting signed URL...")
         const signedUrl = await getSignedUrl();
+        
+        console.log("🎯 Starting ElevenLabs session...")
         const conversationId = await conversation.startSession({ signedUrl });
-        console.log("Sophia conversation started:", conversationId);
+        console.log("✅ Sophia conversation started with ID:", conversationId);
+        
       } catch (err) {
-        console.error("Failed to start Sophia conversation:", err);
+        console.error("❌ Failed to start Sophia conversation:", err);
         setError("Failed to start conversation. Please try again.");
         setIsInitializing(false)
       }
@@ -96,6 +125,7 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({ onClose
 
     // Cleanup on unmount
     return () => {
+      console.log("🧹 Component unmounting, cleaning up conversation...")
       if (conversation.status === 'connected') {
         conversation.endSession().catch(console.error);
       }
@@ -103,13 +133,16 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({ onClose
   }, []);
 
   const handleClose = useCallback(async () => {
+    console.log("🚪 Closing Sophia conversation...")
     if (conversation.status === 'connected') {
       await conversation.endSession();
+      console.log("✅ Conversation ended")
     }
     onClose();
   }, [conversation, onClose]);
 
   const handleReconnect = useCallback(async () => {
+    console.log("🔄 Attempting to reconnect...")
     try {
       setIsInitializing(true)
       setError(null)
@@ -123,8 +156,9 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({ onClose
       
       const signedUrl = await getSignedUrl();
       await conversation.startSession({ signedUrl });
+      console.log("✅ Reconnection successful")
     } catch (err) {
-      console.error("Failed to reconnect:", err);
+      console.error("❌ Failed to reconnect:", err);
       setError("Failed to reconnect. Please try again.");
       setIsInitializing(false)
     }
@@ -132,17 +166,24 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({ onClose
 
   // Get current state for display
   const getCurrentState = () => {
-    if (error) return 'error'
-    if (isInitializing) return 'initializing'
-    if (conversation.status === 'connected') {
-      return conversation.isSpeaking ? 'speaking' : 'listening'
-    }
-    return 'disconnected'
+    const state = (() => {
+      if (error) return 'error'
+      if (isInitializing) return 'initializing'
+      if (conversation.status === 'connected') {
+        return conversation.isSpeaking ? 'speaking' : 'listening'
+      }
+      return 'disconnected'
+    })();
+    
+    console.log("📊 Current state:", state, "| Conversation status:", conversation.status, "| Is speaking:", conversation.isSpeaking);
+    return state;
   }
 
   const currentState = getCurrentState()
 
+  // Error state
   if (error) {
+    console.log("❌ Rendering error state:", error)
     return (
       <div className="p-6 text-center">
         <div className="flex justify-between items-center mb-4">
@@ -165,6 +206,8 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({ onClose
     )
   }
 
+  console.log("✅ Rendering main UI - Current state:", currentState)
+
   return (
     <div className="p-4">
       <Tabs defaultValue="live" className="w-full">
@@ -176,7 +219,7 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({ onClose
         <TabsContent value="live" className="mt-4">
           <div className="rounded-md border p-4 min-h-[200px]">
             <div className="space-y-4">
-              {/* Status indicator - matching original SophiaWrapper style */}
+              {/* Status indicator */}
               <div className="flex justify-end mb-4">
                 <div className="flex items-center gap-2">
                   {currentState === 'listening' ? (
@@ -222,35 +265,7 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({ onClose
 
         <TabsContent value="history" className="mt-4">
           <div className="rounded-md border p-4 min-h-[200px] max-h-96 overflow-auto">
-            {conversationHistory.length > 0 ? (
-              <div className="space-y-4">
-                {conversationHistory.map((message, index) => (
-                  <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`flex items-start gap-2 max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                      {/* Message content */}
-                      <div className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
-                        {/* Chat bubble */}
-                        <div className={`px-4 py-2 rounded-2xl shadow-sm ${
-                          message.role === 'user' 
-                            ? 'bg-blue-500 text-white rounded-br-md' 
-                            : 'bg-gray-100 text-gray-900 rounded-bl-md border'
-                        }`}>
-                          <p className="text-sm leading-relaxed">{message.content}</p>
-                        </div>
-                        {/* Timestamp */}
-                        <span className="text-xs text-gray-500 mt-1 mr-1">
-                          {new Date(message.timestamp).toLocaleTimeString([], { 
-                            hour: 'numeric', 
-                            minute: '2-digit',
-                            hour12: true 
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
+            {conversationHistory.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
@@ -258,8 +273,39 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({ onClose
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                   </div>
-                  <p className="text-sm mb-1">No conversation yet</p>
-                  <p className="text-xs">Start speaking to chat with Sophia</p>
+                  <p className="text-sm mb-1">No conversation history yet</p>
+                  <p className="text-xs">Start talking to see your conversation here</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  {conversationHistory.map((message) => (
+                    <div
+                      key={message.id}
+                      className={cn(
+                        "p-3 rounded-lg max-w-[85%]",
+                        message.type === 'user'
+                          ? "bg-blue-100 ml-auto text-blue-900"
+                          : "bg-gray-100 mr-auto text-gray-900"
+                      )}
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1">
+                          <div className="text-xs font-medium mb-1">
+                            {message.type === 'user' ? 'You' : 'Sophia'}
+                          </div>
+                          <div className="text-sm">{message.content}</div>
+                        </div>
+                        <div className="text-xs text-muted-foreground whitespace-nowrap">
+                          {message.timestamp.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
