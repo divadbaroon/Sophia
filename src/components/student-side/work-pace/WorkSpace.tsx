@@ -1,4 +1,5 @@
 'use client'
+
 import React, { useState, useEffect, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
@@ -421,7 +422,7 @@ export const WorkspaceLayout: React.FC = () => {
                 {/* Sophia panel */}
                 {isQuestionPanelVisible && (
                   <Card className="absolute top-14 right-4 w-[400px] z-40 shadow-lg mt-6 mr-1">
-                    <SophiaConversationalAI onClose={onCloseSophia} />
+                    <SophiaConversationalAI onClose={onCloseSophia} sessionId={sessionId} classId={lessonId} />
                   </Card>
                 )}
               </div>
