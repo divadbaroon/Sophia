@@ -60,6 +60,11 @@ export const WorkspaceLayout: React.FC = () => {
   const currentTask = sessionData?.tasks?.[currentMethodIndex]
   const currentTaskTitle = currentTask?.title || 'Task'
 
+  // Calculate button positioning based on Sophia button state
+  const sophiaButtonText = isQuestionPanelVisible ? 'Close Sophia' : 'Ask Sophia'
+  const sophiaButtonWidth = isQuestionPanelVisible ? 140 : 130
+  const drawingButtonsRightPosition = sophiaButtonWidth + 61 
+
   // Initialize tooltip on component mount (after loading is complete)
   useEffect(() => {
     if (!isLoading && !showConsentModal) {
@@ -287,9 +292,14 @@ export const WorkspaceLayout: React.FC = () => {
 
       <main className={`flex flex-col h-screen ${showConsentModal ? 'pointer-events-none opacity-50' : ''}`}>
         <div className="flex-1 flex relative">
-          {/* Drawing Controls - Hide when quiz/survey/knowledge radar are open */}
+          {/* Drawing Controls*/}
           {!shouldHideButtons && (
-            <div className="absolute top-3.5 right-[16rem] z-[9999] flex gap-3 mt-2">
+            <div 
+              className="absolute top-3.5 z-[9999] flex gap-3 mt-2 transition-all duration-200 ease-in-out"
+              style={{
+                right: `${52 + drawingButtonsRightPosition}px`
+              }}
+            >
               {/* Draw Button */}
               <Button
                 variant={isDrawingMode ? "default" : "outline"}
@@ -307,7 +317,7 @@ export const WorkspaceLayout: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 font-medium text-red-600 hover:text-red-700 hover:bg-red-50 -mr-3"
+                className="gap-2 font-medium text-red-600 hover:text-red-700 hover:bg-red-50"
                 onClick={handleClearDrawing}
                 disabled={showConsentModal}
                 title="Clear all drawings on code editor"
@@ -318,7 +328,7 @@ export const WorkspaceLayout: React.FC = () => {
             </div>
           )}
 
-          {/* Ask Sophia button with tooltip - now with conditional flashing and initialization tooltip */}
+          {/* Ask Sophia button */}
           {!shouldHideButtons && (
             <TooltipProvider>
               <Tooltip open={showInitTooltip} onOpenChange={setShowInitTooltip}>
@@ -326,12 +336,12 @@ export const WorkspaceLayout: React.FC = () => {
                   <Button
                     variant="outline"
                     size="lg"
-                    className="absolute top-3.5 right-16 z-50 flex items-center gap-2 mr-1.5"
+                    className="absolute top-3.5 right-16 z-50 flex items-center gap-2 mr-1.5 transition-all duration-200 ease-in-out"
                     style={{
                       backgroundColor: shouldFlash && flashToggle ? '#fbbf24' : isQuestionPanelVisible ? 'hsl(var(--secondary))' : 'hsl(var(--background))',
                       borderColor: shouldFlash && flashToggle ? '#f59e0b' : undefined,
                       color: shouldFlash && flashToggle ? '#000' : undefined,
-                      transition: 'all 0.2s ease'
+                      minWidth: 'fit-content'
                     }}
                     onClick={() => {
                       console.log('🔘 Button clicked - shouldFlash:', shouldFlash, 'flashToggle:', flashToggle)
@@ -340,7 +350,7 @@ export const WorkspaceLayout: React.FC = () => {
                     disabled={showConsentModal}
                   >
                     <HelpCircle className="h-5 w-5" />
-                    {isQuestionPanelVisible ? 'Close Sophia' : 'Ask Sophia'}
+                    {sophiaButtonText}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-xs">
