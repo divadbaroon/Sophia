@@ -6,9 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { X } from 'lucide-react'
 import { useConversation } from '@11labs/react'
 import { cn } from '@/lib/utils'
+import { saveMessage } from '@/lib/actions/message-actions'
+import { MessageSave } from '@/types'
 
 interface SophiaConversationalAIProps {
   onClose: () => void
+  sessionId?: string
+  classId?: string
 }
 
 interface ConversationMessage {
@@ -46,12 +50,47 @@ async function getSignedUrl(): Promise<string> {
   }
 }
 
-const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({ onClose }) => {
+const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({ 
+  onClose, 
+  sessionId = `sophia-${Date.now()}`, 
+  classId = 'default-class'
+}) => {
   const [error, setError] = useState<string | null>(null)
   const [isInitializing, setIsInitializing] = useState(true)
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([])
 
-  console.log("🔄 SophiaConversationalAI component rendered")
+  console.log("🔄 SophiaConversationalAI component rendered with props:", {
+    sessionId,
+    classId
+  })
+
+  // Helper function to save message to database
+  const saveMessageToDb = useCallback(async (content: string, role: 'user' | 'assistant') => {
+    try {
+      console.log("💾 Attempting to save message with data:", {
+        sessionId,
+        classId,
+        content: content.substring(0, 50) + '...',
+        role
+      })
+      
+      const messageData: MessageSave = {
+        sessionId,
+        classId,
+        content,
+        role
+      }
+      
+      const result = await saveMessage(messageData)
+      if (!result.success) {
+        console.error('Failed to save message to DB:', result.error)
+      } else {
+        console.log('✅ Message saved to DB successfully')
+      }
+    } catch (error) {
+      console.error('Error saving message:', error)
+    }
+  }, [sessionId, classId])
 
   const conversation = useConversation({
     onConnect: () => {
@@ -70,15 +109,22 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({ onClose
     onMessage: (props: any) => {
       console.log("📨 Sophia message received:", props);
       
+      // Determine message content and role
+      const content = props.message || props.text || props.transcript || 'Message received'
+      const role = props.source === 'user' || props.role === 'user' ? 'user' : 'assistant'
+      
       // Add message to history
       const newMessage: ConversationMessage = {
         id: Date.now().toString(),
-        type: props.source === 'user' ? 'user' : 'assistant',
-        content: props.message || props.text || 'Message received',
+        type: role,
+        content,
         timestamp: new Date()
       }
       
       setConversationHistory(prev => [...prev, newMessage])
+      
+      // Save to database
+      saveMessageToDb(content, role)
     },
     onModeChange: (mode: any) => {
       console.log("🔄 Mode changed:", mode);
@@ -162,7 +208,7 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({ onClose
       setError("Failed to reconnect. Please try again.");
       setIsInitializing(false)
     }
-  }, [conversation]);
+  }, [conversation, saveMessageToDb]);
 
   // Get current state for display
   const getCurrentState = () => {
