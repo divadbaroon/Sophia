@@ -10,18 +10,14 @@ import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
 import CodeEditor from "@/components/student-side/code-editor/CodeEditor"
 import Terminal from "@/components/student-side/terminal/Terminal"
 import ConsentModal from "@/components/student-side/consent/ConsentModal"
-import SophiaWrapper from "@/components/student-side/voice-chat/wrapper/SophiaWrapper"
-import { DeepgramTranscriber } from "@/components/student-side/voice-chat/stt/DeepgramTranscriber"
+import SophiaConversationalAI from '@/components/student-side/voice-chat/elevenlabs/SophiaConversationalAI'
 import { trackSophiaInteraction } from "@/lib/actions/sophia-button-interaction-actions"
-import { useSophiaBrain } from "@/components/student-side/voice-chat/hooks/useSophiaBrain"
 import { useFile } from "@/lib/context/FileContext" 
 import { CodeEditorRef } from "@/types"
 
 const CONSENT_STORAGE_KEY = 'sophia_user_consent'
 
 export const WorkspaceLayout: React.FC = () => {
-  const { startTranscription, stopTranscription } = DeepgramTranscriber()
-  const { stopAudio } = useSophiaBrain() 
   const { 
     sessionId, 
     lessonId, 
@@ -169,8 +165,6 @@ export const WorkspaceLayout: React.FC = () => {
     
     if (isQuestionPanelVisible) {
       // Closing Sophia
-      stopTranscription()
-      stopAudio()
       setIsQuestionPanelVisible(false)
       
       // Track close interaction in background 
@@ -186,7 +180,6 @@ export const WorkspaceLayout: React.FC = () => {
       }
     } else {
       // Opening Sophia
-      startTranscription()
       setIsQuestionPanelVisible(true)
       
       // Track open interaction in background 
@@ -205,8 +198,6 @@ export const WorkspaceLayout: React.FC = () => {
 
   // Close handler 
   const onCloseSophia = () => {
-    stopTranscription()
-    stopAudio()
     setIsQuestionPanelVisible(false)
     
     // Track close interaction from wrapper 
@@ -430,7 +421,7 @@ export const WorkspaceLayout: React.FC = () => {
                 {/* Sophia panel */}
                 {isQuestionPanelVisible && (
                   <Card className="absolute top-14 right-4 w-[400px] z-40 shadow-lg mt-6 mr-1">
-                    <SophiaWrapper onClose={onCloseSophia} />
+                    <SophiaConversationalAI onClose={onCloseSophia} />
                   </Card>
                 )}
               </div>
