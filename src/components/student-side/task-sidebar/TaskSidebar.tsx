@@ -107,7 +107,7 @@ export default function TaskSidebar({
   }
 
   // Check if all tasks are completed
-  const allTasksCompleted = sessionData?.tasks.every((_, index) => isTaskCompleted(index)) || false
+  const allTasksCompleted = sessionData?.tasks.every((_: any, index: number) => isTaskCompleted(index)) || false
 
   const handleFinishedClick = () => {
     // Add null check for sessionData
@@ -253,7 +253,7 @@ export default function TaskSidebar({
               </Badge>
             )}
 
-            {concepts.map((concept) => {
+            {concepts.map((concept: string) => {
               const conceptInfo = conceptIcons[concept]
               const Icon = conceptInfo?.icon
               return (
@@ -291,7 +291,7 @@ export default function TaskSidebar({
               <div className="space-y-4">
                 <h3 className="font-semibold text-foreground">Examples</h3>
                 <div className="space-y-3">
-                  {currentTask.examples.map((example, index) => (
+                  {currentTask.examples.map((example: any, index: number) => (
                     <Card key={index} className="overflow-hidden border-0 shadow-sm bg-card">
                       <div className="bg-muted/50 px-4 py-2 border-b">
                         <h4 className="text-sm font-medium text-foreground">Example {index + 1}</h4>
