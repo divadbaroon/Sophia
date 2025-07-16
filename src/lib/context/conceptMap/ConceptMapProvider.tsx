@@ -42,7 +42,7 @@ const ConceptMapContext = createContext<ConceptMapContextType | undefined>(undef
 
 export const ConceptMapProvider = ({ children }: { children: ReactNode }) => {
   const { sessionData, sessionId, lessonId, activeMethodId, currentMethodIndex } = useSession();
-  const { fileContent, executionOutput, registerExecutionOutputCallback } = useCodeEditor();
+  const { fileContent, executionOutput } = useCodeEditor();
 
   // Concept map state
   const [conceptMap, setConceptMap] = useState<any>(null);
@@ -115,17 +115,6 @@ export const ConceptMapProvider = ({ children }: { children: ReactNode }) => {
       setIsLoadingConceptMaps(false);
     }
   };
-
-  // Register execution output callback for concept map updates
-  useEffect(() => {
-    const handleExecutionOutput = async (output: string) => {
-      if (output.trim()) {
-        await updateConceptMapFromAPI('test_run');
-      }
-    };
-
-    registerExecutionOutputCallback(handleExecutionOutput);
-  }, [registerExecutionOutputCallback]);
 
   // Load concept maps when session data is available
   useEffect(() => {

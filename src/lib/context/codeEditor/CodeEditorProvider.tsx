@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { loadAllCodeSnapshots } from '@/lib/actions/code-snapshot-actions';
 import { useSession } from '../session/SessionProvider';
 
@@ -17,9 +17,6 @@ interface CodeEditorContextType {
   setErrorContent: React.Dispatch<React.SetStateAction<string>>;
   executionOutput: string;
   updateExecutionOutput: (output: string) => Promise<void>;
-  
-  // Callback registration for concept map updates
-  registerExecutionOutputCallback: (callback: (output: string) => Promise<void>) => void;
 
   // Text selection and highlighting
   highlightedText: string;
@@ -45,9 +42,6 @@ export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
   // Error and execution state
   const [errorContent, setErrorContent] = useState('');
   const [executionOutput, setExecutionOutput] = useState<string>('');
-  
-  // Callback for concept map updates
-  const [onExecutionOutputChange, setOnExecutionOutputChange] = useState<((output: string) => Promise<void>) | null>(null);
 
   // Text selection and highlighting
   const [highlightedText, setHighlightedText] = useState<string>('');
@@ -134,15 +128,6 @@ export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
 
   const updateExecutionOutput = async (output: string) => {
     setExecutionOutput(output);
-    
-    // Trigger concept map update callback if registered
-    if (onExecutionOutputChange && output.trim()) {
-      await onExecutionOutputChange(output);
-    }
-  };
-
-  const registerExecutionOutputCallback = (callback: (output: string) => Promise<void>) => {
-    setOnExecutionOutputChange(() => callback);
   };
 
   const isSaved = () => {
@@ -159,7 +144,6 @@ export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
     setErrorContent,
     executionOutput,
     updateExecutionOutput,
-    registerExecutionOutputCallback,
     highlightedText,
     updateHighlightedText,
     lineNumber,
