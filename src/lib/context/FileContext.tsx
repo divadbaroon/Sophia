@@ -25,43 +25,9 @@ import {
   saveStudentConceptMap,
 } from '@/lib/actions/student-concept-map-actions'
 
-/* ----------------------------------------------------------------------
- * Additional local helper types for visualisation + drawing
- * --------------------------------------------------------------------*/
-export interface DrawingPoint {
-  x: number
-  y: number
-}
-
-export interface DrawingStroke {
-  points: DrawingPoint[]
-  color: string
-  width: number
-}
-
-interface DrawingContextState {
-  strokes: DrawingStroke[]
-  /** node‑ids currently selected (for click‑to‑select interactions) */
-  selectedNodes: string[]
-  /** is the canvas in free‑draw mode */
-  isDrawing: boolean
-}
-
-interface VisualisationState {
-  /** true if the overlay is visible */
-  visible: boolean
-  /** which visualisation is active e.g. "binaryTree", "linkedList" */
-  type: string | null
-}
-
-/* ----------------------------------------------------------------------*/
 const FileContext = createContext<FileContextType | undefined>(undefined)
 
 export const FileProvider = ({ children }: { children: ReactNode }) => {
-  /* =====================================================================================
-   * ORIGINAL STATE ──────────────────────────────────────────────────────────────────────
-   * (everything until the comment "NEW visualisation & drawing state" was lifted intact)
-   * ===================================================================================*/
   const pathname = usePathname()
 
   const [fileContent, setFileContent] = useState<string>('')
@@ -106,43 +72,6 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [isUpdatingConceptMap, setIsUpdatingConceptMap] = useState(false)
   const [conceptMapsPerMethod, setConceptMapsPerMethod] = useState<Record<string, any>>({})
   const [isLoadingConceptMaps, setIsLoadingConceptMaps] = useState(false)
-
-  /* =====================================================================================
-   * NEW visualisation & drawing state
-   * ===================================================================================*/
-  const [visualisation, setVisualisation] = useState<VisualisationState>({
-    visible: false,
-    type: null,
-  })
-
-  const [drawingCtx, setDrawingCtx] = useState<DrawingContextState>({
-    strokes: [],
-    selectedNodes: [],
-    isDrawing: false,
-  })
-
-  /* helper methods ------------------------------------------------*/
-  /** expose show/hide/toggle so UI can control overlay */
-  const showVisualisation = (type: string) => setVisualisation({ visible: true, type })
-  const hideVisualisation = () => setVisualisation({ visible: false, type: null })
-  const toggleVisualisation = (type?: string) =>
-    setVisualisation((prev) => {
-      if (type && prev.type !== type) return { visible: true, type }
-      return { ...prev, visible: !prev.visible }
-    })
-
-  /** drawing helpers */
-  const addStroke = (stroke: DrawingStroke) =>
-    setDrawingCtx((prev) => ({ ...prev, strokes: [...prev.strokes, stroke] }))
-  const clearDrawing = () => setDrawingCtx((prev) => ({ ...prev, strokes: [] }))
-  const toggleNodeSelected = (nodeId: string) =>
-    setDrawingCtx((prev) => {
-      const exists = prev.selectedNodes.includes(nodeId)
-      const sel = exists ? prev.selectedNodes.filter((id) => id !== nodeId) : [...prev.selectedNodes, nodeId]
-      return { ...prev, selectedNodes: sel }
-    })
-  const setDrawingContext = (ctx: Partial<DrawingContextState>) =>
-    setDrawingCtx((prev) => ({ ...prev, ...ctx }))
 
 
   // Update student task when method changes
@@ -763,7 +692,6 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   return (
     <FileContext.Provider
       value={{
-        /* original props */
         fileContent,
         cachedFileContent,
         updateCachedFileContent,
@@ -818,17 +746,6 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         quizData,
         isLoadingConceptMaps,
         conceptMapsPerMethod,
-
-        /*  NEW additions  */
-        visualisation,
-        showVisualisation,
-        hideVisualisation,
-        toggleVisualisation,
-        drawingCtx,
-        addStroke,
-        clearDrawing,
-        toggleNodeSelected,
-        setDrawingContext,
       }}
     >
       {children}

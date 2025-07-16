@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { HelpCircle, Pencil, Trash2 } from "lucide-react"
+import { HelpCircle } from "lucide-react"
 
 import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader"
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
@@ -45,9 +45,6 @@ export const WorkspaceLayout: React.FC = () => {
   const [showKnowledgeRadar, setShowKnowledgeRadar] = useState(false)
   const [terminalHeight, setTerminalHeight] = useState(50)
   
-  // Drawing state to track drawing mode for button styling
-  const [isDrawingMode, setIsDrawingMode] = useState(false)
-  
   // Test case monitoring state
   const [allTestsPassed, setAllTestsPassed] = useState(false)
   const [shouldFlash, setShouldFlash] = useState(false)
@@ -65,10 +62,8 @@ export const WorkspaceLayout: React.FC = () => {
   const currentTask = sessionData?.tasks?.[currentMethodIndex]
   const currentTaskTitle = currentTask?.title || 'Task'
 
-  // Calculate button positioning based on Sophia button state
+  // Calculate button positioning
   const sophiaButtonText = isQuestionPanelVisible ? 'Close Sophia' : 'Ask Sophia'
-  const sophiaButtonWidth = isQuestionPanelVisible ? 140 : 130
-  const drawingButtonsRightPosition = sophiaButtonWidth + 61 
 
   // Initialize tooltip on component mount (after loading is complete)
   useEffect(() => {
@@ -229,18 +224,7 @@ export const WorkspaceLayout: React.FC = () => {
     setTerminalHeight(Math.min(Math.max(newHeight, 5), 70))
   }
 
-  // Handle drawing mode toggle
-  const handleToggleDrawing = () => {
-    codeEditorRef.current?.toggleDrawing()
-    setIsDrawingMode((prev) => !prev)
-  }
-
-  // Handle clear drawing
-  const handleClearDrawing = () => {
-    codeEditorRef.current?.clearDrawing()
-  }
-
-  // Determine if buttons should be hidden - now includes knowledge radar
+  // Determine if buttons should be hidden
   const shouldHideButtons = isQuizModalOpen || isSurveyModalOpen || showKnowledgeRadar
 
   // Show global loading state
@@ -297,42 +281,6 @@ export const WorkspaceLayout: React.FC = () => {
 
       <main className={`flex flex-col h-screen ${showConsentModal ? 'pointer-events-none opacity-50' : ''}`}>
         <div className="flex-1 flex relative">
-          {/* Drawing Controls*/}
-          {!shouldHideButtons && (
-            <div 
-              className="absolute top-3.5 z-[9999] flex gap-3 mt-2 transition-all duration-200 ease-in-out"
-              style={{
-                right: `${52 + drawingButtonsRightPosition}px`
-              }}
-            >
-              {/* Draw Button */}
-              <Button
-                variant={isDrawingMode ? "default" : "outline"}
-                size="sm"
-                className="gap-2 font-medium"
-                onClick={handleToggleDrawing}
-                disabled={showConsentModal}
-                title="Toggle drawing mode on code editor"
-              >
-                <Pencil className="h-5 w-5" />
-                {isDrawingMode ? "Exit Draw" : "Draw"}
-              </Button>
-
-              {/* Clear All Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 font-medium text-red-600 hover:text-red-700 hover:bg-red-50"
-                onClick={handleClearDrawing}
-                disabled={showConsentModal}
-                title="Clear all drawings on code editor"
-              >
-                <Trash2 className="h-5 w-5" />
-                Clear All
-              </Button>
-            </div>
-          )}
-
           {/* Ask Sophia button */}
           {!shouldHideButtons && (
             <TooltipProvider>

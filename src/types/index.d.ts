@@ -49,35 +49,6 @@ export interface TaskData {
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
- *  Drawing / visualisation helpers
- * ══════════════════════════════════════════════════════════════════════════ */
-
-export interface DrawingPoint {
-  x: number
-  y: number
-}
-
-export interface DrawingStroke {
-  points: DrawingPoint[]
-  color: string
-  width: number
-}
-
-export interface DrawingContextState {
-  strokes: DrawingStroke[]
-  /** ids of nodes the learner has clicked / selected in the visual */
-  selectedNodes: string[]
-  /** free-draw (true)  vs. pointer/selection (false) */
-  isDrawing: boolean
-}
-
-export interface VisualisationState {
-  visible: boolean
-  /** e.g. `'binaryTree' | 'linkedList' | null` */
-  type: string | null
-}
-
-/* ════════════════════════════════════════════════════════════════════════════
  *  File-context (mega-store) shape
  * ══════════════════════════════════════════════════════════════════════════ */
 
@@ -176,22 +147,6 @@ export interface FileContextType {
   /* ───────────── concept-map cache ────────────────────────────────────── */
   isLoadingConceptMaps: boolean
   conceptMapsPerMethod: Record<string, any>
-
-  /* ════════════ NEW ─ visualisation & drawing support ═══════════════════ */
-
-  /** runtime visual overlay state */
-  visualisation: VisualisationState
-  showVisualisation: (type: string) => void
-  hideVisualisation: () => void
-  toggleVisualisation: (type?: string) => void
-
-  /** free-draw + node-selection canvas state */
-  drawingCtx: DrawingContextState
-  addStroke: (stroke: DrawingStroke) => void
-  clearDrawing: () => void
-  toggleNodeSelected: (nodeId: string) => void
-  /** update any part of the drawingCtx (colour/width/isDrawing etc.) */
-  setDrawingContext: (ctx: Partial<DrawingContextState>) => void
 }
 
 export type FolderContextType = {
@@ -507,13 +462,6 @@ export interface CodeEditorRef {
   zoomOut: () => void;
   resetZoom: () => void;
   saveCode: () => Promise<void>;
-  // Drawing methods
-  toggleDrawing: () => void;
-  clearDrawing: () => void;
-  setDrawingColor: (color: string) => void;
-  setDrawingWidth: (width: number) => void;
-  // Visualization methods
-  toggleVisualization: () => void;
 }
 
 export type CodeEditorProps = {
