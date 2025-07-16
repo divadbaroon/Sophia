@@ -16,7 +16,7 @@ import { useSession } from '@/lib/context/session/SessionProvider';
 import { useCodeEditor } from '@/lib/context/codeEditor/CodeEditorProvider';
 
 import { CodeEditorRef, CodeEditorProps } from "@/types"
-import { DEFAULT_FONT_SIZE } from "@/lib/constants"
+import { DEFAULT_FONT_SIZE } from "@/lib/constants/code-editor-font"
 
 // Local storage keys for zoom level
 const LOCAL_STORAGE_ZOOM_KEY = 'code_editor_zoom_level';
