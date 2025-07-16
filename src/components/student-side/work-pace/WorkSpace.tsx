@@ -1,19 +1,24 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from "react"
+
 import { Card } from "@/components/ui/card"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { HelpCircle, Pencil, Trash2 } from "lucide-react"
+
 import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader"
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
 import CodeEditor from "@/components/student-side/code-editor/CodeEditor"
 import Terminal from "@/components/student-side/terminal/Terminal"
 import ConsentModal from "@/components/student-side/consent/ConsentModal"
 import SophiaConversationalAI from '@/components/student-side/voice-chat/elevenlabs/SophiaConversationalAI'
+
 import { trackSophiaInteraction } from "@/lib/actions/sophia-button-interaction-actions"
+
 import { useFile } from "@/lib/context/FileContext" 
+
 import { CodeEditorRef } from "@/types"
 
 const CONSENT_STORAGE_KEY = 'sophia_user_consent'
