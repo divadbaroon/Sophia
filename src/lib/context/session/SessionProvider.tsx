@@ -5,32 +5,7 @@ import { usePathname } from 'next/navigation';
 import { TaskData, TestCase } from '@/types';
 import { getCodingTasksForLesson } from '@/lib/actions/coding-tasks-actions';
 
-interface SessionContextType {
-  // Core session data
-  sessionId: string;
-  lessonId: string;
-  
-  // Task/method navigation
-  currentMethodIndex: number;
-  activeMethodId: string;
-  setCurrentMethodIndex: (index: number) => void;
-  
-  // Session data and loading
-  sessionData: TaskData | null;
-  isLoadingTasks: boolean;
-  
-  // Current task info
-  currentTestCases: TestCase[];
-  studentTask: string;
-  
-  // Navigation methods
-  goToNextMethod: () => void;
-  goToPrevMethod: () => void;
-  
-  // Template helpers
-  getCurrentMethodTemplate: () => string;
-  getAllMethodTemplates: () => Record<string, string>;
-}
+import { SessionContextType } from "../types"
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 

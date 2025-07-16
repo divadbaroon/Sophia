@@ -4,11 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { getQuizQuestions } from '@/lib/actions/quiz-actions';
 import { useSession } from '../session/SessionProvider';
 
-interface QuizContextType {
-  // Quiz state
-  quizLoading: boolean;
-  quizData: any;
-}
+import { QuizContextType } from "../types"
 
 const QuizContext = createContext<QuizContextType | undefined>(undefined);
 

@@ -4,31 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { loadAllCodeSnapshots } from '@/lib/actions/code-snapshot-actions';
 import { useSession } from '../session/SessionProvider';
 
-interface CodeEditorContextType {
-  // File content state
-  fileContent: string;
-  cachedFileContent: string;
-  setFileContent: React.Dispatch<React.SetStateAction<string>>;
-  updateCachedFileContent: (content: string) => void;
-  isSaved: () => boolean;
-
-  // Error and execution state
-  errorContent: string;
-  setErrorContent: React.Dispatch<React.SetStateAction<string>>;
-  executionOutput: string;
-  updateExecutionOutput: (output: string) => Promise<void>;
-
-  // Text selection and highlighting
-  highlightedText: string;
-  updateHighlightedText: (text: string) => void;
-  lineNumber: number | null;
-  updateLineNumber: (line: number | null) => void;
-
-  // Code management per method
-  codeLoading: boolean;
-  methodsCode: Record<string, string>;
-  updateMethodsCode: (methodId: string, code: string) => void;
-}
+import { CodeEditorContextType } from "../types"
 
 const CodeEditorContext = createContext<CodeEditorContextType | undefined>(undefined);
 

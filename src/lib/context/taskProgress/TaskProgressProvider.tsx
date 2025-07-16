@@ -8,21 +8,7 @@ import {
 } from '@/lib/actions/task-progress-actions';
 import { useSession } from '../session/SessionProvider';
 
-interface TaskProgressContextType {
-  // Progress state
-  taskCompletionStatus: Record<string, Record<number, boolean>>;
-  isLoadingTaskProgress: boolean;
-
-  // Progress actions
-  markTaskCompleted: (taskIndex: number, testCasesPassed?: number, totalTestCases?: number) => Promise<void>;
-  recordAttempt: (taskIndex: number, testCasesPassed: number, totalTestCases: number) => Promise<void>;
-
-  // Progress queries
-  isTaskCompleted: (taskIndex: number) => boolean;
-  isTaskUnlocked: (taskIndex: number) => boolean;
-  canGoToNext: () => boolean;
-  getCompletionStats: () => { completed: number; total: number };
-}
+import { TaskProgressContextType } from "../types"
 
 const TaskProgressContext = createContext<TaskProgressContextType | undefined>(undefined);
 
@@ -89,9 +75,9 @@ export const TaskProgressProvider = ({ children }: { children: ReactNode }) => {
 
     const initializeEmptyProgress = () => {
       const initialStatus: Record<number, boolean> = {};
-      sessionData?.tasks.forEach((_, index) => {
+      for (let index = 0; index < (sessionData?.tasks.length || 0); index++) {
         initialStatus[index] = false;
-      });
+      }
       setTaskCompletionStatus(prev => ({
         ...prev,
         [sessionId]: initialStatus
