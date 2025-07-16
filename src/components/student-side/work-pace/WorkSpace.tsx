@@ -17,24 +17,18 @@ import SophiaConversationalAI from '@/components/student-side/voice-chat/elevenl
 
 import { trackSophiaInteraction } from "@/lib/actions/sophia-button-interaction-actions"
 
-import { useFile } from "@/lib/context/FileContext" 
+import { useSession } from "@/lib/context/session/SessionProvider"
+import { useCodeEditor } from "@/lib/context/codeEditor/CodeEditorProvider"
+import { useTaskProgress } from "@/lib/context/taskProgress/TaskProgressProvider"
 
 import { CodeEditorRef } from "@/types"
 
 const CONSENT_STORAGE_KEY = 'sophia_user_consent'
 
 export const WorkspaceLayout: React.FC = () => {
-  const { 
-    sessionId, 
-    lessonId, 
-    currentMethodIndex, 
-    sessionData, 
-    codeLoading,
-    executionOutput,
-    currentTestCases,
-    activeMethodId,
-    isTaskCompleted
-  } = useFile()
+  const { sessionId, lessonId, currentMethodIndex, sessionData, currentTestCases, activeMethodId } = useSession()
+  const { codeLoading, executionOutput } = useCodeEditor()
+  const { isTaskCompleted } = useTaskProgress()
 
   // Panel & UI state
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)

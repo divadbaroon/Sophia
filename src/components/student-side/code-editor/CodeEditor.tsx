@@ -5,13 +5,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import CodeMirror from '@uiw/react-codemirror';
 import { python } from '@codemirror/lang-python';
 import { vscodeLight } from '@uiw/codemirror-theme-vscode';
-import { useFile } from '@/lib/context/FileContext';
 import { EditorView } from '@codemirror/view';
 import { ViewUpdate } from '@uiw/react-codemirror';
 import { SelectionRange, Extension, Range } from '@codemirror/state';
 import { Decoration } from '@codemirror/view';
 import { indentUnit } from '@codemirror/language';
 import { saveCodeSnapshot } from '@/lib/actions/code-snapshot-actions';
+
+import { useSession } from '@/lib/context/session/SessionProvider';
+import { useCodeEditor } from '@/lib/context/codeEditor/CodeEditorProvider';
 
 import { CodeEditorRef, CodeEditorProps } from "@/types"
 import { DEFAULT_FONT_SIZE } from "@/lib/constants"
@@ -59,18 +61,20 @@ const createFontSizeExtension = (fontSize: number) => {
 // Convert to forwardRef to expose the ref interface
 const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(({ className = '', readOnly = false }, ref) => {
   const { 
-    updateCachedFileContent, 
-    setFileContent, 
-    updateHighlightedText,
     sessionId,
     activeMethodId,
     lessonId,
     currentMethodIndex,
+  } = useSession();
+
+  const {
+    updateCachedFileContent, 
+    setFileContent, 
+    updateHighlightedText,
     methodsCode,       
     updateMethodsCode,
-  } = useFile();
+  } = useCodeEditor();
 
-  
   const editorViewRef = useRef<EditorView | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const [localHighlightedText, setLocalHighlightedText] = useState<string>('');

@@ -18,7 +18,9 @@ import KnowledgeRadarModal from "@/components/student-side/student-report/studen
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
 import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
 
-import { useFile } from "@/lib/context/FileContext"
+import { useSession } from "@/lib/context/session/SessionProvider"
+import { useTaskProgress } from "@/lib/context/taskProgress/TaskProgressProvider"
+import { useQuiz } from "@/lib/context/quiz/QuizProvider"
 
 import { conceptIcons } from "@/lib/constants/conceptIcons"
 
@@ -43,18 +45,23 @@ export default function TaskSidebar({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [currentConceptTitle, setCurrentConceptTitle] = useState("")
   const [showPrizeWheel, setShowPrizeWheel] = useState(false) 
-  // Removed local showKnowledgeRadar state since it's now passed as props
 
   const {
     sessionData,
     currentMethodIndex,
     goToNextMethod,
     goToPrevMethod,
-    isTaskCompleted,
     sessionId,
     lessonId,
+  } = useSession()
+
+  const {
+    isTaskCompleted,
+  } = useTaskProgress()
+
+  const {
     quizData, 
-  } = useFile()
+  } = useQuiz()
 
   // Navigation handlers with tracking
   const handleNextClick = () => {

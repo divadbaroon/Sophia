@@ -7,11 +7,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Play } from "lucide-react"
 import { saveTestCaseResults } from '@/lib/actions/test-case-results-actions'
 import { saveCodeError } from '@/lib/actions/code-errors-actions'
-import { useFile } from "@/lib/context/FileContext"
 import { TestCaseResult } from "@/types"
 import { linkedListTestCases, supportedLinkedListMethods, linkClassDefinition } from "@/utils/testCases/LinkedListsTestCases"
 import { binarySearchTreeTestCases, supportedBinarySearchTreeMethods, treeNodeClassDefinition } from "@/utils/testCases/BinarySearchTreeTestCases"
 import { sortingTestCases, supportedSortingMethods } from "@/utils/testCases/SortingTestCases"
+
+import { useSession } from "@/lib/context/session/SessionProvider"
+import { useCodeEditor } from "@/lib/context/codeEditor/CodeEditorProvider"
+import { useTaskProgress } from "@/lib/context/taskProgress/TaskProgressProvider"
 
 const Terminal = () => {
   const [output, setOutput] = useState("")
@@ -19,18 +22,24 @@ const Terminal = () => {
   const [isRunning, setIsRunning] = useState(false)
   
   const { 
+    activeMethodId,
+    currentTestCases,
+    currentMethodIndex,     
+    sessionId,
+    lessonId
+  } = useSession()
+
+  const { 
     fileContent, 
     isSaved, 
     setErrorContent,
     updateExecutionOutput, 
-    activeMethodId,
-    currentTestCases,
-    currentMethodIndex,     
+  } = useCodeEditor()
+
+  const {
     markTaskCompleted,
     recordAttempt,
-    sessionId,
-    lessonId
-  } = useFile()
+  } = useTaskProgress()
 
   // RapidAPI Judge0 configuration
   const JUDGE0_API_URL = "https://judge0-ce.p.rapidapi.com"
