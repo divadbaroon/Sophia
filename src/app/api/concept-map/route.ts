@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     console.log('📨 Received context for method:', context.methodName);
 
     // Dynamic import concept map agent
-    const { ConceptMapAgent } = await import('@/lib/concept-map-agent');
+    const { ConceptMapAgent } = await import('@/lib/conceptMap/agent/concept-map-agent');
     
     console.log('✅ ConceptMapAgent imported successfully');
 
