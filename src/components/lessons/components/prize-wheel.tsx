@@ -115,7 +115,7 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({
       console.warn('Could not load overlay image, wheel will work without it');
       setOverlayImage(null);
     };
-    img.src = '/images/wheel-overlay.svg';
+    img.src = '/images/prizeWheel/wheel-overlay.svg';
   }, []);
 
   useEffect(() => {
