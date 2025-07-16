@@ -20,7 +20,7 @@ import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
 
 import { useFile } from "@/lib/context/FileContext"
 
-import { conceptIcons } from "@/lib/data/conceptIcons"
+import { conceptIcons } from "@/lib/constants/conceptIcons"
 
 // Updated interface to include knowledge radar props
 interface TaskSidebarProps {

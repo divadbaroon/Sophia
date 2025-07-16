@@ -716,7 +716,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
       }
       
       // Call the concept map API route
-      const response = await fetch('/api/concept-map/', {
+      const response = await fetch('/api/claude/concept-map/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
