@@ -27,7 +27,7 @@ interface TaskProgressContextType {
 const TaskProgressContext = createContext<TaskProgressContextType | undefined>(undefined);
 
 export const TaskProgressProvider = ({ children }: { children: ReactNode }) => {
-  const { sessionId, sessionData } = useSession();
+  const { sessionId, sessionData, currentMethodIndex } = useSession();
 
   // Progress state
   const [taskCompletionStatus, setTaskCompletionStatus] = useState<Record<string, Record<number, boolean>>>({});
@@ -158,7 +158,6 @@ export const TaskProgressProvider = ({ children }: { children: ReactNode }) => {
 
   const canGoToNext = (): boolean => {
     if (!sessionData) return false;
-    const { currentMethodIndex } = useSession();
     if (currentMethodIndex >= sessionData.tasks.length - 1) return false;
     return isTaskCompleted(currentMethodIndex);
   };
