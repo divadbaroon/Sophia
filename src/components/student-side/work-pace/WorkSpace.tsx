@@ -19,16 +19,14 @@ import { trackSophiaInteraction } from "@/lib/actions/sophia-button-interaction-
 
 import { useSession } from "@/lib/context/session/SessionProvider"
 import { useCodeEditor } from "@/lib/context/codeEditor/CodeEditorProvider"
-import { useTaskProgress } from "@/lib/context/taskProgress/TaskProgressProvider"
 
 import { CodeEditorRef } from "@/types"
 
 const CONSENT_STORAGE_KEY = 'sophia_user_consent'
 
 export const WorkspaceLayout: React.FC = () => {
-  const { sessionId, lessonId, currentMethodIndex, sessionData, currentTestCases, activeMethodId } = useSession()
-  const { codeLoading, executionOutput } = useCodeEditor()
-  const { isTaskCompleted } = useTaskProgress()
+  const { sessionId, lessonId, currentMethodIndex, sessionData } = useSession()
+  const { codeLoading } = useCodeEditor()
 
   // Panel & UI state
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
@@ -39,10 +37,6 @@ export const WorkspaceLayout: React.FC = () => {
   const [showKnowledgeRadar, setShowKnowledgeRadar] = useState(false)
   const [terminalHeight, setTerminalHeight] = useState(50)
   
-  // Test case monitoring state
-  const [allTestsPassed, setAllTestsPassed] = useState(false)
-  const [shouldFlash, setShouldFlash] = useState(false)
-  const [flashToggle, setFlashToggle] = useState(false)
   
   // Initialization tooltip state
   const [showInitTooltip, setShowInitTooltip] = useState(false)
@@ -51,10 +45,6 @@ export const WorkspaceLayout: React.FC = () => {
 
   // Check if essential data is loaded
   const isLoading = !sessionData || !sessionId || !lessonId || currentMethodIndex === undefined || codeLoading
-
-  // Get current task info
-  const currentTask = sessionData?.tasks?.[currentMethodIndex]
-  const currentTaskTitle = currentTask?.title || 'Task'
 
   // Calculate button positioning
   const sophiaButtonText = isQuestionPanelVisible ? 'Close Sophia' : 'Ask Sophia'
@@ -78,60 +68,6 @@ export const WorkspaceLayout: React.FC = () => {
     }
   }, [isLoading, showConsentModal])
 
-  // Monitor execution output for test results
-  useEffect(() => {
-    if (!executionOutput || !currentTestCases || currentTestCases.length === 0) {
-      setAllTestsPassed(false)
-      return
-    }
-
-    // Parse test results from execution output
-    // Look for patterns like "Test passed" or "Test failed" or specific test case indicators
-    const testPassedMatches = executionOutput.match(/test.*passed/gi) || []
-    const testFailedMatches = executionOutput.match(/test.*failed/gi) || []
-    const allPassedMatch = executionOutput.match(/all tests passed/gi) || []
-    
-    // Also check for specific test case patterns (e.g., "✓" or "✗")
-    const checkmarkMatches = executionOutput.match(/✓/g) || []
-    const crossMatches = executionOutput.match(/✗/g) || []
-    
-    // Calculate passed tests
-    const passedFromMatches = testPassedMatches.length
-    const passedFromCheckmarks = checkmarkMatches.length
-    const totalTests = currentTestCases.length
-    
-    // Use the maximum of the different counting methods
-    const passedCount = Math.max(passedFromMatches, passedFromCheckmarks)
-    
-    // Check if all tests passed
-    const allPassed = allPassedMatch.length > 0 || 
-                     (passedCount === totalTests && totalTests > 0) ||
-                     (testFailedMatches.length === 0 && crossMatches.length === 0 && passedCount > 0)
-    
-    setAllTestsPassed(allPassed)
-    
-    // Log test results for debugging
-    console.log('📋 Test Results:', {
-      currentMethod: activeMethodId,
-      taskIndex: currentMethodIndex,
-      taskTitle: currentTaskTitle,
-      totalTests,
-      passedCount,
-      allPassed,
-      isTaskAlreadyCompleted: isTaskCompleted(currentMethodIndex)
-    })
-
-    // Start flashing if all tests passed and task isn't already completed
-    if (allPassed && !isTaskCompleted(currentMethodIndex)) {
-      setShouldFlash(true)
-      // Stop flashing after 5 seconds
-      const timer = setTimeout(() => setShouldFlash(false), 5000)
-      return () => clearTimeout(timer)
-    } else {
-      setShouldFlash(false)
-    }
-  }, [executionOutput, currentTestCases, activeMethodId, currentMethodIndex, isTaskCompleted, currentTaskTitle])
-
   // Consent check on mount
   useEffect(() => {
     try {
@@ -141,23 +77,6 @@ export const WorkspaceLayout: React.FC = () => {
       setShowConsentModal(true)
     }
   }, [])
-
-  // Flash toggle effect
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null
-    
-    if (shouldFlash) {
-      interval = setInterval(() => {
-        setFlashToggle(false)
-      }, 500) // Toggle every 500ms
-    } else {
-      setFlashToggle(false)
-    }
-    
-    return () => {
-      if (interval) clearInterval(interval)
-    }
-  }, [shouldFlash])
 
   const onToggleSophia = () => {
     // Hide the init tooltip when user interacts with the button
@@ -285,15 +204,10 @@ export const WorkspaceLayout: React.FC = () => {
                     size="lg"
                     className="absolute top-3.5 right-16 z-50 flex items-center gap-2 mr-1.5 transition-all duration-200 ease-in-out"
                     style={{
-                      backgroundColor: shouldFlash && flashToggle ? '#fbbf24' : isQuestionPanelVisible ? 'hsl(var(--secondary))' : 'hsl(var(--background))',
-                      borderColor: shouldFlash && flashToggle ? '#f59e0b' : undefined,
-                      color: shouldFlash && flashToggle ? '#000' : undefined,
+                      backgroundColor: isQuestionPanelVisible ? 'hsl(var(--secondary))' : 'hsl(var(--background))',
                       minWidth: 'fit-content'
                     }}
-                    onClick={() => {
-                      console.log('🔘 Button clicked - shouldFlash:', shouldFlash, 'flashToggle:', flashToggle)
-                      onToggleSophia()
-                    }}
+                    onClick={onToggleSophia}
                     disabled={showConsentModal}
                   >
                     <HelpCircle className="h-5 w-5" />
@@ -304,11 +218,9 @@ export const WorkspaceLayout: React.FC = () => {
                   <p>
                     {showInitTooltip 
                       ? '💡 Click here when you need help or get stuck!'
-                      : allTestsPassed && !isTaskCompleted(currentMethodIndex) 
-                        ? '🎉 All tests passed! Click to discuss with Sophia' 
-                        : isQuestionPanelVisible 
-                          ? 'Close your coding tutor' 
-                          : 'Get help from Sophia, your coding tutor'
+                      : isQuestionPanelVisible 
+                        ? 'Close your coding tutor' 
+                        : 'Get help from Sophia, your coding tutor'
                     }
                   </p>
                 </TooltipContent>
