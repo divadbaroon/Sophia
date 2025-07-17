@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Play } from "lucide-react"
 import { saveTestCaseResults } from '@/lib/actions/test-case-results-actions'
 import { saveCodeError } from '@/lib/actions/code-errors-actions'
+import { markTaskCompleted, recordTaskAttempt } from '@/lib/actions/task-progress-actions'
 import { TestCaseResult } from "@/types"
 import { linkedListTestCases, supportedLinkedListMethods, linkClassDefinition } from "@/utils/testCases/LinkedListsTestCases"
 import { binarySearchTreeTestCases, supportedBinarySearchTreeMethods, treeNodeClassDefinition } from "@/utils/testCases/BinarySearchTreeTestCases"
@@ -14,7 +15,6 @@ import { sortingTestCases, supportedSortingMethods } from "@/utils/testCases/Sor
 
 import { useSession } from "@/lib/context/session/SessionProvider"
 import { useCodeEditor } from "@/lib/context/codeEditor/CodeEditorProvider"
-import { useTaskProgress } from "@/lib/context/taskProgress/TaskProgressProvider"
 
 const Terminal = () => {
   const [output, setOutput] = useState("")
@@ -35,11 +35,6 @@ const Terminal = () => {
     setErrorContent,
     updateExecutionOutput, 
   } = useCodeEditor()
-
-  const {
-    markTaskCompleted,
-    recordAttempt,
-  } = useTaskProgress()
 
   // RapidAPI Judge0 configuration
   const JUDGE0_API_URL = "https://judge0-ce.p.rapidapi.com"
@@ -73,7 +68,6 @@ public class Main {
     } else if (supportedBinarySearchTreeMethods.includes(activeMethodId)) {
       cleanedFileContent = treeNodeClassDefinition + cleanedFileContent
     }
-    // No special class definition needed for sorting algorithms
 
     let testCasesCode = ""
     
@@ -140,12 +134,10 @@ public class Main {
     try {
       console.log("Submitting code to Judge0...");
       
-      // Check if API key is available
       if (!RAPIDAPI_KEY) {
         throw new Error("RapidAPI key not configured. Please check your environment variables.")
       }
       
-      // Create submission
       const createResponse = await fetch(`${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`, {
         method: 'POST',
         headers: {
@@ -169,14 +161,12 @@ public class Main {
       const { token } = await createResponse.json()
       console.log("Submission created with token:", token)
       
-      // Poll for result
       let attempts = 0
-      const maxAttempts = 30 // 30 seconds timeout
+      const maxAttempts = 30
       
       while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
+        await new Promise(resolve => setTimeout(resolve, 1000))
         
-        // Use base64_encoded=true to handle special characters
         const resultResponse = await fetch(`${JUDGE0_API_URL}/submissions/${token}?base64_encoded=true&fields=stdout,stderr,status_id,compile_output,message`, {
           headers: {
             'x-rapidapi-key': RAPIDAPI_KEY,
@@ -193,20 +183,17 @@ public class Main {
         const result = await resultResponse.json()
         console.log(`Attempt ${attempts + 1}: Status ID ${result.status_id}`)
         
-        // Check if execution is complete
-        if (result.status_id <= 2) { // Still processing (1: In Queue, 2: Processing)
+        if (result.status_id <= 2) {
           attempts++
           continue
         }
         
-        // Execution complete - decode base64 output
         let stdout = ""
         if (result.stdout) {
           try {
-            stdout = atob(result.stdout) // Decode base64
+            stdout = atob(result.stdout)
           } catch (e) {
-            console.log(e)
-            stdout = result.stdout // Fallback if not base64
+            stdout = result.stdout
           }
         }
         
@@ -215,7 +202,6 @@ public class Main {
           try {
             stderr = atob(result.stderr)
           } catch (e) {
-            console.log(e)
             stderr = result.stderr
           }
         }
@@ -225,43 +211,39 @@ public class Main {
           try {
             compileOutput = atob(result.compile_output)
           } catch (e) {
-            console.log(e)
             compileOutput = result.compile_output
           }
         }
         
-        if (result.status_id === 3) { // Accepted
+        if (result.status_id === 3) {
           return stdout || "No output"
-        } else if (result.status_id === 6) { // Compilation Error
-          // Format compilation errors more naturally
+        } else if (result.status_id === 6) {
           const formattedError = compileOutput
-            .replace(/Main\.java:/g, '') // Remove file name prefix
-            .replace(/error:/g, 'Error:') // Capitalize Error
+            .replace(/Main\.java:/g, '')
+            .replace(/error:/g, 'Error:')
             .trim()
           
           return `Compilation failed:\n${formattedError}\n\nPlease fix the compilation errors and try again.`
-        } else if (result.status_id === 5) { // Time Limit Exceeded
+        } else if (result.status_id === 5) {
           return `Time Limit Exceeded\n\nYour code took too long to execute. This might be due to:\n• Infinite loops\n• Very inefficient algorithms\n• Large input data\n\nPlease review your code and try again.`
-        } else if (result.status_id === 4) { // Wrong Answer
+        } else if (result.status_id === 4) {
           return stdout || "No output"
-        } else if (result.status_id === 7) { // Memory Limit Exceeded
+        } else if (result.status_id === 7) {
           return `Memory Limit Exceeded\n\nYour code used too much memory. This might be due to:\n• Creating too many objects\n• Large data structures\n• Memory leaks\n\nPlease optimize your code and try again.`
-        } else if (result.status_id === 8) { // Output Limit Exceeded
+        } else if (result.status_id === 8) {
           return `Output Limit Exceeded\n\nYour code produced too much output. This might be due to:\n• Infinite print loops\n• Printing large amounts of data\n\nPlease review your output statements and try again.`
-        } else if (result.status_id === 11) { // Runtime Error (SIGSEGV)
+        } else if (result.status_id === 11) {
           return `Runtime Error: Segmentation Fault\n\nYour code attempted to access invalid memory. This might be due to:\n• Null pointer access\n• Array index out of bounds\n• Stack overflow\n\nPlease review your code for potential null pointer issues.`
-        } else if (result.status_id === 12) { // Runtime Error (SIGXFSZ)
+        } else if (result.status_id === 12) {
           return `Runtime Error: File Size Limit Exceeded\n\nYour code tried to create files that are too large.\nPlease review your file operations.`
         } else {
-          // Other runtime errors
           let errorMsg = stderr || compileOutput || result.message || "Unknown error occurred"
           
-          // Format runtime errors more naturally
           if (stderr) {
             errorMsg = stderr
               .replace(/Exception in thread "main"/g, 'Runtime Error')
-              .replace(/\tat .*/g, '') // Remove stack trace lines starting with "at"
-              .replace(/Main\.java:\d+/g, '') // Remove line number references
+              .replace(/\tat .*/g, '')
+              .replace(/Main\.java:\d+/g, '')
               .trim()
           }
           
@@ -293,20 +275,17 @@ public class Main {
       try {
         setOutput("🔄 Compiling and running Java code...")
 
-        // Create the complete Java code with test cases
         const completeJavaCode = createJavaTestCode()
         console.log("Generated Java code:", completeJavaCode)
         
         console.log("🧪 Running test cases for", activeMethodId, "with RapidAPI Judge0...")
         
-        // Submit to Judge0 and get result
         const result = await submitToJudge0(completeJavaCode)
         
         setOutput(result)
         updateExecutionOutput(result)
         setErrorContent("")
 
-        // Check if this is an error result (not test output)
         const isErrorResult = result.includes("Compilation failed:") || 
                              result.includes("Runtime Error:") || 
                              result.includes("Time Limit Exceeded") ||
@@ -314,21 +293,21 @@ public class Main {
                              result.includes("Output Limit Exceeded")
 
         if (isErrorResult) {
-          // This is an error, don't try to parse test results
           console.log("❌ Code execution failed with error")
           
-          // Save error for tracking
-          saveCodeError({
-            sessionId: sessionId || "unknown-session",
-            lessonId: lessonId || "unknown-lesson",
-            taskIndex: currentMethodIndex,
-            errorMessage: result
-          }).catch(console.error)
+          if (sessionId && lessonId) {
+            saveCodeError({
+              sessionId,
+              lessonId,
+              taskIndex: currentMethodIndex,
+              errorMessage: result
+            }).catch(console.error)
+          }
           
-          return // Exit early, don't try to parse test results
+          return
         }
 
-        // Parse results for analytics (basic implementation)
+        // Parse results for analytics
         const lines = result.split('\n')
         const resultLine = lines.find(line => line.includes('Results:'))
         let passedCount = 0
@@ -345,26 +324,20 @@ public class Main {
         // Create detailed test case results for analytics
         const detailedResults: TestCaseResult[] = []
         
-        // Parse individual test results from the output
-        // Look for lines that contain "PASSED" (our test cases always show PASSED)
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i]
           
-          // Look for test case pattern: "Test 1:", "Test 2:", etc.
           const testMatch = line.match(/Test (\d+):/)
           if (testMatch) {
             const testIndex = parseInt(testMatch[1]) - 1
             
-            // Look for the Expected/Got pattern in the next few lines
             let expectedOutput = ""
             let actualOutput = ""
             let isPassed = false
             
-            // Check the next 5 lines for Expected/Got and PASSED/FAILED
             for (let j = i; j < Math.min(i + 6, lines.length); j++) {
               const currentLine = lines[j]
               
-              // Look for Expected/Got pattern
               if (currentLine.includes("Expected:") && currentLine.includes("Got:")) {
                 const match = currentLine.match(/Expected: '([^']*)', Got: '([^']*)'/)
                 if (match) {
@@ -373,7 +346,6 @@ public class Main {
                 }
               }
               
-              // Check if test passed
               if (currentLine.includes("PASSED")) {
                 isPassed = true
               } else if (currentLine.includes("FAILED")) {
@@ -381,7 +353,6 @@ public class Main {
               }
             }
             
-            // Only add if we found the expected pattern
             if (expectedOutput !== "" || actualOutput !== "") {
               detailedResults.push({
                 testCaseIndex: testIndex,
@@ -393,24 +364,20 @@ public class Main {
                 actualOutput: actualOutput, 
                 passed: isPassed,
                 errorMessage: isPassed ? undefined : "Test failed - output mismatch",
-                executionTimeMs: 25 + Math.floor(Math.random() * 50) // Random execution time between 25-75ms
+                executionTimeMs: 25 + Math.floor(Math.random() * 50)
               })
             }
           }
         }
 
-        // Debug logging
         console.log("📊 Parsing results from output:")
-        console.log("Lines containing 'Test':", lines.filter(line => line.includes('Test')))
-        console.log("Lines containing 'Expected':", lines.filter(line => line.includes('Expected')))
-        console.log("Lines containing 'PASSED':", lines.filter(line => line.includes('PASSED')))
         console.log("Parsed detailed results:", detailedResults)
 
         // Save detailed test case results for analytics
-        if (detailedResults.length > 0) {
+        if (detailedResults.length > 0 && sessionId && lessonId) {
           console.log("💾 Saving test results:", {
-            sessionId: sessionId || "unknown-session",
-            lessonId: lessonId || "unknown-lesson", 
+            sessionId,
+            lessonId, 
             taskIndex: currentMethodIndex,
             methodId: activeMethodId,
             testCaseCount: detailedResults.length
@@ -418,8 +385,8 @@ public class Main {
           
           try {
             await saveTestCaseResults({
-              sessionId: sessionId || "unknown-session",
-              lessonId: lessonId || "unknown-lesson",
+              sessionId,
+              lessonId,
               taskIndex: currentMethodIndex,
               methodId: activeMethodId,
               testCaseResults: detailedResults
@@ -427,26 +394,25 @@ public class Main {
             console.log("✅ Test case results saved successfully")
           } catch (error) {
             console.error("Failed to save detailed test results:", error)
-            // Don't block the UI if analytics saving fails
           }
-        } else {
-          console.log("⚠️ No detailed results to save - could not parse test output")
         }
 
-        // Record the attempt
-        try {
-          await recordAttempt(currentMethodIndex, passedCount, totalCount)
-          console.log(`📝 Recorded attempt: ${passedCount}/${totalCount} test cases passed`)
-        } catch (error) {
-          console.error("Failed to record attempt:", error)
+        // Record the attempt - direct database call
+        if (sessionId) {
+          try {
+            await recordTaskAttempt(sessionId, currentMethodIndex, passedCount, totalCount)
+            console.log(`📝 Recorded attempt: ${passedCount}/${totalCount} test cases passed`)
+          } catch (error) {
+            console.error("Failed to record attempt:", error)
+          }
         }
 
-        // Check if all tests passed
-        if (result.includes("All tests passed")) {
+        // Check if all tests passed and mark completed - direct database call
+        if (result.includes("All tests passed") && sessionId) {
           console.log(`🎉 Success! All ${totalCount} test cases passed!`)
           
           try {
-            await markTaskCompleted(currentMethodIndex, passedCount, totalCount)
+            await markTaskCompleted(sessionId, currentMethodIndex, passedCount, totalCount)
             console.log(`✅ Task ${currentMethodIndex} marked as completed`)
           } catch (error) {
             console.error("Failed to mark task as completed:", error)
@@ -467,7 +433,6 @@ public class Main {
           errorMessage = "An unknown error occurred while connecting to the code execution service"
         }
 
-        // Format API errors more user-friendly
         if (errorMessage.includes("Failed to create submission")) {
           setOutput("🔄 Connection Issue\n\nHaving trouble connecting to the code execution service.\nPlease try running your code again in a moment.")
         } else if (errorMessage.includes("Failed to get submission result")) {
@@ -479,15 +444,16 @@ public class Main {
         }
 
         updateExecutionOutput("")
-        setErrorContent("")  // Clear any previous errors to avoid popups
+        setErrorContent("")
 
-        // Save API error for tracking
-        saveCodeError({
-          sessionId: sessionId || "unknown-session",
-          lessonId: lessonId || "unknown-lesson",
-          taskIndex: currentMethodIndex,
-          errorMessage: `API Error: ${errorMessage}`
-        }).catch(console.error)
+        if (sessionId && lessonId) {
+          saveCodeError({
+            sessionId,
+            lessonId,
+            taskIndex: currentMethodIndex,
+            errorMessage: `API Error: ${errorMessage}`
+          }).catch(console.error)
+        }
       } finally {
         setIsRunning(false)
       }
