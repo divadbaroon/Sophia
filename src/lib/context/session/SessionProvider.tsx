@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 
-import { useSessionUrl } from '@/lib/hooks/session/useSessionURL';
+import { useSessionUrl } from '@/lib/hooks/session/useSessionUrl';
 import { useSessionData } from '@/lib/hooks/session/useSessionData';
 import { useTaskNavigation } from '@/lib/hooks/taskNavigation/useTaskNavigation';
 
