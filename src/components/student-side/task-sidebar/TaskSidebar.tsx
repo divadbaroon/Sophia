@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
@@ -17,14 +17,13 @@ import KnowledgeRadarModal from "@/components/student-side/student-report/studen
 
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
 import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
+import { getQuizQuestions } from '@/lib/actions/quiz-actions'
 
 import { useSession } from "@/lib/context/session/SessionProvider"
 import { useTaskProgress } from "@/lib/context/taskProgress/TaskProgressProvider"
-import { useQuiz } from "@/lib/context/quiz/QuizProvider"
 
 import { conceptIcons } from "@/lib/constants/conceptIcons"
 
-// Updated interface to include knowledge radar props
 interface TaskSidebarProps {
   isQuizModalOpen: boolean
   setIsQuizModalOpen: (open: boolean) => void
@@ -46,6 +45,9 @@ export default function TaskSidebar({
   const [currentConceptTitle, setCurrentConceptTitle] = useState("")
   const [showPrizeWheel, setShowPrizeWheel] = useState(false) 
 
+  // Quiz state 
+  const [quizData, setQuizData] = useState<any>(null)
+
   const {
     sessionData,
     currentMethodIndex,
@@ -59,9 +61,41 @@ export default function TaskSidebar({
     isTaskCompleted,
   } = useTaskProgress()
 
-  const {
-    quizData, 
-  } = useQuiz()
+  // Load quiz questions when needed (only when all tasks are completed)
+  const allTasksCompleted = sessionData?.tasks.every((_: any, index: number) => isTaskCompleted(index)) || false
+
+  useEffect(() => {
+    const loadQuizQuestions = async () => {
+      // Only load quiz when all tasks are completed
+      if (!allTasksCompleted || !lessonId || !sessionData || quizData) return
+      
+      console.log("Loading quiz questions for lesson", lessonId)
+      
+      try {
+        const { data: quizQuestions } = await getQuizQuestions(lessonId, 'post')
+        
+        if (quizQuestions && quizQuestions.length > 0) {
+          const formattedQuiz = {
+            title: sessionData?.tasks[0]?.title || "Lesson Quiz", 
+            questions: quizQuestions.map((question, index) => ({
+              ...question,
+              id: question.id || `question-${lessonId}-${index}` 
+            }))
+          }
+          setQuizData(formattedQuiz)
+          console.log("Quiz questions loaded successfully")
+        } else {
+          console.warn('No quiz questions found for lesson:', lessonId)
+          setQuizData(null)
+        }
+      } catch (error) {
+        console.error('Error loading quiz questions:', error)
+        setQuizData(null)
+      } 
+    }
+
+    loadQuizQuestions()
+  }, [allTasksCompleted, lessonId, sessionData, quizData])
 
   // Navigation handlers with tracking
   const handleNextClick = () => {
@@ -105,9 +139,6 @@ export default function TaskSidebar({
       console.error('Failed to track previous navigation:', error)
     })
   }
-
-  // Check if all tasks are completed
-  const allTasksCompleted = sessionData?.tasks.every((_: any, index: number) => isTaskCompleted(index)) || false
 
   const handleFinishedClick = () => {
     // Add null check for sessionData
@@ -164,25 +195,10 @@ export default function TaskSidebar({
 
   const handlePrizeWon = (prize: string) => {
     console.log("🎉 Prize won:", prize)
-    
-    // Example API call:
-    // await fetch('/api/user-prizes', {
-    //   method: 'POST',
-    //   body: JSON.stringify({ 
-    //     userId: user?.id, 
-    //     prize, 
-    //     lessonId,
-    //     timestamp: new Date().toISOString()
-    //   })
-    // });
-    
-    // analytics.track('prize_won', { prize, lessonId, userId });
   }
 
   const handlePrizeWheelClose = () => {
     setShowPrizeWheel(false)
-    
-    // Now redirect to concepts page after the wheel
     window.location.href = "/concepts"
   }
 
@@ -332,7 +348,7 @@ export default function TaskSidebar({
           </ScrollArea>
         </div>
 
-        {/* Fixed navigation at bottom of screen */}
+        {/* navigation */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-background/95 backdrop-blur-sm space-y-3">
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -423,17 +439,19 @@ export default function TaskSidebar({
       </div>
 
       {/* Modals */}
-      <QuizModal
-        isOpen={isQuizModalOpen}
-        onClose={() => setIsQuizModalOpen(false)}
-        concept={quizData} 
-        sessionId={sessionId}
-        lessonId={lessonId} 
-        quizType="post"
-        onComplete={handleQuizComplete}
-      />
+      {quizData && (
+        <QuizModal
+          isOpen={isQuizModalOpen}
+          onClose={() => setIsQuizModalOpen(false)}
+          concept={quizData} 
+          sessionId={sessionId}
+          lessonId={lessonId} 
+          quizType="post"
+          onComplete={handleQuizComplete}
+        />
+      )}
 
-      {/* Knowledge Radar Modal with Continue Button - now uses props */}
+      {/* Knowledge Radar Modal */}
       <KnowledgeRadarModal
         isOpen={showKnowledgeRadar}
         onClose={() => setShowKnowledgeRadar(false)}
