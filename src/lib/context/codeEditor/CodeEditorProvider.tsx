@@ -1,8 +1,8 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { loadAllCodeSnapshots } from '@/lib/actions/code-snapshot-actions';
 import { useSession } from '../session/SessionProvider';
+import { useCodeSnapshots } from '@/lib/hooks/codeEditor/useCodeSnapshots'; 
 
 import { CodeEditorContextType } from "../types"
 
@@ -11,90 +11,58 @@ const CodeEditorContext = createContext<CodeEditorContextType | undefined>(undef
 export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
   const { sessionData, sessionId, lessonId, activeMethodId } = useSession();
 
-  // File content state
-  const [fileContent, setFileContent] = useState<string>('');
-  const [cachedFileContent, setCachedFileContent] = useState<string>('');
-
-  // Error and execution state
-  const [errorContent, setErrorContent] = useState('');
-  const [executionOutput, setExecutionOutput] = useState<string>('');
-
-  // Text selection and highlighting
-  const [highlightedText, setHighlightedText] = useState<string>('');
-  const [lineNumber, setLineNumber] = useState<number | null>(null);
-
-  // Code management
+  // Code loading state
   const [codeLoading, setCodeLoading] = useState(true);
+
+  // Loads initial code 
+  const { initialMethodsCode, isLoading } = useCodeSnapshots(sessionData, sessionId, lessonId);
+
+  // User's latest code for all tasks
   const [methodsCode, setMethodsCode] = useState<Record<string, string>>({});
 
-  // Load code snapshots when session and lesson data are ready
+  // User's active code
+  const [fileContent, setFileContent] = useState<string>('');
+  // User's last saved code
+  const [cachedFileContent, setCachedFileContent] = useState<string>('');
+
+  // Compilation/runtime errors
+  const [errorContent, setErrorContent] = useState('');
+  // Terminal output from test runs
+  const [executionOutput, setExecutionOutput] = useState<string>('');
+
+  // Selected text in editor
+  const [highlightedText, setHighlightedText] = useState<string>('');
+  // Current cursor line
+  const [lineNumber, setLineNumber] = useState<number | null>(null);
+
+  // Initialize methodsCode when hook finishes loading
   useEffect(() => {
-    const loadCodeSnapshots = async () => {
-      if (!sessionData?.methodTemplates || !sessionId || !lessonId) return;
-      
-      console.log("Loading code snapshots for session", sessionId);
-      setCodeLoading(true);
-      
-      try {
-        // Start with templates as fallback
-        const initialMethodsCode = { ...sessionData.methodTemplates };
-        
-        // Try to load saved code from database
-        const result = await loadAllCodeSnapshots(sessionId, lessonId);
-        
-        if (result.success && result.methodsCode) {
-          console.log("Found saved code in database for session", sessionId);
-          
-          // Merge saved code with templates (saved code takes priority)
-          Object.keys(sessionData.methodTemplates).forEach(methodId => {
-            if (result.methodsCode![methodId]) {
-              initialMethodsCode[methodId] = result.methodsCode![methodId];
-            }
-          });
-          
-          console.log("Using saved code from database");
-        } else {
-          console.log("No saved code found, using templates");
-        }
-        
-        // Set the methods code
-        setMethodsCode(initialMethodsCode);
-        
-        console.log("Code snapshots loaded successfully");
-      } catch (error) {
-        console.error("Error loading code snapshots:", error);
-        // Fallback to templates only
-        setMethodsCode({ ...sessionData.methodTemplates });
-      } finally {
-        setCodeLoading(false);
-      }
-    };
+    if (!isLoading && Object.keys(initialMethodsCode).length > 0) {
+      setMethodsCode(initialMethodsCode);
+      setCodeLoading(false);
+    }
+  }, [isLoading, initialMethodsCode]);
 
-    loadCodeSnapshots();
-  }, [sessionData, sessionId, lessonId]);
-
-  // Update file content when active method changes
+  // Update the user's code content when the user changes the task number
   useEffect(() => {
     if (!activeMethodId || !methodsCode[activeMethodId] || codeLoading) return;
     
+    // 1. Get code for new method from methodsCode
     const currentMethodCode = methodsCode[activeMethodId].trim();
-    console.log("Setting initial file content for method:", activeMethodId);
+
+    // 2. Set as current fileContent
     setFileContent(currentMethodCode);
+
+    // 3. Mark as "saved" (cached = current)
     updateCachedFileContent(currentMethodCode);
   }, [activeMethodId, methodsCode, codeLoading]);
 
+  // Mark content as "saved"
   const updateCachedFileContent = (content: string) => {
     setCachedFileContent(content);
   };
 
-  const updateHighlightedText = (text: string) => {
-    setHighlightedText(text);
-  };
-
-  const updateLineNumber = (line: number | null) => {
-    setLineNumber(line);
-  };
-
+  // Update specific method's code 
   const updateMethodsCode = (methodId: string, code: string) => {
     setMethodsCode(prev => ({
       ...prev,
@@ -102,12 +70,24 @@ export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
-  const updateExecutionOutput = async (output: string) => {
-    setExecutionOutput(output);
-  };
-
+  // Check if current content matches saved content
   const isSaved = () => {
     return fileContent === cachedFileContent;
+  };
+
+  // Track selected text
+  const updateHighlightedText = (text: string) => {
+    setHighlightedText(text);
+  };
+
+  // Track cursor position
+  const updateLineNumber = (line: number | null) => {
+    setLineNumber(line);
+  };
+
+  // Store test results
+  const updateExecutionOutput = async (output: string) => {
+    setExecutionOutput(output);
   };
 
   const value: CodeEditorContextType = {
