@@ -192,7 +192,7 @@ public class Main {
         if (result.stdout) {
           try {
             stdout = atob(result.stdout)
-          } catch (e) {
+          } catch {
             stdout = result.stdout
           }
         }
@@ -201,7 +201,7 @@ public class Main {
         if (result.stderr) {
           try {
             stderr = atob(result.stderr)
-          } catch (e) {
+          } catch {
             stderr = result.stderr
           }
         }
@@ -210,7 +210,7 @@ public class Main {
         if (result.compile_output) {
           try {
             compileOutput = atob(result.compile_output)
-          } catch (e) {
+          } catch {
             compileOutput = result.compile_output
           }
         }
