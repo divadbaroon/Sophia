@@ -1,30 +1,19 @@
 
 // Session
-export interface SessionContextType {
+interface SessionContextType {
   // Core session data
   sessionId: string;
   lessonId: string;
-  
-  // Task/method navigation
-  currentMethodIndex: number;
-  activeMethodId: string;
-  setCurrentMethodIndex: (index: number) => void;
-  
-  // Session data and loading
   sessionData: TaskData | null;
   isLoadingTasks: boolean;
   
-  // Current task info
-  currentTestCases: TestCase[];
-  studentTask: string;
-  
-  // Navigation methods
+  // Navigation (from hook)
+  currentMethodIndex: number;
+  activeMethodId: string;
+  currentTestCases: any[];
+  setCurrentMethodIndex: (index: number) => void;
   goToNextMethod: () => void;
   goToPrevMethod: () => void;
-  
-  // Template helpers
-  getCurrentMethodTemplate: () => string;
-  getAllMethodTemplates: () => Record<string, string>;
 }
 
 // Code Editor
