@@ -19,15 +19,27 @@ export const TaskProgressProvider = ({ children }: { children: ReactNode }) => {
   const [taskCompletionStatus, setTaskCompletionStatus] = useState<Record<string, Record<number, boolean>>>({});
   const [isLoadingTaskProgress, setIsLoadingTaskProgress] = useState(false);
 
+  // Initialize empty progress for a session
+  const initializeEmptyProgress = (sessionId: string) => {
+    const initialStatus: Record<number, boolean> = {};
+    for (let index = 0; index < (sessionData?.tasks.length || 0); index++) {
+      initialStatus[index] = false;
+    }
+    setTaskCompletionStatus(prev => ({
+      ...prev,
+      [sessionId]: initialStatus
+    }));
+    console.log('🔄 Initialized empty task progress');
+  };
+
   // Load completion status from database when session changes
   useEffect(() => {
     const loadTaskProgress = async () => {
-      if (!sessionId) return;
+      if (!sessionId || !sessionData) return;
       
       setIsLoadingTaskProgress(true);
       
       try {
-        // Try to load from database first
         const result = await getTaskProgressForSession(sessionId);
         
         if (result.success && result.data) {
@@ -44,50 +56,20 @@ export const TaskProgressProvider = ({ children }: { children: ReactNode }) => {
           
           console.log('✅ Loaded task progress from database:', progressMap);
         } else {
-          // Fallback to localStorage if database fails
-          console.log('⚠️ Database load failed, trying localStorage...');
-          const storageKey = `task_completion_${sessionId}`;
-          const saved = localStorage.getItem(storageKey);
-          
-          if (saved) {
-            try {
-              const completedData = JSON.parse(saved);
-              setTaskCompletionStatus(prev => ({
-                ...prev,
-                [sessionId]: completedData
-              }));
-              console.log('📱 Loaded task progress from localStorage:', completedData);
-            } catch (error) {
-              console.error('Error parsing localStorage data:', error);
-              initializeEmptyProgress();
-            }
-          } else {
-            initializeEmptyProgress();
-          }
+          // No data found - initialize empty progress
+          console.log('⚠️ No task progress found, initializing empty state');
+          initializeEmptyProgress(sessionId);
         }
       } catch (error) {
         console.error('Error loading task progress:', error);
-        initializeEmptyProgress();
+        // On error - initialize empty progress
+        initializeEmptyProgress(sessionId);
       } finally {
         setIsLoadingTaskProgress(false);
       }
     };
 
-    const initializeEmptyProgress = () => {
-      const initialStatus: Record<number, boolean> = {};
-      for (let index = 0; index < (sessionData?.tasks.length || 0); index++) {
-        initialStatus[index] = false;
-      }
-      setTaskCompletionStatus(prev => ({
-        ...prev,
-        [sessionId]: initialStatus
-      }));
-      console.log('🔄 Initialized empty task progress');
-    };
-
-    if (sessionId && sessionData) {
-      loadTaskProgress();
-    }
+    loadTaskProgress();
   }, [sessionId, sessionData]);
 
   // Progress actions
