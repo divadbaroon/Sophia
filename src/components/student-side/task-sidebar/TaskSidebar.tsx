@@ -18,9 +18,9 @@ import KnowledgeRadarModal from "@/components/student-side/student-report/studen
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
 import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
 import { getQuizQuestions } from '@/lib/actions/quiz-actions'
+import { getTaskProgressForSession } from '@/lib/actions/task-progress-actions'
 
 import { useSession } from "@/lib/context/session/SessionProvider"
-import { useTaskProgress } from "@/lib/context/taskProgress/TaskProgressProvider"
 
 import { conceptIcons } from "@/lib/constants/conceptIcons"
 
@@ -48,6 +48,9 @@ export default function TaskSidebar({
   // Quiz state 
   const [quizData, setQuizData] = useState<any>(null)
 
+  // Task progress state 
+  const [completedTasks, setCompletedTasks] = useState<Set<number>>(new Set())
+
   const {
     sessionData,
     currentMethodIndex,
@@ -57,16 +60,39 @@ export default function TaskSidebar({
     lessonId,
   } = useSession()
 
-  const {
-    isTaskCompleted,
-  } = useTaskProgress()
+  // Load task progress 
+  useEffect(() => {
+    const loadTaskProgress = async () => {
+      if (!sessionId) return
+      
+      try {
+        const result = await getTaskProgressForSession(sessionId)
+        if (result.success && result.data) {
+          const completed = new Set(
+            result.data.filter((p: any) => p.completed).map((p: any) => p.task_index)
+          )
+          setCompletedTasks(completed)
+          console.log('✅ Loaded task progress:', Array.from(completed))
+        }
+      } catch (error) {
+        console.error('Error loading task progress:', error)
+      }
+    }
 
-  // Load quiz questions when needed (only when all tasks are completed)
+    loadTaskProgress()
+  }, [sessionId])
+
+  // Helper function to check if task is completed
+  const isTaskCompleted = (taskIndex: number): boolean => {
+    return completedTasks.has(taskIndex)
+  }
+
+  // Check if all tasks are completed
   const allTasksCompleted = sessionData?.tasks.every((_: any, index: number) => isTaskCompleted(index)) || false
 
+  // Load quiz questions when needed (only when all tasks are completed)
   useEffect(() => {
     const loadQuizQuestions = async () => {
-      // Only load quiz when all tasks are completed
       if (!allTasksCompleted || !lessonId || !sessionData || quizData) return
       
       console.log("Loading quiz questions for lesson", lessonId)
@@ -141,7 +167,6 @@ export default function TaskSidebar({
   }
 
   const handleFinishedClick = () => {
-    // Add null check for sessionData
     if (!sessionData || !sessionData.tasks) {
       console.warn('Session data not available')
       return
@@ -178,13 +203,11 @@ export default function TaskSidebar({
       console.warn('⚠️ No lessonId available to update progress')
     }
     
-    // Show knowledge radar modal after quiz completion - now uses props
     setShowKnowledgeRadar(true)
   }
 
   const handleKnowledgeRadarContinue = () => {
-    setShowKnowledgeRadar(false) // Uses props instead of local state
-    // Open survey modal after radar modal
+    setShowKnowledgeRadar(false)
     setIsSurveyModalOpen(true)
   }
 
@@ -202,11 +225,9 @@ export default function TaskSidebar({
     window.location.href = "/concepts"
   }
 
-  // Add null checks since global loading guarantees sessionData exists
   const currentTask = sessionData?.tasks[currentMethodIndex]
   const concepts = sessionData?.conceptMappings[currentMethodIndex] || []
 
-  // Early return if data is not available 
   if (!sessionData || !currentTask) {
     return null
   }
@@ -224,7 +245,6 @@ export default function TaskSidebar({
           </div>
         </div>
 
-        {/* Navigation buttons */}
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col gap-2">
           <Button
             variant="ghost"
@@ -261,7 +281,7 @@ export default function TaskSidebar({
             </div>
           </div>
 
-          {/* Concept badges inline */}
+          {/* Concept badges */}
           <div className="flex flex-wrap items-center gap-2">
             {concepts.length === 0 && (
               <Badge variant="secondary" className="text-xs font-medium bg-blue-100 text-blue-800">
@@ -348,7 +368,7 @@ export default function TaskSidebar({
           </ScrollArea>
         </div>
 
-        {/* navigation */}
+        {/* Navigation */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-background/95 backdrop-blur-sm space-y-3">
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -451,7 +471,6 @@ export default function TaskSidebar({
         />
       )}
 
-      {/* Knowledge Radar Modal */}
       <KnowledgeRadarModal
         isOpen={showKnowledgeRadar}
         onClose={() => setShowKnowledgeRadar(false)}
@@ -468,7 +487,6 @@ export default function TaskSidebar({
         onComplete={handleSurveyComplete}
       />
 
-      {/* Prize Wheel Modal */}
       <PrizeWheelModal
         isOpen={showPrizeWheel}
         onClose={handlePrizeWheelClose}
