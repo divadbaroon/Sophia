@@ -3,6 +3,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import SessionSimulator from "./SessionSimulator"
 
 interface Session {
   id: string
@@ -54,18 +61,6 @@ const mockSessions: Session[] = [
     score: 78,
     startTime: "1:15 PM",
   },
-  {
-    id: "4",
-    studentName: "Simulated Student 4",
-    studentAvatar: "",
-    status: "active",
-    duration: "6:22",
-    messages: 9,
-    subject: "Binary Tree Insertion",
-    difficulty: "intermediate",
-    score: 88,
-    startTime: "3:00 PM",
-  },
 ]
 
 export default function SimulationsDashboard() {
@@ -97,6 +92,13 @@ export default function SimulationsDashboard() {
 
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all")
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleCardClick = (session: Session) => {
+    setSelectedSession(session)
+    setIsModalOpen(true)
+  }
 
   const handleRerunSimulation = async () => {
     setIsLoading(true)
@@ -190,7 +192,8 @@ export default function SimulationsDashboard() {
               filteredSessions.map((session, index) => (
                 <div
                   key={session.id}
-                  className={`p-6 rounded-lg border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all duration-200 cursor-pointer ${index === 0 ? "mt-6" : ""}`}
+                  onClick={() => handleCardClick(session)}
+                  className={`p-8 rounded-lg border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all duration-200 cursor-pointer ${index === 0 ? "mt-6" : ""}`}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -213,6 +216,21 @@ export default function SimulationsDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Session Simulator Modal */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                Live Session: {selectedSession?.studentName}
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              </DialogTitle>
+            </DialogHeader>
+            {selectedSession && (
+              <SessionSimulator session={selectedSession} />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
