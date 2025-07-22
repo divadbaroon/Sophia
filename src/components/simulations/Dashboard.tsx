@@ -69,16 +69,16 @@ const mockSessions: Session[] = [
 ]
 
 export default function SimulationsDashboard() {
-  const getStatusColor = (status: Session["status"]) => {
+  const getStatusText = (status: Session["status"]) => {
     switch (status) {
       case "active":
-        return "bg-green-500"
+        return "In Progress"
       case "completed":
-        return "bg-blue-500"
+        return "Completed"
       case "paused":
-        return "bg-yellow-500"
+        return "Paused"
       default:
-        return "bg-gray-500"
+        return "Unknown"
     }
   }
 
@@ -113,7 +113,7 @@ export default function SimulationsDashboard() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Top Header with Rerun Button */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 shadow-sm mt-14">
+        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 shadow-sm mt-20">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-1">Simulated Conversation</h1>
@@ -190,17 +190,17 @@ export default function SimulationsDashboard() {
               filteredSessions.map((session, index) => (
                 <div
                   key={session.id}
-                  className={`p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors ${index === 0 ? "mt-6" : ""}`}
+                  className={`p-6 rounded-lg border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all duration-200 cursor-pointer ${index === 0 ? "mt-6" : ""}`}
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-4">
                     <div>
                       <p className="font-medium text-sm">{session.studentName}</p>
                       <p className="text-xs text-gray-500">{session.subject}</p>
                     </div>
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(session.status)}`} />
+                    <span className="text-xs text-gray-600 font-medium">{getStatusText(session.status)}</span>
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mt-auto">
                     <Badge variant="secondary" className={getDifficultyColor(session.difficulty)}>
                       {session.difficulty}
                     </Badge>
