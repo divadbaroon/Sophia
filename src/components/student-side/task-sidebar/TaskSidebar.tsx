@@ -24,14 +24,7 @@ import { useSession } from "@/lib/context/session/SessionProvider"
 
 import { conceptIcons } from "@/lib/constants/conceptIcons"
 
-interface TaskSidebarProps {
-  isQuizModalOpen: boolean
-  setIsQuizModalOpen: (open: boolean) => void
-  isSurveyModalOpen: boolean
-  setIsSurveyModalOpen: (open: boolean) => void
-  showKnowledgeRadar: boolean
-  setShowKnowledgeRadar: (open: boolean) => void
-}
+import { TaskSidebarProps } from "@/components/student-side/task-sidebar/types"
 
 export default function TaskSidebar({ 
   isQuizModalOpen, 
