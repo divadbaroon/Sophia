@@ -391,6 +391,7 @@ export interface ConversationTurn {
   toolCalls: any[];
   toolResults: any[];
   interrupted: boolean;
+  audioData?: string;
 }
 
 export interface SimulationResult {
