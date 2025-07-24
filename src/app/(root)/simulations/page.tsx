@@ -1,5 +1,5 @@
-import SimulationsDashboard from "@/components/simulations/Dashboard"
+import SimulationReplayDashboard from "@/components/simulations/ConversationSimulatorDashboard"
 
 export default function Page() {
-  return <SimulationsDashboard />
+  return <SimulationReplayDashboard />
 }
