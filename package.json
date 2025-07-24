@@ -17,6 +17,7 @@
     "@codemirror/lang-javascript": "^6.2.3",
     "@codemirror/lang-python": "^6.1.7",
     "@deepgram/sdk": "^3.11.0",
+    "@elevenlabs/elevenlabs-js": "^2.7.0",
     "@elevenlabs/react": "^0.3.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
