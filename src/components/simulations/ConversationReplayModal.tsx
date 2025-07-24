@@ -265,12 +265,6 @@ export function ConversationReplayModal({
                                 )}
                               </div>
                               <div className="text-sm text-gray-900">{turn.message}</div>
-                              {isAudioPlaying && currentMessageIndex === index && (
-                                <div className="text-xs text-blue-500 mt-1 flex items-center gap-1">
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                                  Playing audio...
-                                </div>
-                              )}
                             </div>
                           </div>
                         ))
