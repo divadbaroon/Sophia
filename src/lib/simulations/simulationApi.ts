@@ -1,11 +1,16 @@
 import { Session, SimulationResult, ConversationTurn } from "@/types";
+import { EvaluationCriterion } from "@/components/simulations/EvaluationCriteriaModal";
 
-export const runSimulation = async (session: Session): Promise<SimulationResult> => {
+export const runSimulation = async (
+  session: Session, 
+  evaluationCriteria: EvaluationCriterion[]
+): Promise<SimulationResult> => {
   console.log(`🎯 Starting simulation for session:`, {
     id: session.id,
     studentName: session.studentName,
     subject: session.subject,
-    difficulty: session.difficulty
+    difficulty: session.difficulty,
+    criteriaCount: evaluationCriteria.length
   });
 
   const requestBody = {
@@ -19,27 +24,20 @@ export const runSimulation = async (session: Session): Promise<SimulationResult>
         }
       }
     },
-    extraEvaluationCriteria: [
-      {
-        id: "teaching_effectiveness",
-        name: "Teaching Effectiveness",
-        conversationGoalPrompt: "The teacher effectively explained the concepts and helped the student understand.",
-        useKnowledgeBase: false
-      },
-      {
-        id: "student_engagement", 
-        name: "Student Engagement",
-        conversationGoalPrompt: "The student was engaged and asked relevant questions.",
-        useKnowledgeBase: false
-      }
-    ]
+    extraEvaluationCriteria: evaluationCriteria.map(criterion => ({
+      id: criterion.id,
+      name: criterion.name,
+      conversationGoalPrompt: criterion.conversationGoalPrompt,
+      useKnowledgeBase: false
+    }))
   };
 
   console.log(`📤 Sending API request for ${session.studentName}:`, {
     url: '/api/elevenlabs/simulate-conversation',
     agentId: requestBody.agentId,
     prompt: requestBody.simulationSpecification.simulatedUserConfig.prompt.prompt.substring(0, 100) + "...",
-    evaluationCriteria: requestBody.extraEvaluationCriteria.length
+    evaluationCriteria: requestBody.extraEvaluationCriteria.length,
+    criteriaNames: requestBody.extraEvaluationCriteria.map(c => c.name)
   });
 
   try {
@@ -105,12 +103,15 @@ export const runSimulation = async (session: Session): Promise<SimulationResult>
 export const runAllSimulations = async (
   sessions: Session[],
   setSessions: React.Dispatch<React.SetStateAction<Session[]>>,
-  setIsRunning: React.Dispatch<React.SetStateAction<boolean>>
+  setIsRunning: React.Dispatch<React.SetStateAction<boolean>>,
+  evaluationCriteria: EvaluationCriterion[]
 ) => {
   console.log("🚀 Starting all simulations...");
   console.log("📋 Environment check:", {
     teacherAgentId: process.env.NEXT_PUBLIC_TEACHER_AGENT_ID ? "✅ Set" : "❌ Missing",
-    sessionsCount: sessions.length
+    sessionsCount: sessions.length,
+    criteriaCount: evaluationCriteria.length,
+    criteriaNames: evaluationCriteria.map(c => c.name)
   });
   
   setIsRunning(true);
@@ -140,7 +141,7 @@ export const runAllSimulations = async (
       
       try {
         const sessionStartTime = Date.now();
-        const result = await runSimulation(session);
+        const result = await runSimulation(session, evaluationCriteria);
         const sessionEndTime = Date.now();
         const sessionDuration = sessionEndTime - sessionStartTime;
         
