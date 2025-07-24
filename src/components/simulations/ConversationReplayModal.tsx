@@ -84,7 +84,7 @@ export function ConversationReplayModal({
             
             {selectedSession.status === "pending" && (
               <div className="text-gray-500 text-center py-8">
-                Simulation not run yet. Click "Run Simulations" to start.
+                Simulation not run yet. Click &quot;Run Simulations&quot; to start.
               </div>
             )}
             
