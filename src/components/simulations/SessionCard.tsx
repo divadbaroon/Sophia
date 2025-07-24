@@ -43,7 +43,7 @@ export function SessionCard({ session, onSessionClick, getDifficultyColor }: Ses
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2 mt-5">
+      <div className="flex items-center gap-2 mt-6">
         <Badge className={getDifficultyColor(session.difficulty)}>
           {session.difficulty}
         </Badge>
