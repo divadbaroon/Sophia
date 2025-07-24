@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Play, Pause, SkipForward, SkipBack } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Volume2 } from "lucide-react";
 import { Session } from "@/types";
 
 interface ConversationReplayModalProps {
@@ -23,9 +23,11 @@ export function ConversationReplayModal({
 }: ConversationReplayModalProps) {
   const [activeTab, setActiveTab] = useState<"conversation" | "analysis">("conversation");
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(-1); // Start at -1 to show no messages initially
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(-1);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const currentMessageRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Scroll to current message when it changes
   useEffect(() => {
@@ -37,14 +39,79 @@ export function ConversationReplayModal({
     }
   }, [currentMessageIndex]);
 
+  // Play audio for current message
+  useEffect(() => {
+    if (isPlaying && currentMessageIndex >= 0 && selectedSession?.simulationResult) {
+      const filteredMessages = selectedSession.simulationResult.simulatedConversation
+        .filter(turn => turn.message && turn.message !== "==! END_CALL!==");
+      
+      const currentMessage = filteredMessages[currentMessageIndex];
+      if (currentMessage?.audioData) {
+        playMessageAudio(currentMessage.audioData);
+      }
+    }
+  }, [currentMessageIndex, isPlaying]);
+
+  const playMessageAudio = (audioData: string) => {
+    try {
+      // Stop any currently playing audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+
+      // Create and play new audio
+      const audio = new Audio(`data:audio/mp3;base64,${audioData}`);
+      audioRef.current = audio;
+      
+      audio.onloadstart = () => {
+        console.log("🎵 Audio loading started...");
+        setIsAudioPlaying(true);
+      };
+      
+      audio.oncanplaythrough = () => {
+        console.log("🎵 Audio ready to play");
+      };
+      
+      audio.onplay = () => {
+        console.log("🎵 Audio started playing");
+        setIsAudioPlaying(true);
+      };
+      
+      audio.onended = () => {
+        console.log("🎵 Audio finished playing");
+        setIsAudioPlaying(false);
+      };
+      
+      audio.onerror = (e) => {
+        console.error("🎵 Audio playback error:", e);
+        setIsAudioPlaying(false);
+      };
+
+      audio.play().catch(error => {
+        console.error("🎵 Failed to play audio:", error);
+        setIsAudioPlaying(false);
+      });
+
+    } catch (error) {
+      console.error("🎵 Error creating audio:", error);
+      setIsAudioPlaying(false);
+    }
+  };
+
   const handlePlayToggle = () => {
     setIsPlaying(!isPlaying);
     if (!isPlaying) {
       // Start from first message when starting to play
       setCurrentMessageIndex(0);
     } else {
-      // When pausing, reset to show no messages
+      // When pausing, reset to show no messages and stop audio
       setCurrentMessageIndex(-1);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      setIsAudioPlaying(false);
     }
   };
 
@@ -54,6 +121,13 @@ export function ConversationReplayModal({
         .filter(turn => turn.message && turn.message !== "==! END_CALL!==");
       
       if (currentMessageIndex < filteredMessages.length - 1) {
+        // Stop current audio
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+        setIsAudioPlaying(false);
+        
         setCurrentMessageIndex(currentMessageIndex + 1);
       }
     }
@@ -61,17 +135,33 @@ export function ConversationReplayModal({
 
   const handleSkipBack = () => {
     if (currentMessageIndex > 0) {
+      // Stop current audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      setIsAudioPlaying(false);
+      
       setCurrentMessageIndex(currentMessageIndex - 1);
     }
   };
 
+  const handleManualPlayAudio = (audioData: string) => {
+    playMessageAudio(audioData);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>
             {selectedSession ? `Conversation Replay: ${selectedSession.studentName}` : "Conversation Replay"}
           </DialogTitle>
+          {selectedSession && (
+            <p className="text-sm text-gray-500 mt-1">
+              {selectedSession.description}
+            </p>
+          )}
         </DialogHeader>
 
         {selectedSession ? (
@@ -84,7 +174,7 @@ export function ConversationReplayModal({
             
             {selectedSession.status === "pending" && (
               <div className="text-gray-500 text-center py-8">
-                Simulation not run yet. Click &quot;Run Simulations&quot; to start.
+                Simulation not run yet. Click "Run Simulations" to start.
               </div>
             )}
             
@@ -97,7 +187,7 @@ export function ConversationReplayModal({
             {selectedSession.status === "completed" && selectedSession.simulationResult && (
               <>
                 {/* Tab Navigation */}
-                <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-4">
+                <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-1">
                   <Button
                     variant={activeTab === "conversation" ? "default" : "ghost"}
                     size="sm"
@@ -119,7 +209,7 @@ export function ConversationReplayModal({
                 {/* Tab Content */}
                 <div 
                   ref={scrollContainerRef}
-                  className={`overflow-y-auto ${activeTab === "conversation" ? "max-h-[45vh] pb-16" : "max-h-[55vh]"}`}
+                  className={`overflow-y-auto ${activeTab === "conversation" ? "max-h-[50vh] pb-16" : "max-h-[60vh]"}`}
                 >
                   {activeTab === "conversation" && (
                     <div className="space-y-3">
@@ -130,7 +220,7 @@ export function ConversationReplayModal({
                       ) : (
                         selectedSession.simulationResult.simulatedConversation
                           .filter(turn => turn.message && turn.message !== "==! END_CALL!==")
-                          .slice(0, currentMessageIndex + 1) // Only show messages up to current index
+                          .slice(0, currentMessageIndex + 1)
                           .map((turn, index) => (
                           <div
                             key={index}
@@ -159,10 +249,28 @@ export function ConversationReplayModal({
                                   : "bg-blue-50 border border-blue-200"
                               }`}
                             >
-                              <div className="font-medium text-xs mb-1 text-gray-600">
-                                {turn.role === "user" ? "Student" : "Teacher"}
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="font-medium text-xs text-gray-600">
+                                  {turn.role === "user" ? "Student" : "Teacher"}
+                                </div>
+                                {turn.audioData && (
+                                  <Button
+                                    onClick={() => handleManualPlayAudio(turn.audioData!)}
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 w-6 p-0 hover:bg-gray-200"
+                                  >
+                                    <Volume2 className="w-3 h-3" />
+                                  </Button>
+                                )}
                               </div>
                               <div className="text-sm text-gray-900">{turn.message}</div>
+                              {isAudioPlaying && currentMessageIndex === index && (
+                                <div className="text-xs text-blue-500 mt-1 flex items-center gap-1">
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                                  Playing audio...
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))
@@ -171,7 +279,7 @@ export function ConversationReplayModal({
                   )}
 
                   {activeTab === "analysis" && (
-                    <div className="space-y-4">
+                    <div className="space-y-4 ">
                       {/* Overall Status */}
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <h4 className="font-medium mb-2">Overall Assessment</h4>
@@ -219,7 +327,7 @@ export function ConversationReplayModal({
                   )}
                 </div>
 
-                {/* Play Bar*/}
+                {/* Fixed Play Bar - Only shows on conversation tab */}
                 {activeTab === "conversation" && (
                   <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex justify-center gap-2">
                     <Button
