@@ -25,7 +25,7 @@ export function ConversationReplayModal({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(-1);
   // For now but will use in future
-  //@typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const currentMessageRef = useRef<HTMLDivElement>(null);
