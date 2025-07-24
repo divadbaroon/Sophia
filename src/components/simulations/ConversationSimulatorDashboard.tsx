@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Settings } from "lucide-react";
 
 import { Session } from "@/types";
 import { sessionConfigs } from "@/lib/simulations/data/sessionConfigs";
@@ -10,6 +11,20 @@ import { runAllSimulations } from "@/lib/simulations/simulationApi";
 import { ConversationReplayModal } from "@/components/simulations/ConversationReplayModal";
 import { SessionCard } from "@/components/simulations/SessionCard";
 import { CompetencyFilter } from "@/components/simulations/CompetencyFilter";
+import { EvaluationCriteriaModal, EvaluationCriterion } from "@/components/simulations/EvaluationCriteriaModal";
+
+const defaultCriteria: EvaluationCriterion[] = [
+  {
+    id: "teaching_effectiveness",
+    name: "Teaching Effectiveness",
+    conversationGoalPrompt: "The teacher effectively explained the concepts and helped the student understand."
+  },
+  {
+    id: "student_engagement", 
+    name: "Student Engagement",
+    conversationGoalPrompt: "The student was engaged and asked relevant questions."
+  }
+];
 
 export default function SimulationReplayDashboard() {
   const [sessions, setSessions] = useState<Session[]>(
@@ -19,6 +34,9 @@ export default function SimulationReplayDashboard() {
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [competencyFilter, setCompetencyFilter] = useState<"all" | "beginner" | "intermediate" | "advanced">("all");
+  
+  const [evaluationCriteria, setEvaluationCriteria] = useState<EvaluationCriterion[]>(defaultCriteria);
+  const [isCriteriaModalOpen, setIsCriteriaModalOpen] = useState(false);
 
   console.log("🔄 Component rendered with sessions:", sessions.map(s => ({ id: s.id, status: s.status })));
 
@@ -41,7 +59,7 @@ export default function SimulationReplayDashboard() {
   });
 
   const handleRunAllSimulations = () => {
-    runAllSimulations(sessions, setSessions, setIsRunning);
+    runAllSimulations(sessions, setSessions, setIsRunning, evaluationCriteria);
   };
 
   const handleSessionClick = (session: Session) => {
@@ -53,6 +71,11 @@ export default function SimulationReplayDashboard() {
     });
     setSelectedSession(session);
     setIsModalOpen(true);
+  };
+
+  const handleCriteriaSave = (newCriteria: EvaluationCriterion[]) => {
+    setEvaluationCriteria(newCriteria);
+    console.log("📊 Evaluation criteria updated:", newCriteria.map(c => c.name));
   };
 
   return (
@@ -95,7 +118,18 @@ export default function SimulationReplayDashboard() {
           {/* Sessions List */}
           <Card className="w-full">
             <CardHeader>
-              <CardTitle>Simulation Sessions</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Simulation Sessions</CardTitle>
+                <Button
+                  onClick={() => setIsCriteriaModalOpen(true)}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  Evaluation Criteria
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Filter Options */}
@@ -128,6 +162,14 @@ export default function SimulationReplayDashboard() {
           isOpen={isModalOpen}
           onOpenChange={setIsModalOpen}
           selectedSession={selectedSession}
+        />
+
+        {/* Evaluation Criteria Modal */}
+        <EvaluationCriteriaModal
+          isOpen={isCriteriaModalOpen}
+          onOpenChange={setIsCriteriaModalOpen}
+          criteria={evaluationCriteria}
+          onSave={handleCriteriaSave}
         />
       </div>
     </div>
