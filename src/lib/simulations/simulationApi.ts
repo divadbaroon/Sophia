@@ -1,6 +1,42 @@
 import { Session, SimulationResult, ConversationTurn } from "@/types";
 import { EvaluationCriterion } from "@/components/simulations/EvaluationCriteriaModal";
 
+// TTS generation function
+const generateTTS = async (text: string, role: "user" | "agent"): Promise<string | undefined> => {
+  try {
+    // Use different voice IDs for teacher vs student
+    const voiceId = role === "agent" 
+      ? "NihRgaLj2HWAjvZ5XNxl" // Teacher voice
+      : "iDxgwKogoeR1jrVkJKJv"; // Student voice
+    
+    console.log(`🎵 Generating TTS for ${role} with voice ${voiceId}: "${text.substring(0, 30)}${text.length > 30 ? '...' : ''}"`);
+
+    const response = await fetch('/api/elevenlabs/text-to-speech', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        text: text,
+        voiceId: voiceId 
+      })
+    });
+
+    if (!response.ok) {
+      console.error(`❌ TTS API error: ${response.status} ${response.statusText}`);
+      return undefined;
+    }
+
+    const result = await response.json();
+    console.log(`✅ TTS generated for ${role}, size: ${result.size} bytes`);
+    return result.audioData;
+
+  } catch (error) {
+    console.error(`💥 TTS generation failed for ${role}:`, error);
+    return undefined;
+  }
+};
+
 export const runSimulation = async (
   session: Session, 
   evaluationCriteria: EvaluationCriterion[]
@@ -87,6 +123,30 @@ export const runSimulation = async (
           hasToolResults: turn.toolResults?.length > 0
         }))
       );
+    }
+
+    // Generate TTS for each message
+    console.log(`🎵 Starting TTS generation for ${session.studentName}...`);
+    const ttsStartTime = Date.now();
+    
+    if (result.simulatedConversation) {
+      const processedConversation = await Promise.all(
+        result.simulatedConversation.map(async (turn: ConversationTurn) => {
+          // Only generate TTS for messages with actual text content
+          if (turn.message && turn.message !== "==! END_CALL!==" && turn.message.trim().length > 0) {
+            const audioData = await generateTTS(turn.message, turn.role);
+            return { ...turn, audioData };
+          }
+          return turn;
+        })
+      );
+      
+      const ttsEndTime = Date.now();
+      const ttsDuration = ttsEndTime - ttsStartTime;
+      console.log(`🎵 TTS generation completed for ${session.studentName} in ${ttsDuration}ms`);
+      
+      // Update the result with processed conversation
+      result.simulatedConversation = processedConversation;
     }
 
     return result;
