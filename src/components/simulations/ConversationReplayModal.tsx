@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Play, Pause, SkipForward, SkipBack, Volume2 } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from "lucide-react";
 import { Session } from "@/types";
 
 interface ConversationReplayModalProps {
@@ -24,12 +24,21 @@ export function ConversationReplayModal({
   const [activeTab, setActiveTab] = useState<"conversation" | "analysis">("conversation");
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(-1);
-  // For now but will use in future
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [currentlyPlayingMessageIndex, setCurrentlyPlayingMessageIndex] = useState<number | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const currentMessageRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Function to stop all audio
+  const stopAllAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setIsAudioPlaying(false);
+    setCurrentlyPlayingMessageIndex(null);
+  };
 
   // Scroll to current message when it changes
   useEffect(() => {
@@ -49,22 +58,23 @@ export function ConversationReplayModal({
       
       const currentMessage = filteredMessages[currentMessageIndex];
       if (currentMessage?.audioData) {
-        playMessageAudio(currentMessage.audioData);
+        playMessageAudio(currentMessage.audioData, currentMessageIndex);
       }
     }
   }, [currentMessageIndex, isPlaying]);
 
-  const playMessageAudio = (audioData: string) => {
+  const playMessageAudio = (audioData: string, messageIndex?: number) => {
     try {
       // Stop any currently playing audio
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
+      stopAllAudio();
 
       // Create and play new audio
       const audio = new Audio(`data:audio/mp3;base64,${audioData}`);
       audioRef.current = audio;
+      
+      if (messageIndex !== undefined) {
+        setCurrentlyPlayingMessageIndex(messageIndex);
+      }
       
       audio.onloadstart = () => {
         console.log("🎵 Audio loading started...");
@@ -83,37 +93,37 @@ export function ConversationReplayModal({
       audio.onended = () => {
         console.log("🎵 Audio finished playing");
         setIsAudioPlaying(false);
+        setCurrentlyPlayingMessageIndex(null);
       };
       
       audio.onerror = (e) => {
         console.error("🎵 Audio playback error:", e);
         setIsAudioPlaying(false);
+        setCurrentlyPlayingMessageIndex(null);
       };
 
       audio.play().catch(error => {
         console.error("🎵 Failed to play audio:", error);
         setIsAudioPlaying(false);
+        setCurrentlyPlayingMessageIndex(null);
       });
 
     } catch (error) {
       console.error("🎵 Error creating audio:", error);
       setIsAudioPlaying(false);
+      setCurrentlyPlayingMessageIndex(null);
     }
   };
 
   const handlePlayToggle = () => {
-    setIsPlaying(!isPlaying);
-    if (!isPlaying) {
-      // Start from first message when starting to play
-      setCurrentMessageIndex(0);
+    if (isPlaying) {
+      stopAllAudio();
+      setIsPlaying(false);
     } else {
-      // When pausing, reset to show no messages and stop audio
-      setCurrentMessageIndex(-1);
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
+      setIsPlaying(true);
+      if (currentMessageIndex === -1) {
+        setCurrentMessageIndex(0);
       }
-      setIsAudioPlaying(false);
     }
   };
 
@@ -123,13 +133,8 @@ export function ConversationReplayModal({
         .filter(turn => turn.message && turn.message !== "==! END_CALL!==");
       
       if (currentMessageIndex < filteredMessages.length - 1) {
-        // Stop current audio
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current = null;
-        }
-        setIsAudioPlaying(false);
-        
+        // Stop current audio before moving to next
+        stopAllAudio();
         setCurrentMessageIndex(currentMessageIndex + 1);
       }
     }
@@ -137,19 +142,20 @@ export function ConversationReplayModal({
 
   const handleSkipBack = () => {
     if (currentMessageIndex > 0) {
-      // Stop current audio
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      setIsAudioPlaying(false);
-      
+      // Stop current audio before moving to previous
+      stopAllAudio();
       setCurrentMessageIndex(currentMessageIndex - 1);
     }
   };
 
-  const handleManualPlayAudio = (audioData: string) => {
-    playMessageAudio(audioData);
+  const handleManualPlayAudio = (audioData: string, messageIndex: number) => {
+    // If this message is currently playing, stop it
+    if (currentlyPlayingMessageIndex === messageIndex && isAudioPlaying) {
+      stopAllAudio();
+    } else {
+      // Otherwise, play the audio for this message
+      playMessageAudio(audioData, messageIndex);
+    }
   };
 
   return (
@@ -257,12 +263,20 @@ export function ConversationReplayModal({
                                 </div>
                                 {turn.audioData && (
                                   <Button
-                                    onClick={() => handleManualPlayAudio(turn.audioData!)}
+                                    onClick={() => handleManualPlayAudio(turn.audioData!, index)}
                                     size="sm"
                                     variant="ghost"
-                                    className="h-6 w-6 p-0 hover:bg-gray-200"
+                                    className={`h-6 w-6 p-0 hover:bg-gray-200 ${
+                                      currentlyPlayingMessageIndex === index && isAudioPlaying 
+                                        ? "bg-blue-100 text-blue-600" 
+                                        : ""
+                                    }`}
                                   >
-                                    <Volume2 className="w-3 h-3" />
+                                    {currentlyPlayingMessageIndex === index && isAudioPlaying ? (
+                                      <VolumeX className="w-3 h-3" />
+                                    ) : (
+                                      <Volume2 className="w-3 h-3" />
+                                    )}
                                   </Button>
                                 )}
                               </div>
@@ -342,9 +356,9 @@ export function ConversationReplayModal({
                       className="flex items-center justify-center w-10 h-10 p-0 rounded-full"
                     >
                       {isPlaying ? (
-                        <Pause className="w-4 h-4" />
-                      ) : (
                         <Play className="w-4 h-4" />
+                      ) : (
+                        <Pause className="w-4 h-4" />
                       )}
                     </Button>
                     <Button
