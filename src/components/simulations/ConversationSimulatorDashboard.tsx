@@ -12,7 +12,9 @@ import { ConversationReplayModal } from "@/components/simulations/ConversationRe
 import { SessionCard } from "@/components/simulations/SessionCard";
 import { CompetencyFilter } from "@/components/simulations/CompetencyFilter";
 import { EvaluationCriteriaModal, EvaluationCriterion } from "@/components/simulations/EvaluationCriteriaModal";
+import { VoiceSettingsModal } from "@/components/simulations/VoiceSettingsModal";
 
+// Default evaluation criteria
 const defaultCriteria: EvaluationCriterion[] = [
   {
     id: "teaching_effectiveness",
@@ -35,8 +37,12 @@ export default function SimulationReplayDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [competencyFilter, setCompetencyFilter] = useState<"all" | "beginner" | "intermediate" | "advanced">("all");
   
+  // Evaluation Criteria State
   const [evaluationCriteria, setEvaluationCriteria] = useState<EvaluationCriterion[]>(defaultCriteria);
   const [isCriteriaModalOpen, setIsCriteriaModalOpen] = useState(false);
+
+  // Voice Settings State
+  const [isVoiceSettingsOpen, setIsVoiceSettingsOpen] = useState(false);
 
   console.log("🔄 Component rendered with sessions:", sessions.map(s => ({ id: s.id, status: s.status })));
 
@@ -120,15 +126,28 @@ export default function SimulationReplayDashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Simulation Sessions</CardTitle>
-                <Button
-                  onClick={() => setIsCriteriaModalOpen(true)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Settings className="w-4 h-4" />
-                  Evaluation Criteria
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => setIsVoiceSettingsOpen(true)}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5 12a5 5 0 007.54.54l3-3a5 5 0 00-7.54-.54z" />
+                    </svg>
+                    Voice Settings
+                  </Button>
+                  <Button
+                    onClick={() => setIsCriteriaModalOpen(true)}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Evaluation Criteria
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -162,6 +181,12 @@ export default function SimulationReplayDashboard() {
           isOpen={isModalOpen}
           onOpenChange={setIsModalOpen}
           selectedSession={selectedSession}
+        />
+
+        {/* Voice Settings Modal */}
+        <VoiceSettingsModal
+          isOpen={isVoiceSettingsOpen}
+          onOpenChange={setIsVoiceSettingsOpen}
         />
 
         {/* Evaluation Criteria Modal */}
