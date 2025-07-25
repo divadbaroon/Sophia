@@ -4,10 +4,19 @@ import { EvaluationCriterion } from "@/components/simulations/EvaluationCriteria
 // TTS generation function
 const generateTTS = async (text: string, role: "user" | "agent"): Promise<string | undefined> => {
   try {
+    // Get voice IDs from localStorage with fallbacks
+    const teacherVoiceId = typeof window !== 'undefined' 
+      ? localStorage.getItem('teacherVoiceId') || "NihRgaLj2HWAjvZ5XNxl"
+      : "NihRgaLj2HWAjvZ5XNxl";
+    
+    const studentVoiceId = typeof window !== 'undefined'
+      ? localStorage.getItem('studentVoiceId') || "iDxgwKogoeR1jrVkJKJv" 
+      : "iDxgwKogoeR1jrVkJKJv";
+
     // Use different voice IDs for teacher vs student
     const voiceId = role === "agent" 
-      ? "NihRgaLj2HWAjvZ5XNxl" // Teacher voice
-      : "iDxgwKogoeR1jrVkJKJv"; // Student voice
+      ? teacherVoiceId // Teacher voice
+      : studentVoiceId; // Student voice
     
     console.log(`🎵 Generating TTS for ${role} with voice ${voiceId}: "${text.substring(0, 30)}${text.length > 30 ? '...' : ''}"`);
 
