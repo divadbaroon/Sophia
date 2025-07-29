@@ -147,51 +147,12 @@ export function EvaluationCriteriaModal({
     onOpenChange(false);
   };
 
-  const handleResetToDefaults = () => {
-    const defaultCriteria: EvaluationCriterion[] = [
-      {
-        id: "teaching_effectiveness",
-        name: "Teaching Effectiveness",
-        conversationGoalPrompt: "The teacher effectively explained the concepts and helped the student understand."
-      }
-    ];
-    
-    setLocalCriteria(defaultCriteria);
-    console.log('🔄 Reset to default criteria');
-  };
-
-  const handleClearAll = () => {
-    if (window.confirm('Are you sure you want to delete all criteria? This cannot be undone.')) {
-      setLocalCriteria([]);
-      localStorage.removeItem(STORAGE_KEY);
-      console.log('🧹 Cleared all criteria');
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>Evaluation Criteria Management</DialogTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={handleResetToDefaults}
-                variant="outline"
-                size="sm"
-                className="text-xs"
-              >
-                Reset to Defaults
-              </Button>
-              <Button
-                onClick={handleClearAll}
-                variant="outline"
-                size="sm"
-                className="text-xs text-red-600 hover:text-red-700"
-              >
-                Clear All
-              </Button>
-            </div>
           </div>
         </DialogHeader>
 
