@@ -349,7 +349,7 @@ export function EvaluationCriteriaModal({
           {localCriteria.length === 0 && !isAddingNew && (
             <div className="text-center py-8 text-gray-500">
               <p>No evaluation criteria defined yet.</p>
-              <p className="text-sm">Click the + button to create your first criterion, or use "Reset to Defaults".</p>
+              <p className="text-sm">Click the + button to create your first criterion, or use &quot;Reset to Defaults&quot;.</p>
             </div>
           )}
         </div>
