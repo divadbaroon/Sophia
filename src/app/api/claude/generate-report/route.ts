@@ -21,7 +21,12 @@ Generate a report with these three sections:
 
 If NO criteria failed across all sessions, return an empty array.
 
-**Recommendations**: Provide 3-5 actionable recommendations for improving the teaching agent based on the failed criteria patterns.
+**Recommendations**: Provide specific changes to the AI agent's PROMPT to address the failed criteria. Each recommendation should be a concrete prompt modification or addition. If NO criteria failed, return an empty array with no recommendations.
+
+Examples of good prompt recommendations:
+- "Add instructions to detect student confusion signals and simplify explanations when phrases like 'I'm lost' are used"
+- "Include a directive to always ask follow-up questions to verify student understanding before moving to new concepts"
+- "Add personalization instructions to use the student's actual name instead of placeholder names"
 
 Return your response as a JSON object with this structure:
 {
@@ -38,7 +43,7 @@ Return your response as a JSON object with this structure:
   ]
 }
 
-Focus ONLY on failed evaluation criteria and their rationales. Ignore successful criteria.`;
+Focus ONLY on failed evaluation criteria and their rationales. Ignore successful criteria. Make recommendations actionable prompt changes, not general advice.`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -116,7 +121,7 @@ function buildUserPrompt(sessions: Session[]): string {
     prompt += `- Difficulty: ${session.difficulty}\n`;
     prompt += `- Description: ${session.description}\n\n`;
 
-    // Add evaluation results
+    // Add ONLY evaluation results (no conversation transcript)
     if (session.simulationResult?.analysis?.evaluationCriteriaResults) {
       prompt += `### Evaluation Results:\n`;
       Object.entries(session.simulationResult.analysis.evaluationCriteriaResults).forEach(([criterionId, result]) => {
@@ -143,9 +148,9 @@ function buildUserPrompt(sessions: Session[]): string {
   });
 
   if (totalFailures === 0) {
-    prompt += `\nNOTE: All evaluation criteria passed across all sessions. For the "specificIssues" section, return an empty array since there were no failures.`;
+    prompt += `\nNOTE: All evaluation criteria passed across all sessions. For both "specificIssues" and "recommendations" sections, return empty arrays since there were no failures and therefore no prompt changes are needed.`;
   } else {
-    prompt += `\nFocus your analysis on the ${totalFailures} failed criteria across these sessions. Extract specific issues ONLY from failed criteria rationales.`;
+    prompt += `\nFocus your analysis on the ${totalFailures} failed criteria across these sessions. Extract specific issues ONLY from failed criteria rationales. For recommendations, suggest specific changes to the AI agent's prompt that would address these failures.`;
   }
 
   return prompt;
