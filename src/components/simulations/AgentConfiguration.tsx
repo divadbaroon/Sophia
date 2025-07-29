@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Settings, RefreshCw, Save, Edit } from "lucide-react";
+import { Settings, RefreshCw, Save, Edit, ExternalLink, Copy } from "lucide-react";
+import { CloneVoiceModal } from "@/components/simulations/CloneVoiceModal";
 
 interface AgentInfo {
   agent_id: string;
@@ -22,6 +23,9 @@ export function AgentConfiguration() {
   const [error, setError] = useState<string | null>(null);
   const [editedName, setEditedName] = useState("");
   const [editedPrompt, setEditedPrompt] = useState("");
+  const [editedFirstMessage, setEditedFirstMessage] = useState("");
+  const [editedVoiceId, setEditedVoiceId] = useState("");
+  const [isCloneVoiceModalOpen, setIsCloneVoiceModalOpen] = useState(false);
 
   // Fetch agent configuration
   const fetchAgentConfig = async () => {
@@ -55,6 +59,8 @@ export function AgentConfiguration() {
       setAgentInfo(agentData);
       setEditedName(agentData.name);
       setEditedPrompt(agentData.prompt);
+      setEditedFirstMessage(agentData.first_message);
+      setEditedVoiceId(agentData.voice_id);
       console.log('✅ Agent configuration fetched successfully');
 
     } catch (error) {
@@ -82,7 +88,9 @@ export function AgentConfiguration() {
         },
         body: JSON.stringify({
           name: editedName,
-          prompt: editedPrompt
+          prompt: editedPrompt,
+          first_message: editedFirstMessage,
+          voice_id: editedVoiceId
         })
       });
 
@@ -126,6 +134,8 @@ export function AgentConfiguration() {
     if (agentInfo) {
       setEditedName(agentInfo.name);
       setEditedPrompt(agentInfo.prompt);
+      setEditedFirstMessage(agentInfo.first_message);
+      setEditedVoiceId(agentInfo.voice_id);
     }
     setIsEditing(false);
     setError(null);
@@ -229,11 +239,21 @@ export function AgentConfiguration() {
               {/* First Message */}
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">First Message</label>
-                <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <span className="text-sm text-gray-900">
-                    {agentInfo.first_message || <em className="text-gray-500">No first message set</em>}
-                  </span>
-                </div>
+                {isEditing ? (
+                  <Textarea
+                    value={editedFirstMessage}
+                    onChange={(e) => setEditedFirstMessage(e.target.value)}
+                    placeholder="Enter the initial greeting message (optional)"
+                    className="text-sm"
+                    rows={3}
+                  />
+                ) : (
+                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <span className="text-sm text-gray-900">
+                      {agentInfo.first_message || <em className="text-gray-500">No first message set</em>}
+                    </span>
+                  </div>
+                )}
                 <span className="text-xs text-gray-500 mt-1">
                   The initial greeting message the agent sends to start conversations
                 </span>
@@ -262,13 +282,69 @@ export function AgentConfiguration() {
               {/* Voice ID */}
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">Voice ID</label>
-                <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="font-mono text-xs">
-                      {agentInfo.voice_id || "Not set"}
-                    </Badge>
-                    <span className="text-xs text-gray-500">Current voice for TTS</span>
+                {isEditing ? (
+                  <div className="space-y-3">
+                    <Input
+                      value={editedVoiceId}
+                      onChange={(e) => setEditedVoiceId(e.target.value)}
+                      placeholder="Enter voice ID (e.g., cjVigY5qzO86Huf0OWal)"
+                      className="text-sm font-mono"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => window.open('https://elevenlabs.io/app/voice-library?use_cases=conversational', '_blank')}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2 text-xs"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Browse Voices
+                      </Button>
+                      <Button
+                        onClick={() => setIsCloneVoiceModalOpen(true)}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2 text-xs"
+                      >
+                        <Copy className="w-3 h-3" />
+                        Clone Voice
+                      </Button>
+                    </div>
                   </div>
+                ) : (
+                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="font-mono text-xs">
+                          {agentInfo.voice_id || "Not set"}
+                        </Badge>
+                        <span className="text-xs text-gray-500">Current voice for TTS</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() => window.open('https://elevenlabs.io/app/voice-library?use_cases=conversational', '_blank')}
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-2 text-xs"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Browse Voices
+                        </Button>
+                        <Button
+                          onClick={() => setIsCloneVoiceModalOpen(true)}
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-2 text-xs"
+                        >
+                          <Copy className="w-3 h-3" />
+                          Clone Voice
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="text-xs text-gray-500 mt-2">
+                  Browse the voice library to find pre-made voices, or clone a custom voice from audio samples
                 </div>
               </div>
             </div>
@@ -287,6 +363,12 @@ export function AgentConfiguration() {
           )}
         </CardContent>
       </Card>
+
+      {/* Clone Voice Modal */}
+      <CloneVoiceModal
+        isOpen={isCloneVoiceModalOpen}
+        onOpenChange={setIsCloneVoiceModalOpen}
+      />
     </div>
   );
 }
