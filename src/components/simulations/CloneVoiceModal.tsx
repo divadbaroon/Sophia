@@ -247,7 +247,7 @@ export function CloneVoiceModal({ isOpen, onOpenChange, onVoiceCloned }: CloneVo
                     <h3 className="font-semibold text-green-900 mb-3">Sample Prompt - Teaching Scenario</h3>
                     <div className="bg-white border border-green-200 rounded-lg p-4">
                       <p className="text-sm text-gray-700 leading-relaxed italic">
-                        "Hi there, I'm glad you're here for office hours. I can see you're having trouble with binary tree traversals in your data structures assignment. Let me help you understand the difference between inorder, preorder, and postorder traversal. Think of it this way: imagine you're visiting every node in the tree, but the order matters. In preorder, you visit the root first, then the left subtree, then the right subtree. It's like reading a book from top to bottom, left to right. For your assignment, try implementing the recursive approach first - it's more intuitive."
+                        &quot;Hi there, I&apos;m glad you&apos;re here for office hours. I can see you&apos;re having trouble with binary tree traversals in your data structures assignment. Let me help you understand the difference between inorder, preorder, and postorder traversal. Think of it this way: imagine you&apos;re visiting every node in the tree, but the order matters. In preorder, you visit the root first, then the left subtree, then the right subtree. It&apos;s like reading a book from top to bottom, left to right. For your assignment, try implementing the recursive approach first - it&apos;s more intuitive.&quot;
                       </p>
                     </div>
                     <p className="text-xs text-green-700 mt-2">
