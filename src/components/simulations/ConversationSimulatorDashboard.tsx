@@ -16,6 +16,22 @@ import { VoiceSettingsModal } from "@/components/simulations/VoiceSettingsModal"
 import { OverallReport } from "@/components/simulations/OverallReport";
 import { AgentConfiguration } from "@/components/simulations/AgentConfiguration";
 
+// Helper function to load criteria from localStorage
+const loadCriteriaFromStorage = (): EvaluationCriterion[] => {
+  if (typeof window === 'undefined') return [];
+  
+  try {
+    const stored = localStorage.getItem('evaluationCriteria');
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.error('Error loading criteria from localStorage:', error);
+  }
+  
+  return [];
+};
+
 // Default evaluation criteria
 const defaultCriteria: EvaluationCriterion[] = [
   {
@@ -34,9 +50,13 @@ export default function SimulationReplayDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [competencyFilter, setCompetencyFilter] = useState<"all" | "beginner" | "intermediate" | "advanced">("all");
   const [activeTab, setActiveTab] = useState<"configuration" | "sessions" | "report">("configuration");
+  const [currentAgentPrompt, setCurrentAgentPrompt] = useState<string>("");
   
-  // Evaluation Criteria State
-  const [evaluationCriteria, setEvaluationCriteria] = useState<EvaluationCriterion[]>(defaultCriteria);
+  // Evaluation Criteria State - Initialize from localStorage
+  const [evaluationCriteria, setEvaluationCriteria] = useState<EvaluationCriterion[]>(() => {
+    const storedCriteria = loadCriteriaFromStorage();
+    return storedCriteria.length > 0 ? storedCriteria : defaultCriteria;
+  });
   const [isCriteriaModalOpen, setIsCriteriaModalOpen] = useState(false);
 
   // Voice Settings State
@@ -184,7 +204,7 @@ export default function SimulationReplayDashboard() {
             <CardContent>
               {/* Tab Content */}
               {activeTab === "configuration" ? (
-                <AgentConfiguration />
+                <AgentConfiguration onPromptChange={setCurrentAgentPrompt} />
               ) : activeTab === "sessions" ? (
                 <div className="space-y-4">
                   {/* Filter Options */}
@@ -211,7 +231,7 @@ export default function SimulationReplayDashboard() {
                 </div>
               ) : (
                 /* Overall Report Tab */
-                <OverallReport sessions={sessions} />
+                <OverallReport sessions={sessions} currentPrompt={currentAgentPrompt} />
               )}
             </CardContent>
           </Card>

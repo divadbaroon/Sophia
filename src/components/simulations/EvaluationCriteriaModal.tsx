@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,13 +23,44 @@ interface EvaluationCriteriaModalProps {
   onSave: (criteria: EvaluationCriterion[]) => void;
 }
 
+const STORAGE_KEY = 'evaluationCriteria';
+
+// Helper functions for localStorage
+const loadCriteriaFromStorage = (): EvaluationCriterion[] => {
+  if (typeof window === 'undefined') return [];
+  
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      console.log('📦 Loaded criteria from localStorage:', parsed.length, 'items');
+      return parsed;
+    }
+  } catch (error) {
+    console.error('❌ Error loading criteria from localStorage:', error);
+  }
+  
+  return [];
+};
+
+const saveCriteriaToStorage = (criteria: EvaluationCriterion[]) => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(criteria));
+    console.log('💾 Saved criteria to localStorage:', criteria.length, 'items');
+  } catch (error) {
+    console.error('❌ Error saving criteria to localStorage:', error);
+  }
+};
+
 export function EvaluationCriteriaModal({
   isOpen,
   onOpenChange,
   criteria,
   onSave
 }: EvaluationCriteriaModalProps) {
-  const [localCriteria, setLocalCriteria] = useState<EvaluationCriterion[]>(criteria);
+  const [localCriteria, setLocalCriteria] = useState<EvaluationCriterion[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newCriterion, setNewCriterion] = useState<Omit<EvaluationCriterion, 'id'>>({
@@ -37,17 +68,52 @@ export function EvaluationCriteriaModal({
     conversationGoalPrompt: ""
   });
 
+  // Initialize criteria from localStorage on component mount
+  useEffect(() => {
+    const storedCriteria = loadCriteriaFromStorage();
+    if (storedCriteria.length > 0) {
+      setLocalCriteria(storedCriteria);
+      // Also update the parent component with stored criteria
+      onSave(storedCriteria);
+    } else {
+      // If no stored criteria, use the criteria passed as props
+      setLocalCriteria(criteria);
+    }
+  }, []);
+
+  // Update local criteria when modal opens and criteria prop changes
+  useEffect(() => {
+    if (isOpen) {
+      const storedCriteria = loadCriteriaFromStorage();
+      if (storedCriteria.length > 0) {
+        setLocalCriteria(storedCriteria);
+      } else {
+        setLocalCriteria(criteria);
+      }
+    }
+  }, [isOpen, criteria]);
+
   const handleSave = () => {
+    // Save to localStorage
+    saveCriteriaToStorage(localCriteria);
+    
+    // Update parent component
     onSave(localCriteria);
     onOpenChange(false);
+    
+    console.log('✅ Criteria saved successfully');
   };
 
   const handleAddNew = () => {
     if (newCriterion.name.trim() && newCriterion.conversationGoalPrompt.trim()) {
       const newId = `criterion_${Date.now()}`;
-      setLocalCriteria([...localCriteria, { ...newCriterion, id: newId }]);
+      const updatedCriteria = [...localCriteria, { ...newCriterion, id: newId }];
+      
+      setLocalCriteria(updatedCriteria);
       setNewCriterion({ name: "", conversationGoalPrompt: "" });
       setIsAddingNew(false);
+      
+      console.log('➕ Added new criterion:', newCriterion.name);
     }
   };
 
@@ -58,22 +124,75 @@ export function EvaluationCriteriaModal({
   };
 
   const handleDelete = (id: string) => {
+    const criterionToDelete = localCriteria.find(c => c.id === id);
     setLocalCriteria(prev => prev.filter(criterion => criterion.id !== id));
+    
+    if (criterionToDelete) {
+      console.log('🗑️ Deleted criterion:', criterionToDelete.name);
+    }
   };
 
   const handleCancel = () => {
-    setLocalCriteria(criteria); // Reset to original criteria
+    // Reset to stored criteria (not the props)
+    const storedCriteria = loadCriteriaFromStorage();
+    if (storedCriteria.length > 0) {
+      setLocalCriteria(storedCriteria);
+    } else {
+      setLocalCriteria(criteria);
+    }
+    
     setEditingId(null);
     setIsAddingNew(false);
     setNewCriterion({ name: "", conversationGoalPrompt: "" });
     onOpenChange(false);
   };
 
+  const handleResetToDefaults = () => {
+    const defaultCriteria: EvaluationCriterion[] = [
+      {
+        id: "teaching_effectiveness",
+        name: "Teaching Effectiveness",
+        conversationGoalPrompt: "The teacher effectively explained the concepts and helped the student understand."
+      }
+    ];
+    
+    setLocalCriteria(defaultCriteria);
+    console.log('🔄 Reset to default criteria');
+  };
+
+  const handleClearAll = () => {
+    if (window.confirm('Are you sure you want to delete all criteria? This cannot be undone.')) {
+      setLocalCriteria([]);
+      localStorage.removeItem(STORAGE_KEY);
+      console.log('🧹 Cleared all criteria');
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Evaluation Criteria Management</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Evaluation Criteria Management</DialogTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleResetToDefaults}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                Reset to Defaults
+              </Button>
+              <Button
+                onClick={handleClearAll}
+                variant="outline"
+                size="sm"
+                className="text-xs text-red-600 hover:text-red-700"
+              >
+                Clear All
+              </Button>
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="overflow-y-auto max-h-[60vh] space-y-4">
@@ -230,7 +349,7 @@ export function EvaluationCriteriaModal({
           {localCriteria.length === 0 && !isAddingNew && (
             <div className="text-center py-8 text-gray-500">
               <p>No evaluation criteria defined yet.</p>
-              <p className="text-sm">Click &quot;Add Criterion&quot; to create your first one.</p>
+              <p className="text-sm">Click the + button to create your first criterion, or use "Reset to Defaults".</p>
             </div>
           )}
         </div>
