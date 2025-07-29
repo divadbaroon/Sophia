@@ -1,52 +1,117 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Upload, X, AlertCircle } from "lucide-react";
+import { AlertCircle, Copy } from "lucide-react";
 
 interface CloneVoiceModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onVoiceCloned?: (voiceId: string) => void;
 }
 
-export function CloneVoiceModal({ isOpen, onOpenChange }: CloneVoiceModalProps) {
-  const [voiceName, setVoiceName] = useState("");
-  const [description, setDescription] = useState("");
-  const [audioFiles, setAudioFiles] = useState<File[]>([]);
+export function CloneVoiceModal({ isOpen, onOpenChange, onVoiceCloned }: CloneVoiceModalProps) {
   const [isCloning, setIsCloning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [voiceCloneResult, setVoiceCloneResult] = useState<{voice_id: string, requires_verification: boolean} | null>(null);
+  
+  // Recording states
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string>("");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [recordingStatus, setRecordingStatus] = useState<"idle" | "recording" | "completed">("idle");
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const audioFiles = files.filter(file => file.type.startsWith('audio/'));
-    
-    if (audioFiles.length !== files.length) {
-      setError('Please only upload audio files');
-      return;
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [audioUrl]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" });
+        setAudioBlob(audioBlob);
+        const url = URL.createObjectURL(audioBlob);
+        setAudioUrl(url);
+        setRecordingStatus("completed");
+
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingStatus("recording");
+      setRecordingTime(0);
+
+      timerRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      setError("Unable to access microphone. Please check permissions.");
     }
-    
-    setAudioFiles(audioFiles);
-    setError(null);
   };
 
-  const removeFile = (index: number) => {
-    setAudioFiles(files => files.filter((_, i) => i !== index));
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+  };
+
+  const togglePlayback = () => {
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
   };
 
   const handleClone = async () => {
-    if (!voiceName.trim()) {
-      setError('Voice name is required');
-      return;
-    }
-
-    if (audioFiles.length === 0) {
-      setError('At least one audio file is required');
+    if (!audioBlob) {
+      setError('Please record audio');
       return;
     }
 
@@ -54,14 +119,17 @@ export function CloneVoiceModal({ isOpen, onOpenChange }: CloneVoiceModalProps) 
     setError(null);
 
     try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append('name', voiceName);
-      formData.append('description', description);
-      
-      audioFiles.forEach((file, index) => {
-        formData.append(`files`, file);
+      // Convert blob to File for form data
+      const audioFile = new File([audioBlob], `voice-sample-${Date.now()}.webm`, {
+        type: "audio/webm"
       });
+
+      // Create form data for ElevenLabs API
+      const formData = new FormData();
+      formData.append('name', `Voice Clone ${new Date().toLocaleDateString()}`);
+      formData.append('description', 'Voice clone created from web recording');
+      formData.append('remove_background_noise', 'true');
+      formData.append('files', audioFile);
 
       const response = await fetch('/api/elevenlabs/clone-voice', {
         method: 'POST',
@@ -76,14 +144,7 @@ export function CloneVoiceModal({ isOpen, onOpenChange }: CloneVoiceModalProps) 
       const result = await response.json();
       console.log('✅ Voice cloned successfully:', result.voice_id);
       
-      // Reset form and close modal
-      setVoiceName("");
-      setDescription("");
-      setAudioFiles([]);
-      onOpenChange(false);
-      
-      // Show success message or refresh agent config
-      alert(`Voice "${voiceName}" cloned successfully! Voice ID: ${result.voice_id}`);
+      setVoiceCloneResult(result);
 
     } catch (error) {
       console.error('❌ Error cloning voice:', error);
@@ -93,17 +154,32 @@ export function CloneVoiceModal({ isOpen, onOpenChange }: CloneVoiceModalProps) 
     }
   };
 
+  const handleSaveVoice = () => {
+    if (voiceCloneResult && onVoiceCloned) {
+      onVoiceCloned(voiceCloneResult.voice_id);
+      handleCancel();
+    }
+  };
+
   const handleCancel = () => {
-    setVoiceName("");
-    setDescription("");
-    setAudioFiles([]);
     setError(null);
+    setVoiceCloneResult(null);
+    setAudioBlob(null);
+    setAudioUrl("");
+    setRecordingStatus("idle");
+    setRecordingTime(0);
     onOpenChange(false);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Clone Voice</DialogTitle>
         </DialogHeader>
@@ -116,86 +192,148 @@ export function CloneVoiceModal({ isOpen, onOpenChange }: CloneVoiceModalProps) 
             </div>
           )}
 
-          {/* Voice Name */}
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
-              Voice Name *
-            </label>
-            <Input
-              value={voiceName}
-              onChange={(e) => setVoiceName(e.target.value)}
-              placeholder="Enter a name for the cloned voice"
-              className="text-sm"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
-              Description (Optional)
-            </label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the voice characteristics"
-              className="text-sm"
-              rows={3}
-            />
-          </div>
-
-          {/* Audio Files */}
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
-              Audio Samples *
-            </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600 mb-2">
-                Upload audio files for voice cloning
-              </p>
-              <input
-                type="file"
-                multiple
-                accept="audio/*"
-                onChange={handleFileChange}
-                className="hidden"
-                id="audio-upload"
-              />
-              <Button
-                onClick={() => document.getElementById('audio-upload')?.click()}
-                variant="outline"
-                size="sm"
-              >
-                Choose Audio Files
-              </Button>
-            </div>
-            
-            {/* File List */}
-            {audioFiles.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <p className="text-sm font-medium text-gray-700">Uploaded Files:</p>
-                {audioFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                    <span className="text-sm truncate">{file.name}</span>
+          {/* Voice Clone Success Card */}
+          {voiceCloneResult && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-green-900 mb-2">Voice Successfully Cloned!</h3>
+                  <div className="space-y-2">
+                    <div className="bg-white border border-green-200 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Voice ID</p>
+                      <p className="text-sm font-mono text-gray-800 break-all">{voiceCloneResult.voice_id}</p>
+                    </div>
+                    {voiceCloneResult.requires_verification && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                        <p className="text-sm text-yellow-800">⚠️ Voice requires verification before use</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2 mt-3">
                     <Button
-                      onClick={() => removeFile(index)}
-                      variant="ghost"
+                      onClick={() => navigator.clipboard.writeText(voiceCloneResult.voice_id)}
+                      variant="outline"
                       size="sm"
-                      className="h-6 w-6 p-0"
+                      className="text-xs"
                     >
-                      <X className="w-3 h-3" />
+                      <Copy className="w-3 h-3 mr-1" />
+                      Copy Voice ID
+                    </Button>
+                    <Button
+                      onClick={handleSaveVoice}
+                      size="sm"
+                      className="text-xs bg-green-600 hover:bg-green-700"
+                    >
+                      Use This Voice
                     </Button>
                   </div>
-                ))}
+                </div>
               </div>
-            )}
-
-            <div className="mt-2 text-xs text-gray-500">
-              <p>• Upload 1-25 audio files (MP3, WAV, etc.)</p>
-              <p>• Each file should be 1-10 minutes long</p>
-              <p>• Clear speech with minimal background noise works best</p>
             </div>
-          </div>
+          )}
+
+          {!voiceCloneResult && (
+            <>
+              {/* Sample Prompt Card */}
+              <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <div>
+                    <h3 className="font-semibold text-green-900 mb-3">Sample Prompt - Teaching Scenario</h3>
+                    <div className="bg-white border border-green-200 rounded-lg p-4">
+                      <p className="text-sm text-gray-700 leading-relaxed italic">
+                        "Hi there, I'm glad you're here for office hours. I can see you're having trouble with binary tree traversals in your data structures assignment. Let me help you understand the difference between inorder, preorder, and postorder traversal. Think of it this way: imagine you're visiting every node in the tree, but the order matters. In preorder, you visit the root first, then the left subtree, then the right subtree. It's like reading a book from top to bottom, left to right. For your assignment, try implementing the recursive approach first - it's more intuitive."
+                      </p>
+                    </div>
+                    <p className="text-xs text-green-700 mt-2">
+                      💡 Read this prompt naturally and conversationally when recording your voice sample.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recording Section */}
+              <div className="flex flex-col items-center space-y-6">
+                <div className="relative">
+                  <Button
+                    onClick={isRecording ? stopRecording : startRecording}
+                    className={`
+                      w-20 h-20 rounded-full flex items-center justify-center text-white font-medium
+                      transition-all duration-200 hover:shadow-lg
+                      ${isRecording ? "bg-red-600 hover:bg-red-700" : "bg-gray-900 hover:bg-gray-800"}
+                    `}
+                  >
+                    {isRecording ? (
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      </svg>
+                    )}
+                  </Button>
+
+                  {/* Recording Timer */}
+                  {isRecording && (
+                    <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                      <div className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                        {formatTime(recordingTime)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Initial State Message */}
+                {recordingStatus === "idle" && (
+                  <div className="text-center">
+                    <p className="text-sm text-gray-600 mb-4">Click the microphone to start recording</p>
+                  </div>
+                )}
+
+                {/* Audio Controls */}
+                {audioUrl && (
+                  <div className="p-4 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-200 bg-white w-full max-w-md">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-gray-900 text-sm">Recorded Audio</h4>
+                      <span className="text-xs text-gray-500 font-medium">{formatTime(recordingTime)}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={togglePlayback}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        {isPlaying ? (
+                          <>
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6" />
+                            </svg>
+                            Pause
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.5a2.5 2.5 0 010 5H9m-4-5v5a4 4 0 01-4-4 4 4 0 014-4zm.172 1.172a4 4 0 015.656 0" />
+                            </svg>
+                            Play
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-2 pt-4 border-t">
@@ -204,24 +342,29 @@ export function CloneVoiceModal({ isOpen, onOpenChange }: CloneVoiceModalProps) 
               variant="outline"
               disabled={isCloning}
             >
-              Cancel
+              {voiceCloneResult ? 'Close' : 'Cancel'}
             </Button>
-            <Button
-              onClick={handleClone}
-              disabled={isCloning || !voiceName.trim() || audioFiles.length === 0}
-              className="flex items-center gap-2"
-            >
-              {isCloning ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Cloning...
-                </>
-              ) : (
-                'Clone Voice'
-              )}
-            </Button>
+            {!voiceCloneResult && (
+              <Button
+                onClick={handleClone}
+                disabled={isCloning || !audioBlob}
+                className="flex items-center gap-2"
+              >
+                {isCloning ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Creating Voice Clone...
+                  </>
+                ) : (
+                  'Clone Voice'
+                )}
+              </Button>
+            )}
           </div>
         </div>
+
+        {/* Hidden audio element for playback */}
+        {audioUrl && <audio ref={audioRef} src={audioUrl} onEnded={handleAudioEnded} className="hidden" />}
       </DialogContent>
     </Dialog>
   );
