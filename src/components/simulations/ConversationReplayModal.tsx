@@ -23,7 +23,7 @@ export function ConversationReplayModal({
 }: ConversationReplayModalProps) {
   const [activeTab, setActiveTab] = useState<"conversation" | "analysis">("conversation");
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(-1);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [currentlyPlayingMessageIndex, setCurrentlyPlayingMessageIndex] = useState<number | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -45,12 +45,12 @@ export function ConversationReplayModal({
     if (currentMessageRef.current && scrollContainerRef.current && currentMessageIndex >= 0) {
       currentMessageRef.current.scrollIntoView({
         behavior: 'smooth',
-        block: 'nearest'
+        block: 'center'
       });
     }
   }, [currentMessageIndex]);
 
-  // Play audio for current message
+  // Auto-play next message when current finishes (if playing)
   useEffect(() => {
     if (isPlaying && currentMessageIndex >= 0 && selectedSession?.simulationResult) {
       const filteredMessages = selectedSession.simulationResult.simulatedConversation
@@ -58,12 +58,12 @@ export function ConversationReplayModal({
       
       const currentMessage = filteredMessages[currentMessageIndex];
       if (currentMessage?.audioData) {
-        playMessageAudio(currentMessage.audioData, currentMessageIndex);
+        playMessageAudio(currentMessage.audioData, currentMessageIndex, true);
       }
     }
   }, [currentMessageIndex, isPlaying]);
 
-  const playMessageAudio = (audioData: string, messageIndex?: number) => {
+  const playMessageAudio = (audioData: string, messageIndex?: number, autoAdvance: boolean = false) => {
     try {
       // Stop any currently playing audio
       stopAllAudio();
@@ -94,6 +94,19 @@ export function ConversationReplayModal({
         console.log("🎵 Audio finished playing");
         setIsAudioPlaying(false);
         setCurrentlyPlayingMessageIndex(null);
+        
+        // Auto-advance to next message if playing and not at the end
+        if (autoAdvance && isPlaying && selectedSession?.simulationResult) {
+          const filteredMessages = selectedSession.simulationResult.simulatedConversation
+            .filter(turn => turn.message && turn.message !== "==! END_CALL!==");
+          
+          if (currentMessageIndex < filteredMessages.length - 1) {
+            setCurrentMessageIndex(currentMessageIndex + 1);
+          } else {
+            // End of conversation, stop playing
+            setIsPlaying(false);
+          }
+        }
       };
       
       audio.onerror = (e) => {
@@ -121,9 +134,7 @@ export function ConversationReplayModal({
       setIsPlaying(false);
     } else {
       setIsPlaying(true);
-      if (currentMessageIndex === -1) {
-        setCurrentMessageIndex(0);
-      }
+      // Will trigger useEffect to play current message
     }
   };
 
@@ -153,9 +164,17 @@ export function ConversationReplayModal({
     if (currentlyPlayingMessageIndex === messageIndex && isAudioPlaying) {
       stopAllAudio();
     } else {
-      // Otherwise, play the audio for this message
+      // Set this as the current message and play it
+      setCurrentMessageIndex(messageIndex);
       playMessageAudio(audioData, messageIndex);
     }
+  };
+
+  // Get filtered messages for display
+  const getFilteredMessages = () => {
+    if (!selectedSession?.simulationResult) return [];
+    return selectedSession.simulationResult.simulatedConversation
+      .filter(turn => turn.message && turn.message !== "==! END_CALL!==");
   };
 
   return (
@@ -221,75 +240,71 @@ export function ConversationReplayModal({
                 >
                   {activeTab === "conversation" && (
                     <div className="space-y-3">
-                      {currentMessageIndex === -1 ? (
-                        <div className="text-gray-500 text-center py-8">
-                          <p>Click the play button to start the conversation replay</p>
-                        </div>
-                      ) : (
-                        selectedSession.simulationResult.simulatedConversation
-                          .filter(turn => turn.message && turn.message !== "==! END_CALL!==")
-                          .slice(0, currentMessageIndex + 1)
-                          .map((turn, index) => (
+                      {/* Show ALL messages at once */}
+                      {getFilteredMessages().map((turn, index) => (
+                        <div
+                          key={index}
+                          ref={index === currentMessageIndex ? currentMessageRef : null}
+                          className={`flex items-start gap-3 ${
+                            turn.role === "user" ? "" : "flex-row-reverse"
+                          }`}
+                        >
                           <div
-                            key={index}
-                            ref={index === currentMessageIndex ? currentMessageRef : null}
-                            className={`flex items-start gap-3 ${
-                              turn.role === "user" ? "" : "flex-row-reverse"
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all duration-300 mr-2 ${
+                              turn.role === "user" 
+                                ? "bg-green-100 text-green-700" 
+                                : "bg-blue-100 text-blue-700"
+                            } ${
+                              currentMessageIndex === index
+                                ? "ring-2 ring-blue-400 shadow-lg scale-110"
+                                : ""
                             }`}
                           >
-                            <div
-                              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all duration-500 mr-2 ${
-                                turn.role === "user" 
-                                  ? "bg-green-100 text-green-700" 
-                                  : "bg-blue-100 text-blue-700"
-                              } ${
-                                isPlaying && currentMessageIndex === index
-                                  ? "ring-2 ring-blue-300 shadow-lg shadow-blue-300/50"
-                                  : ""
-                              }`}
-                            >
-                              {turn.role === "user" ? "👨‍🎓" : "🤖"}
-                            </div>
-                            <div
-                              className={`max-w-md p-3 rounded-lg ${
-                                turn.role === "user"
-                                  ? "bg-green-50 border border-green-200"
-                                  : "bg-blue-50 border border-blue-200"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="font-medium text-xs text-gray-600">
-                                  {turn.role === "user" ? "Student" : "Teacher"}
-                                </div>
-                                {turn.audioData && (
-                                  <Button
-                                    onClick={() => handleManualPlayAudio(turn.audioData!, index)}
-                                    size="sm"
-                                    variant="ghost"
-                                    className={`h-6 w-6 p-0 hover:bg-gray-200 ${
-                                      currentlyPlayingMessageIndex === index && isAudioPlaying 
-                                        ? "bg-blue-100 text-blue-600" 
-                                        : ""
-                                    }`}
-                                  >
-                                    {currentlyPlayingMessageIndex === index && isAudioPlaying ? (
-                                      <VolumeX className="w-3 h-3" />
-                                    ) : (
-                                      <Volume2 className="w-3 h-3" />
-                                    )}
-                                  </Button>
-                                )}
-                              </div>
-                              <div className="text-sm text-gray-900">{turn.message}</div>
-                            </div>
+                            {turn.role === "user" ? "👨‍🎓" : "🤖"}
                           </div>
-                        ))
-                      )}
+                          <div
+                            className={`max-w-md p-3 rounded-lg transition-all duration-300 ${
+                              turn.role === "user"
+                                ? "bg-green-50 border border-green-200"
+                                : "bg-blue-50 border border-blue-200"
+                            } ${
+                              currentMessageIndex === index
+                                ? "ring-1 ring-blue-300 shadow-md scale-[1.02]"
+                                : ""
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="font-medium text-xs text-gray-600">
+                                {turn.role === "user" ? "Student" : "Teacher"}
+                              </div>
+                              {turn.audioData && (
+                                <Button
+                                  onClick={() => handleManualPlayAudio(turn.audioData!, index)}
+                                  size="sm"
+                                  variant="ghost"
+                                  className={`h-6 w-6 p-0 hover:bg-gray-200 transition-colors ${
+                                    currentlyPlayingMessageIndex === index && isAudioPlaying 
+                                      ? "bg-blue-100 text-blue-600" 
+                                      : ""
+                                  }`}
+                                >
+                                  {currentlyPlayingMessageIndex === index && isAudioPlaying ? (
+                                    <VolumeX className="w-3 h-3" />
+                                  ) : (
+                                    <Volume2 className="w-3 h-3" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                            <div className="text-sm text-gray-900">{turn.message}</div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
 
                   {activeTab === "analysis" && (
-                    <div className="space-y-4 ">
+                    <div className="space-y-4">
                       {/* Overall Status */}
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <h4 className="font-medium mb-2">Overall Assessment</h4>
@@ -339,41 +354,47 @@ export function ConversationReplayModal({
 
                 {/* Fixed Play Bar - Only shows on conversation tab */}
                 {activeTab === "conversation" && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSkipBack}
-                      disabled={currentMessageIndex <= 0}
-                      className="flex items-center justify-center w-10 h-10 p-0 rounded-full disabled:opacity-50"
-                    >
-                      <SkipBack className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handlePlayToggle}
-                      className="flex items-center justify-center w-10 h-10 p-0 rounded-full"
-                    >
-                      {isPlaying ? (
-                        <Play className="w-4 h-4" />
-                      ) : (
-                        <Pause className="w-4 h-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSkipForward}
-                      disabled={
-                        !selectedSession?.simulationResult || 
-                        currentMessageIndex >= selectedSession.simulationResult.simulatedConversation
-                          .filter(turn => turn.message && turn.message !== "==! END_CALL!==").length - 1
-                      }
-                      className="flex items-center justify-center w-10 h-10 p-0 rounded-full disabled:opacity-50"
-                    >
-                      <SkipForward className="w-4 h-4" />
-                    </Button>
+                  <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3">
+                    <div className="flex justify-center gap-2 mb-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSkipBack}
+                        disabled={currentMessageIndex <= 0}
+                        className="flex items-center justify-center w-10 h-10 p-0 rounded-full disabled:opacity-50"
+                      >
+                        <SkipBack className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePlayToggle}
+                        className="flex items-center justify-center w-10 h-10 p-0 rounded-full"
+                      >
+                        {isPlaying ? (
+                          <Pause className="w-4 h-4" />
+                        ) : (
+                          <Play className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSkipForward}
+                        disabled={
+                          !selectedSession?.simulationResult || 
+                          currentMessageIndex >= getFilteredMessages().length - 1
+                        }
+                        className="flex items-center justify-center w-10 h-10 p-0 rounded-full disabled:opacity-50"
+                      >
+                        <SkipForward className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    
+                    {/* Progress indicator */}
+                    <div className="text-center text-xs text-gray-500">
+                      Message {currentMessageIndex + 1} of {getFilteredMessages().length}
+                    </div>
                   </div>
                 )}
               </>
