@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle, TrendingUp, Users } from "lucide-react";
+import { AlertTriangle, CheckCircle, TrendingUp, Users, RefreshCw } from "lucide-react";
 import { Session } from "@/types";
 
 interface OverallReportProps {
   sessions: Session[];
+  currentPrompt?: string;
 }
 
 interface ReportData {
@@ -19,7 +20,7 @@ interface ReportData {
   recommendations: string[];
 }
 
-export function OverallReport({ sessions }: OverallReportProps) {
+export function OverallReport({ sessions, currentPrompt }: OverallReportProps) {
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +70,11 @@ export function OverallReport({ sessions }: OverallReportProps) {
   const generateReport = async () => {
     if (!hasCompletedSessions) return;
 
+    if (!currentPrompt) {
+      setError('Current prompt is required to generate recommendations');
+      return;
+    }
+
     setIsGenerating(true);
     setError(null);
 
@@ -81,7 +87,8 @@ export function OverallReport({ sessions }: OverallReportProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sessions: sessions
+          sessions: sessions,
+          currentPrompt: currentPrompt
         })
       });
 
@@ -178,6 +185,18 @@ export function OverallReport({ sessions }: OverallReportProps) {
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-medium text-gray-900">Overview</h4>
+              {hasCompletedSessions && (
+                <Button
+                  onClick={generateReport}
+                  disabled={isGenerating}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
+                  {isGenerating ? 'Generating...' : 'Regenerate'}
+                </Button>
+              )}
             </div>
             
             {!hasCompletedSessions ? (
@@ -185,7 +204,7 @@ export function OverallReport({ sessions }: OverallReportProps) {
             ) : isGenerating ? (
               <div className="flex items-center gap-2 py-4">
                 <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                <span className="text-gray-600">Generating Overview...</span>
+                <span className="text-gray-600">Analyzing sessions with Claude...</span>
               </div>
             ) : error ? (
               <div className="text-red-600 text-sm">

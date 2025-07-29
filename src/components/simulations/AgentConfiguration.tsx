@@ -15,7 +15,11 @@ interface AgentInfo {
   voice_id: string;
 }
 
-export function AgentConfiguration() {
+interface AgentConfigurationProps {
+  onPromptChange?: (prompt: string) => void;
+}
+
+export function AgentConfiguration({ onPromptChange }: AgentConfigurationProps) {
   const [agentInfo, setAgentInfo] = useState<AgentInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -61,6 +65,12 @@ export function AgentConfiguration() {
       setEditedPrompt(agentData.prompt);
       setEditedFirstMessage(agentData.first_message);
       setEditedVoiceId(agentData.voice_id);
+      
+      // Notify parent component of current prompt
+      if (onPromptChange) {
+        onPromptChange(agentData.prompt);
+      }
+      
       console.log('✅ Agent configuration fetched successfully');
 
     } catch (error) {
