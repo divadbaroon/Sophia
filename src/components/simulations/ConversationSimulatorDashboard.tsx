@@ -176,6 +176,7 @@ export default function SimulationReplayDashboard() {
           isOpen={isModalOpen}
           onOpenChange={setIsModalOpen}
           selectedSession={selectedSession}
+          evaluationCriteria={evaluationCriteria}
         />
 
         {/* Voice Settings Modal */}

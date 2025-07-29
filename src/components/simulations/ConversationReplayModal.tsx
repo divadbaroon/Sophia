@@ -9,17 +9,20 @@ import {
 } from "@/components/ui/dialog";
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from "lucide-react";
 import { Session } from "@/types";
+import { EvaluationCriterion } from "@/components/simulations/EvaluationCriteriaModal";
 
 interface ConversationReplayModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   selectedSession: Session | null;
+  evaluationCriteria?: EvaluationCriterion[];
 }
 
 export function ConversationReplayModal({
   isOpen,
   onOpenChange,
-  selectedSession
+  selectedSession,
+  evaluationCriteria = []
 }: ConversationReplayModalProps) {
   const [activeTab, setActiveTab] = useState<"conversation" | "analysis">("conversation");
   const [isPlaying, setIsPlaying] = useState(false);
@@ -328,24 +331,41 @@ export function ConversationReplayModal({
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <h4 className="font-medium mb-3">Evaluation Results</h4>
                         <div className="space-y-3">
-                          {Object.entries(selectedSession.simulationResult.analysis.evaluationCriteriaResults).map(([key, result]) => (
-                            <div key={key} className="border-l-4 border-gray-300 pl-4">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium text-sm">{result.name || key}</span>
-                                <Badge 
-                                  variant="secondary"
-                                  className={
-                                    result.result === "success" 
-                                      ? "bg-green-100 text-green-800" 
-                                      : "bg-red-100 text-red-800"
-                                  }
-                                >
-                                  {result.result}
-                                </Badge>
+                          {Object.entries(selectedSession.simulationResult.analysis.evaluationCriteriaResults).map(([key, result]) => {
+                            // Helper function to get a readable name
+                            const getDisplayName = (key: string, result: any) => {
+                              if (result.name) return result.name;
+                              
+                              // Look up in the evaluation criteria that were passed to the modal
+                              const criterion = evaluationCriteria.find(c => c.id === key);
+                              if (criterion) return criterion.name;
+                              
+                              // Handle known default criteria
+                              if (key === 'teaching_effectiveness') return 'Teaching Effectiveness';
+                              
+                              // Fallback to formatting the key nicely
+                              return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            };
+
+                            return (
+                              <div key={key} className="border-l-4 border-gray-300 pl-4">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-sm">{getDisplayName(key, result)}</span>
+                                  <Badge 
+                                    variant="secondary"
+                                    className={
+                                      result.result === "success" 
+                                        ? "bg-green-100 text-green-800" 
+                                        : "bg-red-100 text-red-800"
+                                    }
+                                  >
+                                    {result.result}
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-gray-600">{result.rationale}</p>
                               </div>
-                              <p className="text-xs text-gray-600">{result.rationale}</p>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
