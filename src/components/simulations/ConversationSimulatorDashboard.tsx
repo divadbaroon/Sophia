@@ -14,6 +14,7 @@ import { CompetencyFilter } from "@/components/simulations/CompetencyFilter";
 import { EvaluationCriteriaModal, EvaluationCriterion } from "@/components/simulations/EvaluationCriteriaModal";
 import { VoiceSettingsModal } from "@/components/simulations/VoiceSettingsModal";
 import { OverallReport } from "@/components/simulations/OverallReport";
+import { AgentConfiguration } from "@/components/simulations/AgentConfiguration";
 
 // Default evaluation criteria
 const defaultCriteria: EvaluationCriterion[] = [
@@ -32,7 +33,7 @@ export default function SimulationReplayDashboard() {
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [competencyFilter, setCompetencyFilter] = useState<"all" | "beginner" | "intermediate" | "advanced">("all");
-  const [activeTab, setActiveTab] = useState<"sessions" | "report">("sessions");
+  const [activeTab, setActiveTab] = useState<"configuration" | "sessions" | "report">("configuration");
   
   // Evaluation Criteria State
   const [evaluationCriteria, setEvaluationCriteria] = useState<EvaluationCriterion[]>(defaultCriteria);
@@ -81,6 +82,9 @@ export default function SimulationReplayDashboard() {
     console.log("📊 Evaluation criteria updated:", newCriteria.map(c => c.name));
   };
 
+  // Check if we have any completed sessions to show the report
+  const hasCompletedSessions = sessions.some(session => session.status === "completed");
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -125,12 +129,20 @@ export default function SimulationReplayDashboard() {
                 {/* Tab Navigation */}
                 <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
                   <Button
+                    variant={activeTab === "configuration" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setActiveTab("configuration")}
+                    className="h-8 px-4"
+                  >
+                    Configuration
+                  </Button>
+                  <Button
                     variant={activeTab === "sessions" ? "default" : "ghost"}
                     size="sm"
                     onClick={() => setActiveTab("sessions")}
                     className="h-8 px-4"
                   >
-                    Simulations
+                    Simulation Sessions
                   </Button>
                   <Button
                     variant={activeTab === "report" ? "default" : "ghost"}
@@ -138,7 +150,7 @@ export default function SimulationReplayDashboard() {
                     onClick={() => setActiveTab("report")}
                     className="h-8 px-4"
                   >
-                    Performance Report
+                    Overall Report
                   </Button>
                 </div>
 
@@ -171,7 +183,9 @@ export default function SimulationReplayDashboard() {
             </CardHeader>
             <CardContent>
               {/* Tab Content */}
-              {activeTab === "sessions" ? (
+              {activeTab === "configuration" ? (
+                <AgentConfiguration />
+              ) : activeTab === "sessions" ? (
                 <div className="space-y-4">
                   {/* Filter Options */}
                   <CompetencyFilter 
