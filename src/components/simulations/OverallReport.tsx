@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle, TrendingUp, Users, RefreshCw } from "lucide-react";
+import { AlertTriangle, CheckCircle, TrendingUp, Users } from "lucide-react";
 import { Session } from "@/types";
 
 interface OverallReportProps {
@@ -185,18 +185,6 @@ export function OverallReport({ sessions, currentPrompt }: OverallReportProps) {
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-medium text-gray-900">Overview</h4>
-              {hasCompletedSessions && (
-                <Button
-                  onClick={generateReport}
-                  disabled={isGenerating}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
-                  {isGenerating ? 'Generating...' : 'Regenerate'}
-                </Button>
-              )}
             </div>
             
             {!hasCompletedSessions ? (
