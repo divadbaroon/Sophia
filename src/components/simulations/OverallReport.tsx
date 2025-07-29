@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle, TrendingUp, Users } from "lucide-react";
 import { Session } from "@/types";
 
@@ -7,7 +9,21 @@ interface OverallReportProps {
   sessions: Session[];
 }
 
+interface ReportData {
+  overview: string;
+  specificIssues: Array<{
+    sessionName: string;
+    issue: string;
+    criteriaFailed: string;
+  }>;
+  recommendations: string[];
+}
+
 export function OverallReport({ sessions }: OverallReportProps) {
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   // Calculate real metrics from sessions data
   const calculateMetrics = () => {
     const completedSessions = sessions.filter(session => session.status === "completed");
@@ -47,47 +63,56 @@ export function OverallReport({ sessions }: OverallReportProps) {
   };
 
   const performanceMetrics = calculateMetrics();
-
-  // Check if we have any completed sessions
   const hasCompletedSessions = performanceMetrics.completedSessions > 0;
 
-  const agentAnalysis = `The teaching agent demonstrates strong foundational knowledge delivery and excels at providing clear initial explanations. However, it struggles with adaptive questioning when students express confusion and tends to maintain the same complexity level regardless of student feedback. The agent performs best with beginner-level students where straightforward explanations are sufficient, but shows declining effectiveness as student complexity increases.`;
+  // Generate report from API
+  const generateReport = async () => {
+    if (!hasCompletedSessions) return;
 
-  const specificIssues = [
-    {
-      sessionName: "Simulated Student 2 (Advanced BST)",
-      issue: "Failed to simplify explanation when student expressed confusion about time complexity",
-      criteriaFailed: "Teaching Effectiveness"
-    },
-    {
-      sessionName: "Simulated Student 1 (Intermediate Traversal)", 
-      issue: "Didn't provide visual examples when student specifically requested diagram assistance",
-      criteriaFailed: "Student Engagement"
-    },
-    {
-      sessionName: "Simulated Student 2 (Advanced BST)",
-      issue: "Used technical jargon without checking student comprehension level",
-      criteriaFailed: "Clarity of Communication"
+    setIsGenerating(true);
+    setError(null);
+
+    try {
+      console.log('🚀 Generating report for', performanceMetrics.completedSessions, 'sessions');
+      
+      const response = await fetch('/api/claude/generate-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessions: sessions
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate report');
+      }
+
+      const data = await response.json();
+      setReportData(data);
+      console.log('✅ Report generated successfully');
+
+    } catch (error) {
+      console.error('❌ Error generating report:', error);
+      setError(error instanceof Error ? error.message : 'Failed to generate report');
+    } finally {
+      setIsGenerating(false);
     }
-  ];
+  };
 
-  const recommendations = [
-    "Implement confusion detection patterns to trigger explanation simplification when students use phrases like 'I'm lost' or 'I don't understand'",
-    "Add visual/diagram generation capabilities specifically for tree data structure concepts",
-    "Create dynamic vocabulary adjustment based on student difficulty level and comprehension signals",
-    "Develop follow-up question strategies to verify understanding before moving to next concepts"
-  ];
+  // Auto-generate report when completed sessions change
+  useEffect(() => {
+    if (hasCompletedSessions && !reportData && !isGenerating) {
+      generateReport();
+    }
+  }, [hasCompletedSessions, performanceMetrics.completedSessions]);
 
   const getPerformanceColor = (rate: number) => {
     if (rate >= 80) return "text-green-600";
     if (rate >= 60) return "text-yellow-600";
     return "text-red-600";
-  };
-
-  const getPerformanceBgColor = (rate: number) => {
-    if (rate >= 80) return "bg-green-100";
-    if (rate >= 60) return "bg-yellow-100";
-    return "bg-red-100";
   };
 
   return (
@@ -149,13 +174,35 @@ export function OverallReport({ sessions }: OverallReportProps) {
             </div>
           </div>
 
-          {/* Overview - moved under the cards */}
+          {/* Overview */}
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <h4 className="font-medium text-gray-900 mb-3">Overview</h4>
-            {hasCompletedSessions ? (
-              <p className="text-gray-700 leading-relaxed">{agentAnalysis}</p>
-            ) : (
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium text-gray-900">Overview</h4>
+            </div>
+            
+            {!hasCompletedSessions ? (
               <p className="text-gray-500 italic">Run simulations to generate analysis</p>
+            ) : isGenerating ? (
+              <div className="flex items-center gap-2 py-4">
+                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-gray-600">Generating Overview...</span>
+              </div>
+            ) : error ? (
+              <div className="text-red-600 text-sm">
+                Error: {error}
+                <Button
+                  onClick={generateReport}
+                  variant="outline"
+                  size="sm"
+                  className="ml-2"
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : reportData ? (
+              <p className="text-gray-700 leading-relaxed">{reportData.overview}</p>
+            ) : (
+              <p className="text-gray-500 italic">Click "Generate" to analyze sessions</p>
             )}
           </div>
         </CardContent>
@@ -170,9 +217,22 @@ export function OverallReport({ sessions }: OverallReportProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {hasCompletedSessions ? (
+          {!hasCompletedSessions ? (
+            <p className="text-gray-500 italic text-center py-8">
+              Run simulations to identify specific issues
+            </p>
+          ) : isGenerating ? (
+            <div className="flex items-center justify-center gap-2 py-8">
+              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-gray-600">Analyzing issues...</span>
+            </div>
+          ) : error ? (
+            <p className="text-red-500 text-center py-8">
+              Failed to load issues. Click "Regenerate" above to try again.
+            </p>
+          ) : reportData?.specificIssues && reportData.specificIssues.length > 0 ? (
             <div className="space-y-4">
-              {specificIssues.map((issue, index) => (
+              {reportData.specificIssues.map((issue, index) => (
                 <div key={index} className="border-l-4 border-red-300 pl-4 py-2">
                   <div className="flex items-start justify-between mb-1">
                     <span className="font-medium text-sm text-gray-900">{issue.sessionName}</span>
@@ -184,9 +244,13 @@ export function OverallReport({ sessions }: OverallReportProps) {
                 </div>
               ))}
             </div>
+          ) : reportData ? (
+            <p className="text-green-600 text-center py-8 font-medium">
+              🎉 No issues found! All evaluation criteria passed successfully.
+            </p>
           ) : (
-            <p className="text-gray-500 italic text-center py-8">
-              Run simulations to identify specific issues
+            <p className="text-gray-500 text-center py-8">
+              No specific issues found in the analysis.
             </p>
           )}
         </CardContent>
@@ -201,9 +265,22 @@ export function OverallReport({ sessions }: OverallReportProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {hasCompletedSessions ? (
+          {!hasCompletedSessions ? (
+            <p className="text-gray-500 italic text-center py-8">
+              Run simulations to generate recommendations
+            </p>
+          ) : isGenerating ? (
+            <div className="flex items-center justify-center gap-2 py-8">
+              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-gray-600">Generating recommendations...</span>
+            </div>
+          ) : error ? (
+            <p className="text-red-500 text-center py-8">
+              Failed to load recommendations. Click "Regenerate" above to try again.
+            </p>
+          ) : reportData?.recommendations ? (
             <div className="space-y-3">
-              {recommendations.map((recommendation, index) => (
+              {reportData.recommendations.map((recommendation, index) => (
                 <div key={index} className="flex items-start gap-3">
                   <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-xs font-medium text-blue-600">{index + 1}</span>
@@ -213,8 +290,8 @@ export function OverallReport({ sessions }: OverallReportProps) {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 italic text-center py-8">
-              Run simulations to generate recommendations
+            <p className="text-gray-500 text-center py-8">
+              No recommendations available in the analysis.
             </p>
           )}
         </CardContent>
