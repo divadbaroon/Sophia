@@ -197,7 +197,7 @@ export default function SimulationReplayDashboard() {
                 </div>
               ) : (
                 /* Overall Report Tab */
-                <OverallReport />
+                <OverallReport sessions={sessions} />
               )}
             </CardContent>
           </Card>
