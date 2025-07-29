@@ -204,7 +204,7 @@ export function OverallReport({ sessions, currentPrompt }: OverallReportProps) {
             ) : isGenerating ? (
               <div className="flex items-center gap-2 py-4">
                 <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                <span className="text-gray-600">Analyzing sessions with Claude...</span>
+                <span className="text-gray-600">Generating Overview...</span>
               </div>
             ) : error ? (
               <div className="text-red-600 text-sm">
@@ -221,7 +221,7 @@ export function OverallReport({ sessions, currentPrompt }: OverallReportProps) {
             ) : reportData ? (
               <p className="text-gray-700 leading-relaxed">{reportData.overview}</p>
             ) : (
-              <p className="text-gray-500 italic">Click "Generate" to analyze sessions</p>
+                <p className="text-gray-500 italic">Click &quot;Generate&quot; to analyze sessions</p>
             )}
           </div>
         </CardContent>
@@ -247,7 +247,7 @@ export function OverallReport({ sessions, currentPrompt }: OverallReportProps) {
             </div>
           ) : error ? (
             <p className="text-red-500 text-center py-8">
-              Failed to load issues. Click "Regenerate" above to try again.
+              Failed to load issues. Click &quot;Regenerate&quot; above to try again.
             </p>
           ) : reportData?.specificIssues && reportData.specificIssues.length > 0 ? (
             <div className="space-y-4">
@@ -295,7 +295,7 @@ export function OverallReport({ sessions, currentPrompt }: OverallReportProps) {
             </div>
           ) : error ? (
             <p className="text-red-500 text-center py-8">
-              Failed to load recommendations. Click "Regenerate" above to try again.
+              Failed to load recommendations. Click &quot;Regenerate&quot; above to try again.
             </p>
           ) : reportData?.recommendations ? (
             <div className="space-y-3">
