@@ -13,6 +13,7 @@ import { SessionCard } from "@/components/simulations/SessionCard";
 import { CompetencyFilter } from "@/components/simulations/CompetencyFilter";
 import { EvaluationCriteriaModal, EvaluationCriterion } from "@/components/simulations/EvaluationCriteriaModal";
 import { VoiceSettingsModal } from "@/components/simulations/VoiceSettingsModal";
+import { OverallReport } from "@/components/simulations/OverallReport";
 
 // Default evaluation criteria
 const defaultCriteria: EvaluationCriterion[] = [
@@ -31,6 +32,7 @@ export default function SimulationReplayDashboard() {
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [competencyFilter, setCompetencyFilter] = useState<"all" | "beginner" | "intermediate" | "advanced">("all");
+  const [activeTab, setActiveTab] = useState<"sessions" | "report">("sessions");
   
   // Evaluation Criteria State
   const [evaluationCriteria, setEvaluationCriteria] = useState<EvaluationCriterion[]>(defaultCriteria);
@@ -116,56 +118,86 @@ export default function SimulationReplayDashboard() {
         </div>
 
         <div className="flex justify-center">
-          {/* Sessions List */}
+          {/* Main Content Card */}
           <Card className="w-full">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Simulation Sessions</CardTitle>
-                <div className="flex items-center gap-2">
+                {/* Tab Navigation */}
+                <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
                   <Button
-                    onClick={() => setIsVoiceSettingsOpen(true)}
-                    variant="outline"
+                    variant={activeTab === "sessions" ? "default" : "ghost"}
                     size="sm"
-                    className="flex items-center gap-2"
+                    onClick={() => setActiveTab("sessions")}
+                    className="h-8 px-4"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5 12a5 5 0 007.54.54l3-3a5 5 0 00-7.54-.54z" />
-                    </svg>
-                    Voice Settings
+                    Simulations
                   </Button>
                   <Button
-                    onClick={() => setIsCriteriaModalOpen(true)}
-                    variant="outline"
+                    variant={activeTab === "report" ? "default" : "ghost"}
                     size="sm"
-                    className="flex items-center gap-2"
+                    onClick={() => setActiveTab("report")}
+                    className="h-8 px-4"
                   >
-                    <Settings className="w-4 h-4" />
-                    Evaluation Criteria
+                    Performance Report
                   </Button>
                 </div>
+
+                {/* Action buttons - only show on sessions tab */}
+                {activeTab === "sessions" && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => setIsVoiceSettingsOpen(true)}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5 12a5 5 0 007.54.54l3-3a5 5 0 00-7.54-.54z" />
+                      </svg>
+                      Voice Settings
+                    </Button>
+                    <Button
+                      onClick={() => setIsCriteriaModalOpen(true)}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Evaluation Criteria
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Filter Options */}
-              <CompetencyFilter 
-                competencyFilter={competencyFilter}
-                setCompetencyFilter={setCompetencyFilter}
-              />
-
-              {/* Sessions */}
-              {filteredSessions.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">
-                  No sessions match the current filters.
-                </p>
-              ) : (
-                filteredSessions.map((session) => (
-                  <SessionCard
-                    key={session.id}
-                    session={session}
-                    onSessionClick={handleSessionClick}
-                    getDifficultyColor={getDifficultyColor}
+            <CardContent>
+              {/* Tab Content */}
+              {activeTab === "sessions" ? (
+                <div className="space-y-4">
+                  {/* Filter Options */}
+                  <CompetencyFilter 
+                    competencyFilter={competencyFilter}
+                    setCompetencyFilter={setCompetencyFilter}
                   />
-                ))
+
+                  {/* Sessions */}
+                  {filteredSessions.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">
+                      No sessions match the current filters.
+                    </p>
+                  ) : (
+                    filteredSessions.map((session) => (
+                      <SessionCard
+                        key={session.id}
+                        session={session}
+                        onSessionClick={handleSessionClick}
+                        getDifficultyColor={getDifficultyColor}
+                      />
+                    ))
+                  )}
+                </div>
+              ) : (
+                /* Overall Report Tab */
+                <OverallReport />
               )}
             </CardContent>
           </Card>
