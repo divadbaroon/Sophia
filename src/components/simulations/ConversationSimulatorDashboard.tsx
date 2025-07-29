@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Settings } from "lucide-react";
 
 import { Session } from "@/types";
@@ -101,9 +101,6 @@ export default function SimulationReplayDashboard() {
     setEvaluationCriteria(newCriteria);
     console.log("📊 Evaluation criteria updated:", newCriteria.map(c => c.name));
   };
-
-  // Check if we have any completed sessions to show the report
-  const hasCompletedSessions = sessions.some(session => session.status === "completed");
 
   return (
     <div className="min-h-screen bg-gray-50">
