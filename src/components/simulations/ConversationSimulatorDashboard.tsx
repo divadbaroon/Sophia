@@ -20,11 +20,6 @@ const defaultCriteria: EvaluationCriterion[] = [
     id: "teaching_effectiveness",
     name: "Teaching Effectiveness",
     conversationGoalPrompt: "The teacher effectively explained the concepts and helped the student understand."
-  },
-  {
-    id: "student_engagement", 
-    name: "Student Engagement",
-    conversationGoalPrompt: "The student was engaged and asked relevant questions."
   }
 ];
 
