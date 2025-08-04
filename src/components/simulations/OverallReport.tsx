@@ -219,23 +219,6 @@ export function OverallReport({ sessions, currentPrompt, onPromptUpdate, current
     setProcessedSuggestions(prev => new Set(prev).add(index));
   };
 
-  // Render diff-style text with highlighting
-  const renderDiffText = (text: string, addedText: string[], removedText: string[]) => {
-    let result = text;
-    
-    // Apply highlighting for added text (green background)
-    addedText.forEach(added => {
-      result = result.replace(added, `<span class="bg-green-100 text-green-800 px-1 rounded">${added}</span>`);
-    });
-    
-    // Apply highlighting for removed text (this won't show in updated section, but useful for current section)
-    removedText.forEach(removed => {
-      result = result.replace(removed, `<span class="bg-red-100 text-red-800 line-through px-1 rounded">${removed}</span>`);
-    });
-    
-    return result;
-  };
-
   return (
     <div className="space-y-6">
       {/* Performance Summary */}
@@ -332,7 +315,7 @@ export function OverallReport({ sessions, currentPrompt, onPromptUpdate, current
             ) : hasCurrentReport ? (
               <p className="text-gray-700 leading-relaxed">{reportData.overview}</p>
             ) : (
-              <p className="text-gray-500 italic">Click "Generate Report" to analyze sessions</p>
+              <p className="text-gray-500 italic">Click &quot;Generate Report&quot; to analyze sessions</p>
             )}
           </div>
         </CardContent>
@@ -358,7 +341,7 @@ export function OverallReport({ sessions, currentPrompt, onPromptUpdate, current
             </div>
           ) : error ? (
             <p className="text-red-500 text-center py-8">
-              Failed to load issues. Click "Generate Report" above to try again.
+              Failed to load issues. Click &quot;Generate Report&quot; above to try again.
             </p>
           ) : hasCurrentReport && reportData.specificIssues && reportData.specificIssues.length > 0 ? (
             <div className="space-y-4">
@@ -406,7 +389,7 @@ export function OverallReport({ sessions, currentPrompt, onPromptUpdate, current
             </div>
           ) : error ? (
             <p className="text-red-500 text-center py-8">
-              Failed to load suggestions. Click "Generate Report" above to try again.
+              Failed to load suggestions. Click &quot;Generate Report&quot; above to try again.
             </p>
           ) : hasCurrentReport && reportData.promptSuggestions && reportData.promptSuggestions.length > 0 ? (
             <div className="space-y-6">
