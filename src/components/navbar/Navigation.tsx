@@ -56,9 +56,8 @@ export default function Navigation({ user }: NavigationProps) {
     : user
       ? [
           { name: "Concepts", href: "/concepts" },
-          { name: "Simulations", href: "/simulations" },
         ]
-      : ["How It Works", "Features", "Contact"]
+      : []
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault()
