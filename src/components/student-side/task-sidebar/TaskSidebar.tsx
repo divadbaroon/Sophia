@@ -10,14 +10,12 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ArrowLeft, ArrowRight, Target, ChevronRight, CheckCircle, Lock } from "lucide-react"
 
-import { QuizModal } from "@/components/lessons/components/quiz-modal"
 import { SurveyModal } from "@/components/lessons/components/survey-modal"
 import PrizeWheelModal from "@/components/lessons/components/prize-wheel" 
 import KnowledgeRadarModal from "@/components/student-side/student-report/studentReport" 
 
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
 import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
-import { getQuizQuestions } from '@/lib/actions/quiz-actions'
 import { getTaskProgressForSession } from '@/lib/actions/task-progress-actions'
 
 import { useSession } from "@/lib/context/session/SessionProvider"
@@ -27,8 +25,6 @@ import { conceptIcons } from "@/lib/constants/conceptIcons"
 import { TaskSidebarProps } from "@/components/student-side/task-sidebar/types"
 
 export default function TaskSidebar({ 
-  isQuizModalOpen, 
-  setIsQuizModalOpen, 
   isSurveyModalOpen, 
   setIsSurveyModalOpen,
   showKnowledgeRadar,
@@ -37,9 +33,6 @@ export default function TaskSidebar({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [currentConceptTitle, setCurrentConceptTitle] = useState("")
   const [showPrizeWheel, setShowPrizeWheel] = useState(false) 
-
-  // Quiz state 
-  const [quizData, setQuizData] = useState<any>(null)
 
   // Task progress state 
   const [completedTasks, setCompletedTasks] = useState<Set<number>>(new Set())
@@ -82,39 +75,6 @@ export default function TaskSidebar({
 
   // Check if all tasks are completed
   const allTasksCompleted = sessionData?.tasks.every((_: any, index: number) => isTaskCompleted(index)) || false
-
-  // Load quiz questions when needed (only when all tasks are completed)
-  useEffect(() => {
-    const loadQuizQuestions = async () => {
-      if (!allTasksCompleted || !lessonId || !sessionData || quizData) return
-      
-      console.log("Loading quiz questions for lesson", lessonId)
-      
-      try {
-        const { data: quizQuestions } = await getQuizQuestions(lessonId, 'post')
-        
-        if (quizQuestions && quizQuestions.length > 0) {
-          const formattedQuiz = {
-            title: sessionData?.tasks[0]?.title || "Lesson Quiz", 
-            questions: quizQuestions.map((question, index) => ({
-              ...question,
-              id: question.id || `question-${lessonId}-${index}` 
-            }))
-          }
-          setQuizData(formattedQuiz)
-          console.log("Quiz questions loaded successfully")
-        } else {
-          console.warn('No quiz questions found for lesson:', lessonId)
-          setQuizData(null)
-        }
-      } catch (error) {
-        console.error('Error loading quiz questions:', error)
-        setQuizData(null)
-      } 
-    }
-
-    loadQuizQuestions()
-  }, [allTasksCompleted, lessonId, sessionData, quizData])
 
   // Navigation handlers with tracking
   const handleNextClick = () => {
@@ -159,44 +119,38 @@ export default function TaskSidebar({
     })
   }
 
-  const handleFinishedClick = () => {
+  const handleFinishedClick = async () => {
     if (!sessionData || !sessionData.tasks) {
       console.warn('Session data not available')
       return
     }
 
     if (currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex)) {
-      // Only show quiz on the last task when it's completed
+      // On the last task when it's completed, complete the lesson and show knowledge radar
       const conceptTitle = sessionData.tasks[currentMethodIndex]?.title || "Lesson Complete"
       setCurrentConceptTitle(conceptTitle)
-      setIsQuizModalOpen(true)
+      
+      if (lessonId) {
+        try {
+          console.log('📝 Updating lesson progress...', { lessonId })
+          const result = await completeLessonProgress(lessonId)
+          
+          if (result.success) {
+            console.log('✅ Lesson completed successfully!', result.data)
+          } else {
+            console.error('❌ Failed to update lesson progress:', result.error)
+          }
+        } catch (error) {
+          console.error('❌ Error updating lesson progress:', error)
+        }
+      } else {
+        console.warn('⚠️ No lessonId available to update progress')
+      }
+      
+      setShowKnowledgeRadar(true)
     } else {
       handleNextClick() 
     }
-  }
-
-  const handleQuizComplete = async (score: number, conceptTitle: string) => {
-    setIsQuizModalOpen(false)
-    setCurrentConceptTitle(conceptTitle)
-    
-    if (lessonId) {
-      try {
-        console.log('📝 Updating lesson progress...', { lessonId, score })
-        const result = await completeLessonProgress(lessonId, score)
-        
-        if (result.success) {
-          console.log('✅ Lesson completed successfully!', result.data)
-        } else {
-          console.error('❌ Failed to update lesson progress:', result.error)
-        }
-      } catch (error) {
-        console.error('❌ Error updating lesson progress:', error)
-      }
-    } else {
-      console.warn('⚠️ No lessonId available to update progress')
-    }
-    
-    setShowKnowledgeRadar(true)
   }
 
   const handleKnowledgeRadarContinue = () => {
@@ -436,7 +390,7 @@ export default function TaskSidebar({
                 <TooltipContent>
                   <p>
                     {currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex)
-                      ? "Take quiz, view your learning report, complete survey, and spin the wheel for prizes!"
+                      ? "View your learning report, complete survey, and spin the wheel for prizes!"
                       : !isTaskCompleted(currentMethodIndex)
                         ? "Complete all test cases to unlock the next task"
                         : currentMethodIndex === (sessionData?.tasks.length || 0) - 1
@@ -452,18 +406,6 @@ export default function TaskSidebar({
       </div>
 
       {/* Modals */}
-      {quizData && (
-        <QuizModal
-          isOpen={isQuizModalOpen}
-          onClose={() => setIsQuizModalOpen(false)}
-          concept={quizData} 
-          sessionId={sessionId}
-          lessonId={lessonId} 
-          quizType="post"
-          onComplete={handleQuizComplete}
-        />
-      )}
-
       <KnowledgeRadarModal
         isOpen={showKnowledgeRadar}
         onClose={() => setShowKnowledgeRadar(false)}

@@ -89,10 +89,3 @@ export interface ConceptMapContextType {
   // API update state
   isUpdatingConceptMap: boolean;
 }
-
-// Quiz
-export interface QuizContextType {
-  // Quiz state
-  quizLoading: boolean;
-  quizData: any;
-}

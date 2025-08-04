@@ -141,7 +141,7 @@ export async function checkSurveyCompletion(lessonId: string) {
 
     const profileId = user.id
 
-    // Check if user has completed survey for this lesson (similar to quiz check)
+    // Check if user has completed survey for this lesson 
     const { data: responses, error } = await supabase
       .from('survey_responses')
       .select(`

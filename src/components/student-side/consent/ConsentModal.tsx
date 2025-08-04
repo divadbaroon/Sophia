@@ -58,7 +58,7 @@ const ConsentModal = ({ isOpen = true, onClose, onConsent, isProcessing = false 
                 Data Collection & Privacy
               </h3>
               <p className="text-lg leading-relaxed mb-4">
-                All student interactions, quiz responses, coding sessions, and any audio data are anonymized and
+                All student interactions, coding sessions, and any audio data are anonymized and
                 securely stored. No retrieved data can be traced back to any individual student. Your privacy is our top
                 priority.
               </p>

@@ -32,7 +32,6 @@ export const WorkspaceLayout: React.FC = () => {
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
   const [showConsentModal, setShowConsentModal] = useState(false)
   const [consentProcessing, setConsentProcessing] = useState(false)
-  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false)
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false)
   const [showKnowledgeRadar, setShowKnowledgeRadar] = useState(false)
   const [terminalHeight, setTerminalHeight] = useState(50)
@@ -138,7 +137,7 @@ export const WorkspaceLayout: React.FC = () => {
   }
 
   // Determine if buttons should be hidden
-  const shouldHideButtons = isQuizModalOpen || isSurveyModalOpen || showKnowledgeRadar
+  const shouldHideButtons = isSurveyModalOpen || showKnowledgeRadar
 
   // Show global loading state
   if (isLoading) {
@@ -231,8 +230,6 @@ export const WorkspaceLayout: React.FC = () => {
           <ResizablePanelGroup direction="horizontal">
             <ResizablePanel defaultSize={28} minSize={20} maxSize={40}>
               <TaskSidebar
-                isQuizModalOpen={isQuizModalOpen}
-                setIsQuizModalOpen={setIsQuizModalOpen}
                 isSurveyModalOpen={isSurveyModalOpen}
                 setIsSurveyModalOpen={setIsSurveyModalOpen}
                 showKnowledgeRadar={showKnowledgeRadar}

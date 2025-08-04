@@ -65,7 +65,7 @@ export function LessonModal({ isOpen, onClose, concept, onComplete }: LessonModa
 
           <div className="flex justify-end pt-4 border-t border-gray-200">
             <Button onClick={handleComplete} className="bg-black text-white hover:bg-gray-800 transition-colors">
-              {onComplete ? "Take Quiz" : "Continue Learning"}
+              Continue Learning
             </Button>
           </div>
         </div>

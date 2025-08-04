@@ -37,7 +37,7 @@ export async function createLearningSession(lessonId: string, classId: string) {
   }
 }
 
-export async function completeLessonProgress(lessonId: string, quizScore: number) {
+export async function completeLessonProgress(lessonId: string) {
   const supabase = await createClient()
   
   try {
@@ -68,7 +68,6 @@ export async function completeLessonProgress(lessonId: string, quizScore: number
       .update({
         status: 'completed',
         completed_at: new Date().toISOString(),
-        post_quiz_score: quizScore,
         updated_at: new Date().toISOString()
       })
       .eq('id', session.id)
@@ -95,8 +94,6 @@ export async function updateLearningSession(
   updates: {
     status?: 'in_progress' | 'coding_tasks' | 'completed'
     completed_at?: string
-    pre_quiz_completed_at?: string
-    post_quiz_completed_at?: string
     survey_completed_at?: string
   }
 ) {

@@ -23,7 +23,6 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
       <DialogContent className="max-w-2xl bg-white border-2 border-black">
         <DialogHeader className="border-b border-gray-200 pb-4">
           <DialogTitle className="text-2xl font-bold text-black">Ready for Coding Practice?</DialogTitle>
-          <p className="text-gray-600 mt-2">Great job completing the {conceptTitle} quiz!</p>
         </DialogHeader>
 
         <div className="space-y-6 pt-4">

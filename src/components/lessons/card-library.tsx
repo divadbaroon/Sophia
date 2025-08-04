@@ -11,14 +11,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 import { UnlockedConceptCard } from "@/components/lessons/components/unlocked-concept-card"
-import { QuizModal } from "@/components/lessons/components/quiz-modal"
 import { InstructionsModal } from "@/components/lessons/components/instructions-modal"
 import { DemographicForm } from "./components/demographic-form"
 
 import { getUserClasses } from "@/lib/actions/class-actions"
 import { getClassLessons } from "@/lib/actions/lessons-actions"
 import { enrollInClass } from "@/lib/actions/class-actions"
-import { getQuizQuestions } from "@/lib/actions/quiz-actions"
 import { createLearningSession, getUserLearningSessions } from "@/lib/actions/learning-session-actions"
 import { checkDemographicCompletion } from "@/lib/actions/demographic-actions"
 
@@ -58,7 +56,6 @@ export default function ConceptLibrary() {
 
   // Existing UI state
   const [selectedConcept, setSelectedConcept] = useState<any | null>(null)
-  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false)
   const [isInstructionsModalOpen, setIsInstructionsModalOpen] = useState(false)
   const [currentConceptTitle, setCurrentConceptTitle] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
@@ -144,26 +141,8 @@ export default function ConceptLibrary() {
       // Get lessons for first class
       const { data: classLessons } = await getClassLessons((classes[0] as any).id)
               
-      // Fetch quiz questions for all lessons
-      const lessonsWithQuiz = await Promise.all(
-        (classLessons || []).map(async (lesson) => {
-          const { data: quizQuestions } = await getQuizQuestions(lesson.id, 'pre')
-
-          return {
-            ...lesson,
-            quiz: {
-              title: lesson.title,
-              questions: (quizQuestions || []).map((question, index) => ({
-                ...question,
-                id: question.id || `question-${lesson.id}-${index}`
-              }))
-            }
-          }
-        })
-      )
-      
       // Sort lessons by custom order and assign fixed IDs
-      const sortedLessons = sortLessonsByOrder(lessonsWithQuiz)
+      const sortedLessons = sortLessonsByOrder(classLessons || [])
       setLessons(sortedLessons)
       
       // Load completed lessons for the first class
@@ -195,25 +174,8 @@ export default function ConceptLibrary() {
       
       const { data: classLessons } = await getClassLessons(newClass.id)
       
-      // Fetch quiz questions for all lessons in the new class
-      const lessonsWithQuiz = await Promise.all(
-        (classLessons || []).map(async (lesson) => {
-          const { data: quizQuestions } = await getQuizQuestions(lesson.id, 'pre')
-          return {
-            ...lesson,
-            quiz: {
-              title: lesson.title,
-              questions: (quizQuestions || []).map((question, index) => ({
-                ...question,
-                id: question.id || `question-${lesson.id}-${index}`
-              }))
-            }
-          }
-        })
-      )
-      
       // Sort lessons by custom order and assign fixed IDs
-      const sortedLessons = sortLessonsByOrder(lessonsWithQuiz)
+      const sortedLessons = sortLessonsByOrder(classLessons || [])
       setLessons(sortedLessons)
       
       // Load completed lessons for the new class
@@ -282,12 +244,11 @@ export default function ConceptLibrary() {
         description: lesson.description,
         difficulty: lesson.difficulty,
         estimatedTime: `${lesson.estimated_time_mins} min`,
-        quiz: lesson.quiz,
         sessionId: sessionResult.data.id 
       })
 
-      // Open quiz modal
-      setIsQuizModalOpen(true)
+      setCurrentConceptTitle(lesson.title)
+      setIsInstructionsModalOpen(true)
       setIsCreatingSession(false)
 
     } catch (error) {
@@ -296,12 +257,6 @@ export default function ConceptLibrary() {
       setIsCreatingSession(false)
     }
   }
-
-  const handleQuizComplete = async (score: number, conceptTitle: string) => {
-    setIsQuizModalOpen(false);
-    setCurrentConceptTitle(conceptTitle);
-    setIsInstructionsModalOpen(true);
-  };
 
   const handleInstructionsContinue = () => {
     window.location.href = `/concepts/${selectedConcept.id}/session/${selectedConcept.sessionId}`
@@ -662,16 +617,6 @@ export default function ConceptLibrary() {
       </Dialog>
 
       {/* Modals */}
-      <QuizModal
-        isOpen={isQuizModalOpen}
-        onClose={() => setIsQuizModalOpen(false)}
-        concept={selectedConcept?.quiz || null}
-        sessionId={selectedConcept?.sessionId} 
-        lessonId={selectedConcept?.id} 
-        quizType="pre" 
-        onComplete={handleQuizComplete}
-      />
-
       <InstructionsModal
         isOpen={isInstructionsModalOpen}
         onClose={() => setIsInstructionsModalOpen(false)}
