@@ -52,6 +52,17 @@ export default function SimulationReplayDashboard() {
   const [activeTab, setActiveTab] = useState<"configuration" | "sessions" | "report">("configuration");
   const [currentAgentPrompt, setCurrentAgentPrompt] = useState<string>("");
   
+  // Agent info state for the OverallReport component
+  const [currentAgentInfo, setCurrentAgentInfo] = useState<{
+    name: string;
+    first_message: string;
+    voice_id: string;
+  }>({
+    name: "",
+    first_message: "",
+    voice_id: ""
+  });
+  
   // Evaluation Criteria State - Initialize from localStorage
   const [evaluationCriteria, setEvaluationCriteria] = useState<EvaluationCriterion[]>(() => {
     const storedCriteria = loadCriteriaFromStorage();
@@ -100,6 +111,22 @@ export default function SimulationReplayDashboard() {
   const handleCriteriaSave = (newCriteria: EvaluationCriterion[]) => {
     setEvaluationCriteria(newCriteria);
     console.log("📊 Evaluation criteria updated:", newCriteria.map(c => c.name));
+  };
+
+  // Handle agent info updates from AgentConfiguration
+  const handleAgentInfoUpdate = (agentInfo: {
+    name: string;
+    first_message: string;
+    voice_id: string;
+  }) => {
+    setCurrentAgentInfo(agentInfo);
+    console.log("🤖 Agent info updated:", agentInfo);
+  };
+
+  // Handle prompt updates from OverallReport (when "Add" is clicked)
+  const handlePromptUpdate = (newPrompt: string) => {
+    setCurrentAgentPrompt(newPrompt);
+    console.log("📝 Prompt updated from OverallReport");
   };
 
   return (
@@ -159,7 +186,7 @@ export default function SimulationReplayDashboard() {
                     onClick={() => setActiveTab("sessions")}
                     className="h-8 px-4"
                   >
-                    Simulation Sessions
+                    Simulated Testing
                   </Button>
                   <Button
                     variant={activeTab === "report" ? "default" : "ghost"}
@@ -167,7 +194,7 @@ export default function SimulationReplayDashboard() {
                     onClick={() => setActiveTab("report")}
                     className="h-8 px-4"
                   >
-                    Overall Report
+                    Performance Report
                   </Button>
                 </div>
 
@@ -199,10 +226,16 @@ export default function SimulationReplayDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              {/* Tab Content */}
-              {activeTab === "configuration" ? (
-                <AgentConfiguration onPromptChange={setCurrentAgentPrompt} />
-              ) : activeTab === "sessions" ? (
+              {/* Tab Content - Keep OverallReport always mounted but conditionally visible */}
+              <div style={{ display: activeTab === "configuration" ? "block" : "none" }}>
+                <AgentConfiguration 
+                  onPromptChange={setCurrentAgentPrompt} 
+                  onCriteriaUpdate={setEvaluationCriteria}
+                  onAgentInfoChange={handleAgentInfoUpdate}
+                />
+              </div>
+              
+              <div style={{ display: activeTab === "sessions" ? "block" : "none" }}>
                 <div className="space-y-4">
                   {/* Filter Options */}
                   <CompetencyFilter 
@@ -226,10 +259,17 @@ export default function SimulationReplayDashboard() {
                     ))
                   )}
                 </div>
-              ) : (
-                /* Overall Report Tab */
-                <OverallReport sessions={sessions} currentPrompt={currentAgentPrompt} />
-              )}
+              </div>
+              
+              <div style={{ display: activeTab === "report" ? "block" : "none" }}>
+                {/* OverallReport with all required props */}
+                <OverallReport 
+                  sessions={sessions} 
+                  currentPrompt={currentAgentPrompt}
+                  onPromptUpdate={handlePromptUpdate}
+                  currentAgentInfo={currentAgentInfo}
+                />
+              </div>
             </CardContent>
           </Card>
         </div>
