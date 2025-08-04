@@ -2,6 +2,7 @@ import { Session, SimulationResult, ConversationTurn } from "@/types";
 import { EvaluationCriterion } from "@/components/simulations/EvaluationCriteriaModal";
 
 // TTS generation function
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const generateTTS = async (text: string, role: "user" | "agent"): Promise<string | undefined> => {
   try {
     // Get voice IDs from localStorage with fallbacks
