@@ -11,13 +11,13 @@ import { SessionContextType } from "@/lib/context/types"
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export const SessionProvider = ({ children }: { children: ReactNode }) => {
-  // Hook 1: Extract session and lesson IDs from URL
+  // Extract session and lesson IDs from URL
   const { sessionId, lessonId } = useSessionUrl();
   
-  // Hook 2: Load session data
+  // Load session data
   const { sessionData, isLoadingTasks } = useSessionData(lessonId);
   
-  // Hook 3: Handle task navigation
+  // Handle task navigation
   const {
     currentMethodIndex,
     setCurrentMethodIndex,
