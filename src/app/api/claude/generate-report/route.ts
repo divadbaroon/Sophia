@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
    let response;
    try {
      response = JSON.parse(jsonText);
-   } catch (parseError) {
+   } catch {
      // Return fallback response structure
      response = {
        overview: "Unable to parse analysis results. Please regenerate the report.",

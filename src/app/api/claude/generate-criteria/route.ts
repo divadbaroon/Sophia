@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
    let criteria;
    try {
      criteria = JSON.parse(jsonText);
-   } catch (parseError) {
+   } catch {
      // Return fallback criteria
      criteria = [
        {
