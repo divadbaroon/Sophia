@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Settings, RefreshCw, Save, Edit, ExternalLink, Copy } from "lucide-react";
+import { Settings, Save, Edit, RefreshCw, ExternalLink, Copy, Sparkles } from "lucide-react";
 import { CloneVoiceModal } from "@/components/simulations/CloneVoiceModal";
+import { GeneratedCriteriaModal } from "@/components/simulations/GeneratedCriteriaModal";
+import { EvaluationCriterion } from "@/components/simulations/EvaluationCriteriaModal";
 
 interface AgentInfo {
   agent_id: string;
@@ -17,19 +19,29 @@ interface AgentInfo {
 
 interface AgentConfigurationProps {
   onPromptChange?: (prompt: string) => void;
+  onCriteriaUpdate?: (criteria: EvaluationCriterion[]) => void;
+  onAgentInfoChange?: (agentInfo: { name: string; first_message: string; voice_id: string }) => void;
 }
 
-export function AgentConfiguration({ onPromptChange }: AgentConfigurationProps) {
+export function AgentConfiguration({ onPromptChange, onCriteriaUpdate, onAgentInfoChange }: AgentConfigurationProps) {
+  // Basic state
   const [agentInfo, setAgentInfo] = useState<AgentInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Form state
   const [editedName, setEditedName] = useState("");
   const [editedPrompt, setEditedPrompt] = useState("");
   const [editedFirstMessage, setEditedFirstMessage] = useState("");
   const [editedVoiceId, setEditedVoiceId] = useState("");
+  
+  // Modal state
   const [isCloneVoiceModalOpen, setIsCloneVoiceModalOpen] = useState(false);
+  const [isCriteriaModalOpen, setIsCriteriaModalOpen] = useState(false);
+  const [generatedCriteria, setGeneratedCriteria] = useState<EvaluationCriterion[]>([]);
+  const [isGeneratingCriteria, setIsGeneratingCriteria] = useState(false);
 
   // Fetch agent configuration
   const fetchAgentConfig = async () => {
@@ -71,6 +83,15 @@ export function AgentConfiguration({ onPromptChange }: AgentConfigurationProps) 
         onPromptChange(agentData.prompt);
       }
       
+      // Notify parent component of current agent info
+      if (onAgentInfoChange) {
+        onAgentInfoChange({
+          name: agentData.name,
+          first_message: agentData.first_message,
+          voice_id: agentData.voice_id
+        });
+      }
+      
       console.log('✅ Agent configuration fetched successfully');
 
     } catch (error) {
@@ -78,6 +99,49 @@ export function AgentConfiguration({ onPromptChange }: AgentConfigurationProps) 
       setError(error instanceof Error ? error.message : 'Failed to fetch agent configuration');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Generate evaluation criteria
+  const generateEvaluationCriteria = async () => {
+    if (!agentInfo) return;
+
+    setIsGeneratingCriteria(true);
+    
+    try {
+      console.log('✨ Generating evaluation criteria...');
+      
+      const response = await fetch('/api/claude/generate-criteria', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          agentPrompt: agentInfo.prompt,
+          agentName: agentInfo.name,
+          firstMessage: agentInfo.first_message
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate criteria');
+      }
+
+      const data = await response.json();
+      const criteria: EvaluationCriterion[] = data.criteria;
+
+      console.log(`✅ Generated ${criteria.length} evaluation criteria`);
+      
+      // Show modal with generated criteria
+      setGeneratedCriteria(criteria);
+      setIsCriteriaModalOpen(true);
+
+    } catch (error) {
+      console.error('❌ Error generating criteria:', error);
+      setError(error instanceof Error ? error.message : 'Failed to generate criteria');
+    } finally {
+      setIsGeneratingCriteria(false);
     }
   };
 
@@ -120,6 +184,21 @@ export function AgentConfiguration({ onPromptChange }: AgentConfigurationProps) 
 
       setAgentInfo(updatedAgentData);
       setIsEditing(false);
+      
+      // Notify parent of prompt change
+      if (onPromptChange) {
+        onPromptChange(updatedAgentData.prompt);
+      }
+
+      // Notify parent of agent info change
+      if (onAgentInfoChange) {
+        onAgentInfoChange({
+          name: updatedAgentData.name,
+          first_message: updatedAgentData.first_message,
+          voice_id: updatedAgentData.voice_id
+        });
+      }
+
       console.log('✅ Agent configuration updated successfully');
 
     } catch (error) {
@@ -130,11 +209,29 @@ export function AgentConfiguration({ onPromptChange }: AgentConfigurationProps) 
     }
   };
 
-  // Load agent config on component mount
-  useEffect(() => {
-    fetchAgentConfig();
-  }, []);
+  // Handle accepting criteria from modal
+  const handleAcceptCriteria = (selectedCriteria: EvaluationCriterion[]) => {
+    // Save to localStorage
+    localStorage.setItem('evaluationCriteria', JSON.stringify(selectedCriteria));
+    
+    // Notify parent component
+    if (onCriteriaUpdate) {
+      onCriteriaUpdate(selectedCriteria);
+    }
 
+    console.log(`✅ Accepted and saved ${selectedCriteria.length} evaluation criteria`);
+  };
+
+  // Handle voice cloning
+  const handleVoiceCloned = (voiceId: string) => {
+    setEditedVoiceId(voiceId);
+    if (!isEditing) {
+      setIsEditing(true);
+    }
+    console.log('Voice ID updated:', voiceId);
+  };
+
+  // Event handlers
   const handleEdit = () => {
     setIsEditing(true);
     setError(null);
@@ -154,6 +251,11 @@ export function AgentConfiguration({ onPromptChange }: AgentConfigurationProps) 
   const handleSave = () => {
     updateAgentConfig();
   };
+
+  // Load agent config on component mount
+  useEffect(() => {
+    fetchAgentConfig();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -177,16 +279,28 @@ export function AgentConfiguration({ onPromptChange }: AgentConfigurationProps) 
               </Button>
               
               {!isEditing ? (
-                <Button
-                  onClick={handleEdit}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                  disabled={!agentInfo || isLoading}
-                >
-                  <Edit className="w-4 h-4" />
-                  Edit
-                </Button>
+                <>
+                  <Button
+                    onClick={generateEvaluationCriteria}
+                    disabled={!agentInfo || isLoading || isGeneratingCriteria}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Sparkles className={`w-4 h-4 ${isGeneratingCriteria ? 'animate-pulse' : ''}`} />
+                    {isGeneratingCriteria ? 'Generating...' : 'Generate Criteria'}
+                  </Button>
+                  <Button
+                    onClick={handleEdit}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    disabled={!agentInfo || isLoading}
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit
+                  </Button>
+                </>
               ) : (
                 <div className="flex items-center gap-2">
                   <Button
@@ -215,6 +329,17 @@ export function AgentConfiguration({ onPromptChange }: AgentConfigurationProps) 
           {error && (
             <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg mb-4">
               <strong>Error:</strong> {error}
+            </div>
+          )}
+
+          {isGeneratingCriteria && (
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-blue-600 animate-pulse" />
+                <span className="text-sm text-blue-800">
+                  Generating evaluation criteria based on your agent configuration...
+                </span>
+              </div>
             </div>
           )}
 
@@ -264,7 +389,7 @@ export function AgentConfiguration({ onPromptChange }: AgentConfigurationProps) 
                     </span>
                   </div>
                 )}
-                <span className="text-xs text-gray-500 mt-1">
+                <span className="text-xs text-gray-500 mt-1 block">
                   The initial greeting message the agent sends to start conversations
                 </span>
               </div>
@@ -378,6 +503,15 @@ export function AgentConfiguration({ onPromptChange }: AgentConfigurationProps) 
       <CloneVoiceModal
         isOpen={isCloneVoiceModalOpen}
         onOpenChange={setIsCloneVoiceModalOpen}
+        onVoiceCloned={handleVoiceCloned}
+      />
+
+      {/* Generated Criteria Modal */}
+      <GeneratedCriteriaModal
+        isOpen={isCriteriaModalOpen}
+        onOpenChange={setIsCriteriaModalOpen}
+        generatedCriteria={generatedCriteria}
+        onAcceptCriteria={handleAcceptCriteria}
       />
     </div>
   );
