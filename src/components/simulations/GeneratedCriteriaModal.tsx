@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Sparkles, Check, X } from "lucide-react";
+import { Sparkles, Check } from "lucide-react";
 import { EvaluationCriterion } from "@/components/simulations/EvaluationCriteriaModal";
 
 interface GeneratedCriteriaModalProps {
