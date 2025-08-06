@@ -5,7 +5,6 @@ import React, { useState, useEffect, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { HelpCircle } from "lucide-react"
 
 import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader"
@@ -36,10 +35,6 @@ export const WorkspaceLayout: React.FC = () => {
   const [showKnowledgeRadar, setShowKnowledgeRadar] = useState(false)
   const [terminalHeight, setTerminalHeight] = useState(50)
   
-  
-  // Initialization tooltip state
-  const [showInitTooltip, setShowInitTooltip] = useState(false)
-  
   const codeEditorRef = useRef<CodeEditorRef>(null)
 
   // Check if essential data is loaded
@@ -47,25 +42,6 @@ export const WorkspaceLayout: React.FC = () => {
 
   // Calculate button positioning
   const sophiaButtonText = isQuestionPanelVisible ? 'Close Sophia' : 'Ask Sophia'
-
-  // Initialize tooltip on component mount (after loading is complete)
-  useEffect(() => {
-    if (!isLoading && !showConsentModal) {
-      // Show the tooltip after a short delay to ensure everything is rendered
-      const timer = setTimeout(() => {
-        setShowInitTooltip(true)
-        
-        // Auto-hide the tooltip after 5 seconds
-        const hideTimer = setTimeout(() => {
-          setShowInitTooltip(false)
-        }, 5000)
-        
-        return () => clearTimeout(hideTimer)
-      }, 500)
-      
-      return () => clearTimeout(timer)
-    }
-  }, [isLoading, showConsentModal])
 
   // Consent check on mount
   useEffect(() => {
@@ -78,9 +54,6 @@ export const WorkspaceLayout: React.FC = () => {
   }, [])
 
   const onToggleSophia = () => {
-    // Hide the init tooltip when user interacts with the button
-    setShowInitTooltip(false)
-    
     if (isQuestionPanelVisible) {
       // Closing Sophia
       setIsQuestionPanelVisible(false)
@@ -195,9 +168,6 @@ export const WorkspaceLayout: React.FC = () => {
         <div className="flex-1 flex relative">
           {/* Ask Sophia button */}
           {!shouldHideButtons && (
-            <TooltipProvider>
-              <Tooltip open={showInitTooltip} onOpenChange={setShowInitTooltip}>
-                <TooltipTrigger asChild>
                   <Button
                     variant="outline"
                     size="lg"
@@ -211,20 +181,7 @@ export const WorkspaceLayout: React.FC = () => {
                   >
                     <HelpCircle className="h-5 w-5" />
                     {sophiaButtonText}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs">
-                  <p>
-                    {showInitTooltip 
-                      ? '💡 Click here when you need help or get stuck!'
-                      : isQuestionPanelVisible 
-                        ? 'Close your coding tutor' 
-                        : 'Get help from Sophia, your coding tutor'
-                    }
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                  </Button> 
           )}
 
           <ResizablePanelGroup direction="horizontal">
