@@ -25,14 +25,17 @@ const CONSENT_STORAGE_KEY = 'sophia_user_consent'
 
 export const WorkspaceLayout: React.FC = () => {
   const { sessionId, lessonId, currentMethodIndex, sessionData } = useSession()
+
   const { codeLoading } = useCodeEditor()
 
-  // Panel & UI state
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
+
   const [showConsentModal, setShowConsentModal] = useState(false)
   const [consentProcessing, setConsentProcessing] = useState(false)
+
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false)
   const [showKnowledgeRadar, setShowKnowledgeRadar] = useState(false)
+  
   const [terminalHeight, setTerminalHeight] = useState(50)
   
   const codeEditorRef = useRef<CodeEditorRef>(null)
