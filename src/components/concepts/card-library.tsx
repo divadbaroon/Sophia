@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
@@ -17,10 +16,9 @@ import { getClassLessons } from "@/lib/actions/lessons-actions"
 import { createLearningSession, getUserLearningSessions } from "@/lib/actions/learning-session-actions"
 import { checkDemographicCompletion } from "@/lib/actions/demographic-actions"
 
-import { Search, Filter, GraduationCap, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box, Target, ChevronDown, ChevronUp, Gift } from "lucide-react"
+import { Search, Filter, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box, Target, ChevronDown, ChevronUp, Gift } from "lucide-react"
 
 export default function ConceptLibrary() {
-  // Icon mapping for database icon names to Lucide components
   const iconMap: { [key: string]: any } = {
     'Variable': Variable,
     'ActivityIcon': Function,
@@ -37,7 +35,7 @@ export default function ConceptLibrary() {
     'Binary Search Trees'
   ]
 
-  // Fixed ID mapping - first card always opens to first ID, etc.
+  // Fixed ID mapping 
   const FIXED_LESSON_IDS = [
     '0cff2209-b34f-45b4-8a79-9503d0066ab8', 
     '15af35b6-69c4-43d0-8403-a273ed587ee0',  
@@ -45,9 +43,8 @@ export default function ConceptLibrary() {
   ]
 
   // Database state
-  const [userClasses, setUserClasses] = useState<any[]>([])
+  const [currentClass, setCurrentClass] = useState<any>(null)
   const [lessons, setLessons] = useState<any[]>([])
-  const [selectedClass, setSelectedClass] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set())
 
@@ -117,13 +114,11 @@ export default function ConceptLibrary() {
     const { data: classes } = await getUserClasses()
     
     if (classes && classes.length > 0) {
-      setUserClasses(classes)
-      setSelectedClass(classes[0])
+      setCurrentClass(classes[0]) 
       
       // Check if demographics are completed for the first class selected
       const demographicResult = await checkDemographicCompletion((classes[0] as any).id)
       if (demographicResult.success) {
-        // Show demographic form if not completed
         if (!demographicResult.completed) {
           setShowDemographicForm(true)
         }
@@ -132,11 +127,9 @@ export default function ConceptLibrary() {
       // Get lessons for first class
       const { data: classLessons } = await getClassLessons((classes[0] as any).id)
               
-      // Sort lessons by custom order and assign fixed IDs
       const sortedLessons = sortLessonsByOrder(classLessons || [])
       setLessons(sortedLessons)
       
-      // Load completed lessons for the first class
       await loadCompletedLessons((classes[0] as any).id)
     }
     
@@ -147,32 +140,6 @@ export default function ConceptLibrary() {
   useEffect(() => {
     loadData()
   }, [loadData])
-
-  // Handle class change
-  const handleClassChange = async (classCode: string) => {
-    const newClass = userClasses.find(cls => cls.class_code === classCode)
-    if (newClass) {
-      setSelectedClass(newClass)
-      
-      // Check demographics for the new class
-      const demographicResult = await checkDemographicCompletion(newClass.id)
-      if (demographicResult.success) {
-        // Show demographic form if not completed
-        if (!demographicResult.completed) {
-          setShowDemographicForm(true)
-        }
-      }
-      
-      const { data: classLessons } = await getClassLessons(newClass.id)
-      
-      // Sort lessons by custom order and assign fixed IDs
-      const sortedLessons = sortLessonsByOrder(classLessons || [])
-      setLessons(sortedLessons)
-      
-      // Load completed lessons for the new class
-      await loadCompletedLessons(newClass.id)
-    }
-  }
 
   // Add demographic form completion handler
   const handleDemographicComplete = () => {
@@ -191,7 +158,7 @@ export default function ConceptLibrary() {
       const lessonIdForSession = lesson.fixedId || lesson.id
       
       // Create learning session first
-      const sessionResult = await createLearningSession(lessonIdForSession, selectedClass.id)
+      const sessionResult = await createLearningSession(lessonIdForSession, currentClass.id)
       
       if (!sessionResult.success) {
         setSessionError(sessionResult.error || "Failed to create learning session")
@@ -285,7 +252,7 @@ export default function ConceptLibrary() {
           
           <div className="relative text-center py-16 px-8">
             <h1 className="text-3xl md:text-4xl font-bold text-black mb-4 tracking-tight">
-              Welcome to {selectedClass?.class_code || "Your Class"}!
+              Welcome to {currentClass?.class_code || "Your Class"}!
             </h1>
             <p className="text-gray-700 text-base max-w-2xl mx-auto leading-relaxed mb-4">
               Practice topics for your final exam and receive intelligent assistance from Sophia.
@@ -527,7 +494,7 @@ export default function ConceptLibrary() {
       <DemographicForm
         isOpen={showDemographicForm}
         onSubmit={handleDemographicComplete}
-        classId={selectedClass?.id || ""}
+        classId={currentClass?.id || ""}
       />
     </div>
   )
