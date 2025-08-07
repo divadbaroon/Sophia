@@ -67,25 +67,7 @@ export interface ConceptMapContextType {
   updateConceptMap: (newConceptMap: any) => void;
   conceptMapsPerMethod: Record<string, any>;
   isLoadingConceptMaps: boolean;
-
-  // Concept map confidence and pivots
-  conceptMapConfidenceMet: boolean;
-  updateConceptMapConfidence: (isConfident: boolean) => void;
-  latestPivotMessage: string | null;
-  updateLatestPivotMessage: (message: string | null) => void;
-  pivotQueue: Array<{ concept: string; category: string; confidence: number }>;
-  updatePivotQueue: (queue: Array<{ concept: string; category: string; confidence: number }>) => void;
-  conceptMapInitializing: boolean;
-  updateConceptMapInitializing: (isInitializing: boolean) => void;
-
-  // Conversation state
-  conversationHistory: ConversationMessage[];
-  updateConversationHistory: (newHistory: ConversationMessage[]) => Promise<void>;
-
-  // Report state
-  showReport: boolean;
-  setShowReport: React.Dispatch<React.SetStateAction<boolean>>;
-
+  
   // API update state
   isUpdatingConceptMap: boolean;
 }
