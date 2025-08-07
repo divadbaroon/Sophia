@@ -281,7 +281,7 @@ const PrizeWheelModal: React.FC<PrizeWheelModalProps> = ({
   };
 
   const handleGoBack = () => {
-    window.location.href = "/concepts";
+    window.location.href = "/classes";
   };
 
   const getPrizeIcon = (prize: string) => {

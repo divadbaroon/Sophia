@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
           const result = await enrollInClass(classCode)
           if (result.success) {
             // Redirect to concepts page after successful enrollment
-            redirect('/concepts')
+            redirect('/classes')
           } else {
             // Enrollment failed, redirect with error
             redirect(`/invitation/${classCode}?message=${encodeURIComponent(result.error || 'Failed to enroll in class')}`)

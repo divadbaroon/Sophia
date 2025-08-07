@@ -169,7 +169,7 @@ export default function TaskSidebar({
 
   const handlePrizeWheelClose = () => {
     setShowPrizeWheel(false)
-    window.location.href = "/concepts"
+    window.location.href = "/classes"
   }
 
   const currentTask = sessionData?.tasks[currentMethodIndex]
