@@ -14,7 +14,6 @@ import { DemographicForm } from "./components/demographic-form"
 
 import { getUserClasses } from "@/lib/actions/class-actions"
 import { getClassLessons } from "@/lib/actions/lessons-actions"
-import { enrollInClass } from "@/lib/actions/class-actions"
 import { createLearningSession, getUserLearningSessions } from "@/lib/actions/learning-session-actions"
 import { checkDemographicCompletion } from "@/lib/actions/demographic-actions"
 
@@ -61,10 +60,7 @@ export default function ConceptLibrary() {
   const [showFilters, setShowFilters] = useState(false)
 
   // Join class modal state
-  const [showJoinModal, setShowJoinModal] = useState(false)
   const [classCode, setClassCode] = useState("")
-  const [isJoining, setIsJoining] = useState(false)
-  const [joinError, setJoinError] = useState<string | null>(null)
 
   // Session state
   const [isCreatingSession, setIsCreatingSession] = useState(false)
@@ -178,36 +174,6 @@ export default function ConceptLibrary() {
       
       // Load completed lessons for the new class
       await loadCompletedLessons(newClass.id)
-    }
-  }
-
-  // Handle joining a class
-  const handleJoinClass = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!classCode.trim()) return
-
-    setIsJoining(true)
-    setJoinError(null)
-
-    try {
-      const result = await enrollInClass(classCode.trim())
-      
-      if (!result.success) {
-        setJoinError(result.error || "Failed to join class")
-        setIsJoining(false)
-        return
-      }
-
-      // Success! Refresh classes and close modal
-      await loadData()
-      setShowJoinModal(false)
-      setClassCode("")
-      setIsJoining(false)
-
-    } catch (error) {
-      console.error('Class join error:', error)
-      setJoinError('An unexpected error occurred. Please try again.')
-      setIsJoining(false)
     }
   }
 
