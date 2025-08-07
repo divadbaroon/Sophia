@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect } from "react"
 
 import { Card } from "@/components/ui/card"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
@@ -19,8 +19,6 @@ import { trackSophiaInteraction } from "@/lib/actions/sophia-button-interaction-
 import { useSession } from "@/lib/context/session/SessionProvider"
 import { useCodeEditor } from "@/lib/context/codeEditor/CodeEditorProvider"
 
-import { CodeEditorRef } from "@/types"
-
 const CONSENT_STORAGE_KEY = 'sophia_user_consent'
 
 export const WorkspaceLayout: React.FC = () => {
@@ -38,8 +36,6 @@ export const WorkspaceLayout: React.FC = () => {
   
   const [terminalHeight, setTerminalHeight] = useState(50)
   
-  const codeEditorRef = useRef<CodeEditorRef>(null)
-
   // Check if essential data is loaded
   const isLoading = !sessionData || !sessionId || !lessonId || currentMethodIndex === undefined || codeLoading
 
@@ -204,7 +200,7 @@ export const WorkspaceLayout: React.FC = () => {
                 {/* Code editor */}
                 <div className="absolute inset-0 -mt-2">
                   <PanelWithHeader>
-                    <CodeEditor ref={codeEditorRef} />
+                    <CodeEditor />
                   </PanelWithHeader>
                 </div>
 
