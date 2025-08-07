@@ -22,7 +22,7 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl bg-white border-2 border-black">
         <DialogHeader className="border-b border-gray-200 pb-4">
-          <DialogTitle className="text-2xl font-bold text-black">Ready for Coding Practice?</DialogTitle>
+          <DialogTitle className="text-2xl font-bold text-black">Ready for {conceptTitle} Practice?</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 pt-4">
@@ -39,9 +39,9 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
                       <Target className="w-4 h-4 text-blue-600" />
                     </div>
                     <div>
-                      <h5 className="font-semibold text-black mb-1">3 Coding Tasks</h5>
+                      <h5 className="font-semibold text-black mb-1">3 {conceptTitle} Coding Tasks</h5>
                       <p className="text-sm text-gray-600">
-                        You&apos;ll receive 3 progressively challenging coding problems related to {conceptTitle}.
+                        You'll receive progressively challenging coding problems related to {conceptTitle.toLowerCase()}.
                       </p>
                     </div>
                   </div>
@@ -55,10 +55,9 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
                       <HelpCircle className="w-4 h-4 text-green-600" />
                     </div>
                     <div>
-                      <h5 className="font-semibold text-black mb-1">AI Assistant Available</h5>
+                      <h5 className="font-semibold text-black mb-1">Instructor-Configured Assistance</h5>
                       <p className="text-sm text-gray-600">
-                        Sophia is always here to help! Get hints, explanations, or step-by-step guidance whenever you
-                        need it.
+                        Sophia is configured by your instructor to provide reliable guidance whenever you need it.
                       </p>
                     </div>
                   </div>
@@ -72,9 +71,9 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
                       <Code className="w-4 h-4 text-purple-600" />
                     </div>
                     <div>
-                      <h5 className="font-semibold text-black mb-1">Learn by Doing</h5>
+                      <h5 className="font-semibold text-black mb-1">Exam Preparation Focus</h5>
                       <p className="text-sm text-gray-600">
-                        Practice makes perfect! Each task builds on what you&apos;ve learned and prepares you for your exam.
+                        Each task builds on what you've learned and prepares you for your exam.
                       </p>
                     </div>
                   </div>
@@ -82,8 +81,6 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
               </Card>
             </div>
           </div>
-
-      
 
           {/* Action Button */}
           <div className="pt-4 border-t border-gray-200">
