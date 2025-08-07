@@ -41,7 +41,7 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
                     <div>
                       <h5 className="font-semibold text-black mb-1">3 {conceptTitle} Coding Tasks</h5>
                       <p className="text-sm text-gray-600">
-                        You'll receive progressively challenging coding problems related to {conceptTitle.toLowerCase()}.
+                        You&apos;ll receive progressively challenging coding problems related to {conceptTitle.toLowerCase()}.
                       </p>
                     </div>
                   </div>
@@ -73,7 +73,7 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
                     <div>
                       <h5 className="font-semibold text-black mb-1">Exam Preparation Focus</h5>
                       <p className="text-sm text-gray-600">
-                        Each task builds on what you've learned and prepares you for your exam.
+                        Each task builds on what you&apos;ve learned and prepares you for your exam.
                       </p>
                     </div>
                   </div>
