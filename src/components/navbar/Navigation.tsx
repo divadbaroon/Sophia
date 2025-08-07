@@ -83,7 +83,7 @@ export default function Navigation({ user }: NavigationProps) {
   const shouldShowNavbarStyling =
     pathname.includes("sessions") || pathname.includes("/login") || pathname.includes("/sign-up") 
     || pathname.includes("/classes") || pathname.includes("/dashboard") || pathname.includes("/progress")
-    || pathname.includes("/invitation") || pathname.includes("/simulations") || pathname.includes("/voice-cloning") 
+    || pathname.includes("/invitation") || pathname.includes("/concepts") 
 
   return (
     <nav
