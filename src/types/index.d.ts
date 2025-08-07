@@ -49,6 +49,13 @@ export interface ConversationMessage {
   timestamp?: number;  
 }
 
+export interface ConversationContextType {
+  conversationHistory: ConversationMessage[];
+  addMessage: (message: ConversationMessage) => void;
+  updateConversationHistory: (messages: ConversationMessage[]) => void;
+  clearConversation: () => void;
+}
+
 export interface User {
   email?: string
   id: string
