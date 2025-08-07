@@ -55,7 +55,7 @@ export default function Navigation({ user }: NavigationProps) {
     ? []
     : user
       ? [
-          { name: "Concepts", href: "/concepts" },
+          { name: "Classes", href: "/classes" },
         ]
       : []
 
@@ -82,7 +82,7 @@ export default function Navigation({ user }: NavigationProps) {
 
   const shouldShowNavbarStyling =
     pathname.includes("sessions") || pathname.includes("/login") || pathname.includes("/sign-up") 
-    || pathname.includes("/concepts") || pathname.includes("/dashboard") || pathname.includes("/progress")
+    || pathname.includes("/classes") || pathname.includes("/dashboard") || pathname.includes("/progress")
     || pathname.includes("/invitation") || pathname.includes("/simulations") || pathname.includes("/voice-cloning") 
 
   return (
