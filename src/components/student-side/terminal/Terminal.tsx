@@ -39,7 +39,7 @@ const Terminal = () => {
   // RapidAPI Judge0 configuration
   const JUDGE0_API_URL = "https://judge0-ce.p.rapidapi.com"
   const JAVA_LANGUAGE_ID = 62 // Java (OpenJDK 13.0.1)
-  const RAPIDAPI_KEY = process.env.NEXT_PUBLIC_JUDGE0_API_KEY || "a47d91602cmsh9bc3fa55dc76eaep1cf4e8jsn5f3fa0d7fa6e"
+  const RAPIDAPI_KEY = process.env.NEXT_PUBLIC_JUDGE0_API_KEY 
 
   const createJavaTestCode = (): string => {
     const allSupportedMethods = [...supportedLinkedListMethods, ...supportedBinarySearchTreeMethods, ...supportedSortingMethods]
