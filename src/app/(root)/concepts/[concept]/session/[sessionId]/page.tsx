@@ -3,15 +3,17 @@
 import React from 'react';
 import { WorkspaceLayout } from '@/components/student-side/work-pace/WorkSpace';
 
-import { SessionProvider, CodeEditorProvider, ConceptMapProvider  } from '@/lib/context';
+import { SessionProvider, CodeEditorProvider, ConversationProvider, ConceptMapProvider  } from '@/lib/context';
 
 const JoinSessionPage = () => {
   return (
     <SessionProvider>
       <CodeEditorProvider>
-          <ConceptMapProvider>
-              <WorkspaceLayout />
-          </ConceptMapProvider>
+          <ConversationProvider>
+            <ConceptMapProvider>
+                <WorkspaceLayout />
+            </ConceptMapProvider>
+          </ConversationProvider>
       </CodeEditorProvider>
     </SessionProvider>
   );
