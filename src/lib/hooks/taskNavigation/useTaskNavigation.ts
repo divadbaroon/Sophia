@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+import { extractMethodIdFromTitle } from "@/utils/string-parsing/string-utils"
+
 import { UseTaskNavigationReturn } from './types'
 import { TestCase } from '@/types';
 
@@ -9,12 +11,6 @@ export const useTaskNavigation = (
   const [currentMethodIndex, setCurrentMethodIndex] = useState<number>(0);
   const [activeMethodId, setActiveMethodId] = useState<string>('');
   const [currentTestCases, setCurrentTestCases] = useState<TestCase[]>([]);
-
-  // Helper function to extract method ID from title
-  const extractMethodIdFromTitle = (title: string): string | null => {
-    const match = title.match(/(?:\d+\.\)\s+)?([a-zA-Z_]+)\(\)/);
-    return match ? match[1] : null;
-  };
 
   // Update active method ID and test cases when method index or session changes
   useEffect(() => {
