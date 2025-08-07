@@ -50,7 +50,7 @@ export default function SophiaLanding() {
             className="text-4xl lg:text-5xl font-normal text-gray-500 mb-12 max-w-4xl mx-auto leading-tight"
             variants={fadeInUp}
           >
-            AI that understands how each student thinks
+            Personalized AI Learning
           </motion.h2>
           <motion.div variants={fadeInUp}>
             <Button className="bg-blue-600 text-white hover:bg-blue-700 rounded-full px-12 py-4 text-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 transform">

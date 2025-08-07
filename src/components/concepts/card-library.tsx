@@ -477,7 +477,7 @@ export default function ConceptLibrary() {
         {/* Footer */}
         <div className="text-center border-t border-gray-200 pt-8">
           <p className="text-gray-500 text-sm">
-            Powered by <span className="font-semibold text-black">Sophia</span> - AI that understands how each student thinks
+            Powered by <span className="font-semibold text-black">Sophia</span> - Personalized AI Learning
           </p>
         </div>
       </div>
