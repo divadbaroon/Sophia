@@ -1,48 +1,38 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { ConversationMessage } from '@/types';
+
+import { useSession } from '../session/SessionProvider';
+import { useCodeEditor } from '../codeEditor/CodeEditorProvider';
+import { useConversation } from '../conversation/conversationHistoryProvider';
+
 import {
   loadStudentConceptMapWithFallback,
   saveStudentConceptMap,
 } from '@/lib/actions/student-concept-map-actions';
-import { useSession } from '../session/SessionProvider';
-import { useCodeEditor } from '../codeEditor/CodeEditorProvider';
+
+import { extractMethodIdFromTitle } from "@/utils/string-parsing/string-utils"
 
 import { ConceptMapContextType } from "../types"
 
 const ConceptMapContext = createContext<ConceptMapContextType | undefined>(undefined);
 
 export const ConceptMapProvider = ({ children }: { children: ReactNode }) => {
+  // Session data
   const { sessionData, sessionId, lessonId, activeMethodId, currentMethodIndex } = useSession();
+  // Session code content
   const { fileContent, executionOutput } = useCodeEditor();
+  // Session conversation history 
+  const { conversationHistory } = useConversation()
 
   // Concept map state
   const [conceptMap, setConceptMap] = useState<any>(null);
   const [conceptMapsPerMethod, setConceptMapsPerMethod] = useState<Record<string, any>>({});
   const [isLoadingConceptMaps, setIsLoadingConceptMaps] = useState(false);
 
-  // Concept map confidence and pivots
-  const [conceptMapConfidenceMet, setConceptMapConfidenceMet] = useState(false);
-  const [latestPivotMessage, setLatestPivotMessage] = useState<string | null>(null);
-  const [pivotQueue, setPivotQueue] = useState<Array<{ concept: string; category: string; confidence: number }>>([]);
-  const [conceptMapInitializing, setConceptMapInitializing] = useState(false);
-
-  // Conversation state
-  const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
-
-  // Report state
-  const [showReport, setShowReport] = useState(false);
-
   // API update state
   const [lastConceptMapUpdate, setLastConceptMapUpdate] = useState<number>(Date.now());
   const [isUpdatingConceptMap, setIsUpdatingConceptMap] = useState(false);
-
-  // Helper function to extract method ID from title
-  const extractMethodIdFromTitle = (title: string): string | null => {
-    const match = title.match(/(?:\d+\.\)\s+)?([a-zA-Z_]+)\(\)/);
-    return match ? match[1] : null;
-  };
 
   // Load concept maps for all methods
   const loadConceptMapsForAllMethods = async (tasks: any[]) => {
@@ -117,35 +107,6 @@ export const ConceptMapProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateConceptMapConfidence = (isConfident: boolean) => {
-    setConceptMapConfidenceMet(isConfident);
-  };
-
-  const updateLatestPivotMessage = (message: string | null) => {
-    setLatestPivotMessage(message);
-  };
-
-  const updatePivotQueue = (queue: Array<{concept: string, category: string, confidence: number}>) => {
-    setPivotQueue(queue);
-  };
-
-  const updateConceptMapInitializing = (isInitializing: boolean) => {
-    setConceptMapInitializing(isInitializing);
-    console.log(`Concept map initialization state updated to: ${isInitializing ? 'initializing' : 'complete'}`);
-  };
-
-  const updateConversationHistory = async (newHistory: ConversationMessage[]) => {
-    setConversationHistory(newHistory);
-    
-    // Trigger concept map update if conversation has meaningful new content
-    if (newHistory.length > conversationHistory.length) {
-      const lastMessage = newHistory[newHistory.length - 1];
-      if (lastMessage.content.length > 10) { // Only for substantial messages
-        await updateConceptMapFromAPI('conversation');
-      }
-    }
-  };
-
   // Check if concept map should be updated
   const shouldUpdateConceptMap = (): boolean => {
     // Don't update if already updating or if data isn't ready
@@ -158,8 +119,35 @@ export const ConceptMapProvider = ({ children }: { children: ReactNode }) => {
     return timeSinceLastUpdate > 5000;
   };
 
+  // Listen for task changes and update concept map
+  useEffect(() => {
+    if (activeMethodId) {
+      // Only update if this isn't the initial load
+      if (conceptMapsPerMethod[activeMethodId]) {
+        updateConceptMapFromAPI('task_change');
+      }
+    }
+  }, [activeMethodId]);
+
+  // Listen for test execution and update concept map
+  useEffect(() => {
+    if (executionOutput && executionOutput.trim().length > 0) {
+      updateConceptMapFromAPI('test_run');
+    }
+  }, [executionOutput]);
+
+  // Listen for conversation history changes, in which rerun concept map
+  useEffect(() => {
+    if (conversationHistory.length > 0) {
+      const lastMessage = conversationHistory[conversationHistory.length - 1];
+      if (lastMessage.content.length > 10) {
+        updateConceptMapFromAPI('conversation');
+      }
+    }
+  }, [conversationHistory]);
+
   // Function to call the concept map API
-  const updateConceptMapFromAPI = async (trigger: 'test_run' | 'conversation') => {
+  const updateConceptMapFromAPI = async (trigger: 'test_run' | 'conversation' | 'task_change') => {
     if (!shouldUpdateConceptMap()) return;
     
     setIsUpdatingConceptMap(true);
@@ -204,18 +192,13 @@ export const ConceptMapProvider = ({ children }: { children: ReactNode }) => {
       
       const result = await response.json();
 
-      // Log what concept map returned
-      console.log('🔍 Raw API response:', result);
-      console.log('📊 Updated concept map:', result.updatedConceptMap);
-      console.log('🔄 Previous concept map:', currentMethodConceptMap);
-      
       // Update the concept map state
       updateConceptMap(result.updatedConceptMap);
       setLastConceptMapUpdate(Date.now());
       
       // Save updated concept map to database
       if (currentTask.id) {
-        await saveStudentConceptMap(
+        saveStudentConceptMap(
           lessonId,
           currentTask.id,
           activeMethodId,
@@ -237,18 +220,6 @@ export const ConceptMapProvider = ({ children }: { children: ReactNode }) => {
     updateConceptMap,
     conceptMapsPerMethod,
     isLoadingConceptMaps,
-    conceptMapConfidenceMet,
-    updateConceptMapConfidence,
-    latestPivotMessage,
-    updateLatestPivotMessage,
-    pivotQueue,
-    updatePivotQueue,
-    conceptMapInitializing,
-    updateConceptMapInitializing,
-    conversationHistory,
-    updateConversationHistory,
-    showReport,
-    setShowReport,
     isUpdatingConceptMap,
   };
 
