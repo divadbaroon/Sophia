@@ -262,31 +262,50 @@ export default function ConceptLibrary() {
     <div className="min-h-screen bg-white py-12 px-4 relative">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-6 mt-14">
-          <h1 className="text-4xl font-bold text-black mb-4">Concepts</h1>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Assess your understanding of fundamental programming concepts.
-          </p>
-        </div>
-
-        {/* Class Selection */}
-        <div className="mb-6">
-          <div className="flex items-center justify-center">
-            <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
-              <GraduationCap className="w-5 h-5 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Class:</span>
-              <Select value={selectedClass?.class_code || ""} onValueChange={handleClassChange}>
-                <SelectTrigger className="w-40 border-2 border-gray-200 focus:border-black">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {userClasses.map((cls) => (
-                    <SelectItem key={cls.id} value={cls.class_code}>
-                      {cls.class_code}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <div className="relative mb-8 mt-14 mx-4">
+          {/* Background with geometric patterns */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50 rounded-2xl overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute top-6 left-8 w-12 h-12 bg-blue-200 rounded-full opacity-60"></div>
+            <div className="absolute top-16 right-12 w-8 h-8 bg-purple-300 rounded-lg rotate-45 opacity-50"></div>
+            <div className="absolute bottom-8 left-16 w-6 h-6 bg-indigo-300 rounded-full opacity-70"></div>
+            <div className="absolute bottom-12 right-8 w-10 h-10 border-2 border-blue-300 rounded-full opacity-60"></div>
+            <div className="absolute top-1/2 left-1/4 w-4 h-4 bg-purple-400 rotate-45 opacity-40"></div>
+            <div className="absolute top-1/3 right-1/4 w-5 h-5 bg-blue-400 rounded-full opacity-50"></div>
+            
+            {/* Subtle grid pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="grid grid-cols-12 gap-4 h-full">
+                {Array.from({ length: 48 }).map((_, i) => (
+                  <div key={i} className="border border-blue-300"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="relative text-center py-16 px-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-black mb-4 tracking-tight">
+              Welcome to {selectedClass?.class_code || "Your Class"}!
+            </h1>
+            <p className="text-gray-700 text-base max-w-2xl mx-auto leading-relaxed mb-4">
+              Practice topics for your final exam and receive intelligent assistance from Sophia.
+            </p>
+            
+            {/* Learn more link */}
+            <div className="text-sm">
+              <span className="text-gray-600">Want to know more? </span>
+              <a 
+                href="#" 
+                className="text-blue-600 hover:text-blue-800 underline font-medium transition-colors"
+                onClick={(e) => {
+                  e.preventDefault()
+                  // Add modal logic
+                  console.log('Learn more about Sophia clicked')
+                }}
+              >
+                Learn more
+              </a>
+              <span className="text-gray-600"> about Sophia</span>
             </div>
           </div>
         </div>
