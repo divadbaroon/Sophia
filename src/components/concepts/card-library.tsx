@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
-import { UnlockedConceptCard } from "@/components/lessons/components/unlocked-concept-card"
-import { InstructionsModal } from "@/components/lessons/components/instructions-modal"
+import { UnlockedConceptCard } from "@/components/concepts/components/unlocked-concept-card"
+import { InstructionsModal } from "@/components/concepts/components/instructions-modal"
 import { DemographicForm } from "./components/demographic-form"
 
 import { getUserClasses } from "@/lib/actions/class-actions"

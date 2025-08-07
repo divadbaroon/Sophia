@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ArrowLeft, ArrowRight, Target, ChevronRight, CheckCircle, Lock } from "lucide-react"
 
-import { SurveyModal } from "@/components/lessons/components/survey-modal"
-import PrizeWheelModal from "@/components/lessons/components/prize-wheel" 
+import { SurveyModal } from "@/components/concepts/components/survey-modal"
+import PrizeWheelModal from "@/components/concepts/components/prize-wheel" 
 import KnowledgeRadarModal from "@/components/student-side/student-report/studentReport" 
 
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"

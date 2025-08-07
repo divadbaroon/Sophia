@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 
-import { ClassIdEntry } from "@/components/lessons/components/class-id-entry"
-import ConceptLibrary from "@/components/lessons/card-library"
+import { ClassIdEntry } from "@/components/concepts/components/class-id-entry"
+import ConceptLibrary from "@/components/concepts/card-library"
 
 import { getUserClasses } from "@/lib/actions/class-actions"
 
