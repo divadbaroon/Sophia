@@ -59,9 +59,6 @@ export default function ConceptLibrary() {
   const [selectedFilter, setSelectedFilter] = useState("All")
   const [showFilters, setShowFilters] = useState(false)
 
-  // Join class modal state
-  const [classCode, setClassCode] = useState("")
-
   // Session state
   const [isCreatingSession, setIsCreatingSession] = useState(false)
   const [sessionError, setSessionError] = useState<string | null>(null)
