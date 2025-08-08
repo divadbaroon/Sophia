@@ -258,7 +258,7 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
     <div className="p-4">
       <Tabs defaultValue="live" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="live">Current</TabsTrigger>
+          <TabsTrigger value="live">Sophia</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
