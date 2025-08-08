@@ -7,7 +7,6 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { Button } from "@/components/ui/button"
 import { HelpCircle } from "lucide-react"
 
-import { PanelWithHeader } from "@/components/student-side/utils/PanelWithHeader"
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
 import CodeEditor from "@/components/student-side/code-editor/CodeEditor"
 import Terminal from "@/components/student-side/terminal/Terminal"
@@ -143,9 +142,12 @@ export const WorkspaceLayout: React.FC = () => {
               <div className="relative h-full">
                 {/* Code editor */}
                 <div className="absolute inset-0 -mt-2">
-                  <PanelWithHeader>
-                    <CodeEditor />
-                  </PanelWithHeader>
+                  <div className="h-full flex flex-col">
+                    <div className="h-24 bg-white -mt-1"></div>
+                    <div className="flex-1">
+                      <CodeEditor />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Drag handle for resizing terminal */}
