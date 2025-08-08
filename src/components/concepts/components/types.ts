@@ -1,4 +1,3 @@
-// Create this file: src/types/spin-wheel.d.ts
 
 declare module 'spin-wheel' {
   export interface WheelItem {
@@ -89,3 +88,4 @@ declare module 'spin-wheel' {
     getCurrentIndex(): number;
   }
 }
+
