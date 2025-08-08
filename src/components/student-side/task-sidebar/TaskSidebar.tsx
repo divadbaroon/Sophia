@@ -33,7 +33,7 @@ export default function TaskSidebar({
   } = useSession()
 
    // Task progress state 
-  const { isTaskCompleted, isLoading: taskProgressLoading, error } = useTaskProgress(sessionId)
+  const { isTaskCompleted, isLoading: taskProgressLoading } = useTaskProgress(sessionId)
 
   // Navigation handlers with tracking
   const handleNextClick = () => {
