@@ -8,14 +8,12 @@ import { Play } from "lucide-react"
 import { saveTestCaseResults } from '@/lib/actions/test-case-results-actions'
 import { saveCodeError } from '@/lib/actions/code-errors-actions'
 import { markTaskCompleted, recordTaskAttempt } from '@/lib/actions/task-progress-actions'
-import { TestCaseResult } from "@/types"
-import { linkedListTestCases, supportedLinkedListMethods, linkClassDefinition } from "@/utils/testCases/LinkedListsTestCases"
-import { binarySearchTreeTestCases, supportedBinarySearchTreeMethods, treeNodeClassDefinition } from "@/utils/testCases/BinarySearchTreeTestCases"
-import { sortingTestCases, supportedSortingMethods } from "@/utils/testCases/SortingTestCases"
 
 import { useSession } from "@/lib/context/session/SessionProvider"
 import { useCodeEditor } from "@/lib/context/codeEditor/CodeEditorProvider"
 import { useCodeExecution } from "@/lib/hooks/terminal/useCodeExecution"
+import { useTestResultParser } from "@/lib/hooks/terminal/useTestResultParser"
+import { createJavaTestCode } from "@/utils/code-generation/javaTestCodeGenerator"
 
 const Terminal = () => {
   const [output, setOutput] = useState("")
@@ -37,95 +35,7 @@ const Terminal = () => {
   } = useCodeEditor()
 
   const { executeCode, isExecuting } = useCodeExecution()
-
-  const createJavaTestCode = (): string => {
-    const allSupportedMethods = [...supportedLinkedListMethods, ...supportedBinarySearchTreeMethods, ...supportedSortingMethods]
-    
-    if (!activeMethodId || (!currentTestCases || currentTestCases.length === 0) && !allSupportedMethods.includes(activeMethodId)) {
-      return `
-public class Main {
-    public static void main(String[] args) {
-        System.out.println("⚠️ No test cases available for function '${activeMethodId}'");
-        System.out.println("Please try selecting a different function or try again.");
-    }
-}`;
-    }
-
-    // Clean the user's code and inject class definitions if needed
-    let cleanedFileContent = fileContent
-      .replace(/public\s+class\s+(\w+)/g, 'class $1') // Remove public from all classes
-      .replace(/\/\/\s*Test method to demonstrate the solution[\s\S]*$/g, '') // Remove test methods and everything after
-      .replace(/public\s+static\s+void\s+main\s*\([^)]*\)\s*\{[\s\S]*?\n\s*\}/g, '') // Remove any existing main methods
-      .replace(/\/\*\*[\s\S]*?\*\/\s*/g, '') // Remove class definition comments
-      .trim() // Remove trailing whitespace
-
-    // Inject appropriate class definition based on method type
-    if (supportedLinkedListMethods.includes(activeMethodId)) {
-      cleanedFileContent = linkClassDefinition + cleanedFileContent
-    } else if (supportedBinarySearchTreeMethods.includes(activeMethodId)) {
-      cleanedFileContent = treeNodeClassDefinition + cleanedFileContent
-    }
-
-    let testCasesCode = ""
-    
-    // Check if we have hardcoded test cases for this method
-    if (linkedListTestCases[activeMethodId]) {
-      testCasesCode = linkedListTestCases[activeMethodId]
-    } else if (binarySearchTreeTestCases[activeMethodId]) {
-      testCasesCode = binarySearchTreeTestCases[activeMethodId]
-    } else if (sortingTestCases[activeMethodId]) {
-      testCasesCode = sortingTestCases[activeMethodId]
-    } else {
-      // Use database test cases for other functions
-      testCasesCode = `
-        System.out.println("Running test cases for ${activeMethodId} function:");
-        System.out.println("==================================================");
-        
-        // Add your test cases here based on currentTestCases
-        System.out.println("Test execution for " + "${activeMethodId}" + " not implemented yet.");`
-    }
-
-    return `
-${cleanedFileContent}
-
-public class Main {
-    ${supportedLinkedListMethods.includes(activeMethodId) ? `
-    // Helper method to print linked lists
-    public static void printHelper(Link node) {
-        Link current = node;
-        while (current != null) {
-            System.out.print(current.element);
-            current = current.next;
-            if (current != null) {
-                System.out.print(" ");
-            }
-        }
-    }` : ''}
-    ${supportedBinarySearchTreeMethods.includes(activeMethodId) ? `
-    // Helper method to print tree in-order (for debugging and tests)
-    public static void printInOrderHelper(TreeNode node) {
-        if (node != null) {
-            printInOrderHelper(node.left);
-            System.out.print(node.val + " ");
-            printInOrderHelper(node.right);
-        }
-    }` : ''}
-    ${supportedSortingMethods.includes(activeMethodId) ? `
-    // Helper method to print arrays
-    public static void printArrayHelper(int[] array) {
-        for (int i = 0; i < array.length; i++) {
-            System.out.print(array[i]);
-            if (i < array.length - 1) {
-                System.out.print(" ");
-            }
-        }
-    }` : ''}
-    
-    public static void main(String[] args) {
-        ${testCasesCode}
-    }
-}`;
-  }
+  const { parseTestResults } = useTestResultParser()
 
   const handleRun = async (): Promise<void> => {
     if (!isSaved()) {
@@ -142,9 +52,13 @@ public class Main {
       try {
         setOutput("🔄 Compiling and running Java code...")
 
-        const completeJavaCode = createJavaTestCode()
-        console.log("Generated Java code:", completeJavaCode)
+        const completeJavaCode = createJavaTestCode({
+          fileContent,
+          activeMethodId,
+          currentTestCases
+        })
         
+        console.log("Generated Java code:", completeJavaCode)
         console.log("🧪 Running test cases for", activeMethodId, "with RapidAPI Judge0...")
         
         const result = await executeCode(completeJavaCode)
@@ -153,13 +67,10 @@ public class Main {
         updateExecutionOutput(result)
         setErrorContent("")
 
-        const isErrorResult = result.includes("Compilation failed:") || 
-                             result.includes("Runtime Error:") || 
-                             result.includes("Time Limit Exceeded") ||
-                             result.includes("Memory Limit Exceeded") ||
-                             result.includes("Output Limit Exceeded")
+        // Use the parser hook to analyze results
+        const { passedCount, totalCount, detailedResults, isError, isSuccess } = parseTestResults(result, activeMethodId)
 
-        if (isErrorResult) {
+        if (isError) {
           console.log("❌ Code execution failed with error")
           
           if (sessionId && lessonId) {
@@ -172,69 +83,6 @@ public class Main {
           }
           
           return
-        }
-
-        // Parse results for analytics
-        const lines = result.split('\n')
-        const resultLine = lines.find(line => line.includes('Results:'))
-        let passedCount = 0
-        let totalCount = 0
-        
-        if (resultLine) {
-          const match = resultLine.match(/(\d+)\/(\d+) tests passed/)
-          if (match) {
-            passedCount = parseInt(match[1])
-            totalCount = parseInt(match[2])
-          }
-        }
-
-        // Create detailed test case results for analytics
-        const detailedResults: TestCaseResult[] = []
-        
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i]
-          
-          const testMatch = line.match(/Test (\d+):/)
-          if (testMatch) {
-            const testIndex = parseInt(testMatch[1]) - 1
-            
-            let expectedOutput = ""
-            let actualOutput = ""
-            let isPassed = false
-            
-            for (let j = i; j < Math.min(i + 6, lines.length); j++) {
-              const currentLine = lines[j]
-              
-              if (currentLine.includes("Expected:") && currentLine.includes("Got:")) {
-                const match = currentLine.match(/Expected: '([^']*)', Got: '([^']*)'/)
-                if (match) {
-                  expectedOutput = match[1]
-                  actualOutput = match[2]
-                }
-              }
-              
-              if (currentLine.includes("PASSED")) {
-                isPassed = true
-              } else if (currentLine.includes("FAILED")) {
-                isPassed = false
-              }
-            }
-            
-            if (expectedOutput !== "" || actualOutput !== "") {
-              detailedResults.push({
-                testCaseIndex: testIndex,
-                testInput: { 
-                  methodCall: activeMethodId,
-                  testDescription: line.trim()
-                },
-                expectedOutput: expectedOutput,
-                actualOutput: actualOutput, 
-                passed: isPassed,
-                errorMessage: isPassed ? undefined : "Test failed - output mismatch",
-                executionTimeMs: 25 + Math.floor(Math.random() * 50)
-              })
-            }
-          }
         }
 
         console.log("📊 Parsing results from output:")
@@ -251,7 +99,7 @@ public class Main {
           })
           
           try {
-            await saveTestCaseResults({
+            saveTestCaseResults({
               sessionId,
               lessonId,
               taskIndex: currentMethodIndex,
@@ -264,22 +112,22 @@ public class Main {
           }
         }
 
-        // Record the attempt - direct database call
+        // Record the attempt 
         if (sessionId) {
           try {
-            await recordTaskAttempt(sessionId, currentMethodIndex, passedCount, totalCount)
+            recordTaskAttempt(sessionId, currentMethodIndex, passedCount, totalCount)
             console.log(`📝 Recorded attempt: ${passedCount}/${totalCount} test cases passed`)
           } catch (error) {
             console.error("Failed to record attempt:", error)
           }
         }
 
-        // Check if all tests passed and mark completed - direct database call
-        if (result.includes("All tests passed") && sessionId) {
+        // Check if all tests passed and mark completed 
+        if (isSuccess && sessionId) {
           console.log(`🎉 Success! All ${totalCount} test cases passed!`)
           
           try {
-            await markTaskCompleted(sessionId, currentMethodIndex, passedCount, totalCount)
+            markTaskCompleted(sessionId, currentMethodIndex, passedCount, totalCount)
             console.log(`✅ Task ${currentMethodIndex} marked as completed`)
           } catch (error) {
             console.error("Failed to mark task as completed:", error)
