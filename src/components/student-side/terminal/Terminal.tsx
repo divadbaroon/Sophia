@@ -1,30 +1,25 @@
 "use client"
 
 import { useState } from "react"
-
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-
 import { Play } from "lucide-react"
-
 import { saveTestCaseResults } from '@/lib/actions/test-case-results-actions'
 import { saveCodeError } from '@/lib/actions/code-errors-actions'
 import { markTaskCompleted, recordTaskAttempt } from '@/lib/actions/task-progress-actions'
-
-import { useSession } from "@/lib/context/session/SessionProvider"
-import { useCodeEditor } from "@/lib/context/codeEditor/CodeEditorProvider"
-
+import { TestCaseResult } from "@/types"
 import { linkedListTestCases, supportedLinkedListMethods, linkClassDefinition } from "@/utils/testCases/LinkedListsTestCases"
 import { binarySearchTreeTestCases, supportedBinarySearchTreeMethods, treeNodeClassDefinition } from "@/utils/testCases/BinarySearchTreeTestCases"
 import { sortingTestCases, supportedSortingMethods } from "@/utils/testCases/SortingTestCases"
 
-import { TestCaseResult } from "@/types"
+import { useSession } from "@/lib/context/session/SessionProvider"
+import { useCodeEditor } from "@/lib/context/codeEditor/CodeEditorProvider"
+import { useCodeExecution } from "@/lib/hooks/terminal/useCodeExecution"
 
 const Terminal = () => {
   const [output, setOutput] = useState("")
   const [compiler, setCompiler] = useState("java")
-  const [isRunning, setIsRunning] = useState(false)
   
   const { 
     activeMethodId,
@@ -41,9 +36,7 @@ const Terminal = () => {
     updateExecutionOutput, 
   } = useCodeEditor()
 
-  const JUDGE0_API_URL = "https://judge0-ce.p.rapidapi.com"
-  const JAVA_LANGUAGE_ID = 62 // Java (OpenJDK 13.0.1)
-  const RAPIDAPI_KEY = process.env.NEXT_PUBLIC_JUDGE0_API_KEY 
+  const { executeCode, isExecuting } = useCodeExecution()
 
   const createJavaTestCode = (): string => {
     const allSupportedMethods = [...supportedLinkedListMethods, ...supportedBinarySearchTreeMethods, ...supportedSortingMethods]
@@ -134,135 +127,6 @@ public class Main {
 }`;
   }
 
-  const submitToJudge0 = async (sourceCode: string): Promise<string> => {
-    try {
-      console.log("Submitting code to Judge0...");
-      
-      if (!RAPIDAPI_KEY) {
-        throw new Error("RapidAPI key not configured. Please check your environment variables.")
-      }
-      
-      const createResponse = await fetch(`${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-rapidapi-key': RAPIDAPI_KEY,
-          'x-rapidapi-host': 'judge0-ce.p.rapidapi.com'
-        },
-        body: JSON.stringify({
-          source_code: sourceCode,
-          language_id: JAVA_LANGUAGE_ID,
-          stdin: "",
-        })
-      })
-
-      if (!createResponse.ok) {
-        const errorText = await createResponse.text()
-        console.error("Create submission error:", errorText)
-        throw new Error(`Failed to create submission: ${createResponse.status} - ${errorText}`)
-      }
-
-      const { token } = await createResponse.json()
-      console.log("Submission created with token:", token)
-      
-      let attempts = 0
-      const maxAttempts = 30
-      
-      while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        const resultResponse = await fetch(`${JUDGE0_API_URL}/submissions/${token}?base64_encoded=true&fields=stdout,stderr,status_id,compile_output,message`, {
-          headers: {
-            'x-rapidapi-key': RAPIDAPI_KEY,
-            'x-rapidapi-host': 'judge0-ce.p.rapidapi.com'
-          }
-        })
-        
-        if (!resultResponse.ok) {
-          const errorText = await resultResponse.text()
-          console.error("Get result error:", errorText)
-          throw new Error(`Failed to get submission result: ${resultResponse.status} - ${errorText}`)
-        }
-        
-        const result = await resultResponse.json()
-        console.log(`Attempt ${attempts + 1}: Status ID ${result.status_id}`)
-        
-        if (result.status_id <= 2) {
-          attempts++
-          continue
-        }
-        
-        let stdout = ""
-        if (result.stdout) {
-          try {
-            stdout = atob(result.stdout)
-          } catch {
-            stdout = result.stdout
-          }
-        }
-        
-        let stderr = ""
-        if (result.stderr) {
-          try {
-            stderr = atob(result.stderr)
-          } catch {
-            stderr = result.stderr
-          }
-        }
-        
-        let compileOutput = ""
-        if (result.compile_output) {
-          try {
-            compileOutput = atob(result.compile_output)
-          } catch {
-            compileOutput = result.compile_output
-          }
-        }
-        
-        if (result.status_id === 3) {
-          return stdout || "No output"
-        } else if (result.status_id === 6) {
-          const formattedError = compileOutput
-            .replace(/Main\.java:/g, '')
-            .replace(/error:/g, 'Error:')
-            .trim()
-          
-          return `Compilation failed:\n${formattedError}\n\nPlease fix the compilation errors and try again.`
-        } else if (result.status_id === 5) {
-          return `Time Limit Exceeded\n\nYour code took too long to execute. This might be due to:\n• Infinite loops\n• Very inefficient algorithms\n• Large input data\n\nPlease review your code and try again.`
-        } else if (result.status_id === 4) {
-          return stdout || "No output"
-        } else if (result.status_id === 7) {
-          return `Memory Limit Exceeded\n\nYour code used too much memory. This might be due to:\n• Creating too many objects\n• Large data structures\n• Memory leaks\n\nPlease optimize your code and try again.`
-        } else if (result.status_id === 8) {
-          return `Output Limit Exceeded\n\nYour code produced too much output. This might be due to:\n• Infinite print loops\n• Printing large amounts of data\n\nPlease review your output statements and try again.`
-        } else if (result.status_id === 11) {
-          return `Runtime Error: Segmentation Fault\n\nYour code attempted to access invalid memory. This might be due to:\n• Null pointer access\n• Array index out of bounds\n• Stack overflow\n\nPlease review your code for potential null pointer issues.`
-        } else if (result.status_id === 12) {
-          return `Runtime Error: File Size Limit Exceeded\n\nYour code tried to create files that are too large.\nPlease review your file operations.`
-        } else {
-          let errorMsg = stderr || compileOutput || result.message || "Unknown error occurred"
-          
-          if (stderr) {
-            errorMsg = stderr
-              .replace(/Exception in thread "main"/g, 'Runtime Error')
-              .replace(/\tat .*/g, '')
-              .replace(/Main\.java:\d+/g, '')
-              .trim()
-          }
-          
-          return `Runtime Error:\n${errorMsg}\n\nPlease review your code and try again.`
-        }
-      }
-      
-      throw new Error("Execution timeout - submission took too long to complete")
-      
-    } catch (error) {
-      console.error("Judge0 submission error:", error)
-      throw error
-    }
-  }
-
   const handleRun = async (): Promise<void> => {
     if (!isSaved()) {
       setOutput("❌ Please save the file before running")
@@ -275,7 +139,6 @@ public class Main {
     }
 
     if (compiler === "java") {
-      setIsRunning(true)
       try {
         setOutput("🔄 Compiling and running Java code...")
 
@@ -284,7 +147,7 @@ public class Main {
         
         console.log("🧪 Running test cases for", activeMethodId, "with RapidAPI Judge0...")
         
-        const result = await submitToJudge0(completeJavaCode)
+        const result = await executeCode(completeJavaCode)
         
         setOutput(result)
         updateExecutionOutput(result)
@@ -426,7 +289,7 @@ public class Main {
         }
 
       } catch (error: unknown) {
-        console.log("❌ Judge0 API Error:", error)
+        console.log("❌ Code Execution Error:", error)
         let errorMessage: string
 
         if (error instanceof Error) {
@@ -434,7 +297,7 @@ public class Main {
         } else if (typeof error === "string") {
           errorMessage = error
         } else {
-          errorMessage = "An unknown error occurred while connecting to the code execution service"
+          errorMessage = "An unknown error occurred while executing code"
         }
 
         if (errorMessage.includes("Failed to create submission")) {
@@ -455,11 +318,9 @@ public class Main {
             sessionId,
             lessonId,
             taskIndex: currentMethodIndex,
-            errorMessage: `API Error: ${errorMessage}`
+            errorMessage: `Execution Error: ${errorMessage}`
           }).catch(console.error)
         }
-      } finally {
-        setIsRunning(false)
       }
     } else {
       setOutput("❌ Please select Java compiler")
@@ -474,10 +335,10 @@ public class Main {
             onClick={handleRun} 
             size="sm" 
             className="bg-primary text-primary-foreground hover:bg-primary/90"
-            disabled={isRunning}
+            disabled={isExecuting}
           >
             <Play className="h-3.5 w-3.5 mr-1.5" />
-            {isRunning ? "Running..." : "Run Tests"}
+            {isExecuting ? "Running..." : "Run Tests"}
           </Button>
           <div>
             <Select defaultValue="java" onValueChange={setCompiler}>
