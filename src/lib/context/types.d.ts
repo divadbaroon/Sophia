@@ -14,6 +14,10 @@ interface SessionContextType {
   setCurrentMethodIndex: (index: number) => void;
   goToNextMethod: () => void;
   goToPrevMethod: () => void;
+
+  completedTasks: Set<number>
+  markTaskCompleted: (taskIndex: number) => void
+  taskCompletionTrigger: number  
 }
 
 // Code Editor
