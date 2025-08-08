@@ -20,12 +20,13 @@ const Terminal = () => {
   const [compiler, setCompiler] = useState("java")
   
   const { 
+    sessionId,
+    lessonId,
     activeMethodId,
     currentTestCases,
     currentMethodIndex,     
-    sessionId,
-    lessonId
-  } = useSession()
+    markTaskCompleted: triggerTaskCompletion
+    } = useSession()
 
   const { 
     fileContent, 
@@ -127,7 +128,8 @@ const Terminal = () => {
           console.log(`🎉 Success! All ${totalCount} test cases passed!`)
           
           try {
-            markTaskCompleted(sessionId, currentMethodIndex, passedCount, totalCount)
+            await markTaskCompleted(sessionId, currentMethodIndex, passedCount, totalCount)
+            triggerTaskCompletion(currentMethodIndex)
             console.log(`✅ Task ${currentMethodIndex} marked as completed`)
           } catch (error) {
             console.error("Failed to mark task as completed:", error)
