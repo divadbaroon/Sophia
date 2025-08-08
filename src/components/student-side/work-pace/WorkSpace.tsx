@@ -17,6 +17,7 @@ import KnowledgeRadarModal from "@/components/student-side/student-report/studen
 import ConsentModal from "@/components/student-side/consent/ConsentModal"
 
 import SophiaConversationalAI from '@/components/student-side/voice-chat/elevenlabs/SophiaConversationalAI'
+import SophiaOnboardingModal from "@/components/concepts/components/SophiaOnboardingModal"
 
 import { useUserConsent } from '@/lib/hooks/userConsent/useUserConsent'
 import { useSophiaButtonInteractionTracking } from '@/lib/hooks/interactionTracking/useSophiaButtonInteractionTracking'
@@ -38,8 +39,6 @@ export const WorkspaceLayout: React.FC = () => {
 
   const { trackOpen, trackClose } = useSophiaButtonInteractionTracking()
 
-  const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
-
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false)
 
   const [showKnowledgeRadar, setShowKnowledgeRadar] = useState(false)
@@ -47,6 +46,9 @@ export const WorkspaceLayout: React.FC = () => {
   const [showPrizeWheel, setShowPrizeWheel] = useState(false) 
   
   const [terminalHeight, setTerminalHeight] = useState(50)
+
+  const [showSophiaOnboarding, setShowSophiaOnboarding] = useState(true)
+  const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
 
   // Derive concept title from session data
   const currentConceptTitle = sessionData?.tasks[currentMethodIndex]?.title || "Lesson Complete"
@@ -100,8 +102,17 @@ export const WorkspaceLayout: React.FC = () => {
     window.location.href = "/classes"
   }
 
+  const handleSophiaOnboardingClose = () => {
+    setShowSophiaOnboarding(false)
+  }
+
+  const handleSophiaGetStarted = () => {
+    setShowSophiaOnboarding(false)
+    trackOpen()
+  }
+
   // Determine if buttons should be hidden
-  const shouldHideButtons = isSurveyModalOpen || showKnowledgeRadar || showPrizeWheel
+  const shouldHideButtons = isSurveyModalOpen || showKnowledgeRadar || showPrizeWheel || showSophiaOnboarding
 
   // Show global loading state
   if (isLoading) {
@@ -139,6 +150,14 @@ export const WorkspaceLayout: React.FC = () => {
         />
       )}
 
+      {/* onboarding modal */}
+      <SophiaOnboardingModal
+        isOpen={showSophiaOnboarding}
+        onClose={handleSophiaOnboardingClose}
+        onGetStarted={handleSophiaGetStarted}
+      />
+
+
       <main className={`flex flex-col h-screen ${showConsentModal ? 'pointer-events-none opacity-50' : ''}`}>
         <div className="flex-1 flex relative">
           {/* Ask Sophia button */}
@@ -161,28 +180,41 @@ export const WorkspaceLayout: React.FC = () => {
 
           <ResizablePanelGroup direction="horizontal">
             <ResizablePanel defaultSize={28} minSize={20} maxSize={40}>
-              <TaskSidebar
-                onUserFinished={handleUserFinished}
-              />
+              <TaskSidebar onUserFinished={handleUserFinished} />
             </ResizablePanel>
 
             <ResizableHandle withHandle />
 
             <ResizablePanel defaultSize={70}>
               <div className="relative h-full">
-                {/* Code editor */}
+                {/* Code editor area */}
                 <div className="absolute inset-0 -mt-2">
                   <div className="h-full flex flex-col">
                     <div className="h-24 bg-white -mt-1"></div>
-                    <div className="flex-1">
-                      <CodeEditor />
+                    
+                    {/* Code editor */}
+                    <div className="flex-1 flex">
+                      <div className={`flex-1 transition-all duration-300`}>
+                        <CodeEditor />
+                      </div>
+                      
+                      {/* Sophia panel inside code editor area */}
+                      {isQuestionPanelVisible && (
+                        <div className="w-80 bg-background border-l shadow-lg">
+                          <SophiaConversationalAI 
+                            onClose={onCloseSophia} 
+                            sessionId={sessionId} 
+                            classId={lessonId} 
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Drag handle for resizing terminal */}
                 <div
-                  className="absolute left-0 right-0 h-2 bg-gray-100 hover:bg-gray-200 cursor-ns-resize z-10"
+                  className="absolute left-0 right-0 h-2 bg-gray-100 hover:bg-gray-200 cursor-ns-resize z-20"
                   style={{
                     bottom: `${terminalHeight}%`,
                     marginBottom: "-4px",
@@ -216,13 +248,6 @@ export const WorkspaceLayout: React.FC = () => {
                 >
                   <Terminal />
                 </div>
-
-                {/* Sophia panel */}
-                {isQuestionPanelVisible && (
-                  <Card className="absolute top-14 right-4 w-[400px] z-40 shadow-lg mt-6 mr-1">
-                    <SophiaConversationalAI onClose={onCloseSophia} sessionId={sessionId} classId={lessonId} />
-                  </Card>
-                )}
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
