@@ -10,7 +10,12 @@ import { HelpCircle } from "lucide-react"
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
 import CodeEditor from "@/components/student-side/code-editor/CodeEditor"
 import Terminal from "@/components/student-side/terminal/Terminal"
+
+import { SurveyModal } from "@/components/concepts/components/survey-modal"
+import PrizeWheelModal from "@/components/concepts/components/prize-wheel" 
+import KnowledgeRadarModal from "@/components/student-side/student-report/studentReport" 
 import ConsentModal from "@/components/student-side/consent/ConsentModal"
+
 import SophiaConversationalAI from '@/components/student-side/voice-chat/elevenlabs/SophiaConversationalAI'
 
 import { useUserConsent } from '@/lib/hooks/userConsent/useUserConsent'
@@ -38,8 +43,13 @@ export const WorkspaceLayout: React.FC = () => {
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false)
 
   const [showKnowledgeRadar, setShowKnowledgeRadar] = useState(false)
+
+  const [showPrizeWheel, setShowPrizeWheel] = useState(false) 
   
   const [terminalHeight, setTerminalHeight] = useState(50)
+
+  // Derive concept title from session data
+  const currentConceptTitle = sessionData?.tasks[currentMethodIndex]?.title || "Lesson Complete"
   
   // Check if essential data is loaded
   const isLoading = !sessionData || !sessionId || !lessonId || currentMethodIndex === undefined || codeLoading
@@ -67,8 +77,31 @@ export const WorkspaceLayout: React.FC = () => {
     setTerminalHeight(Math.min(Math.max(newHeight, 5), 70))
   }
 
+  const handleUserFinished = () => {
+  setShowKnowledgeRadar(true)
+  }
+
+  const handleKnowledgeRadarContinue = () => {
+    setShowKnowledgeRadar(false)
+    setIsSurveyModalOpen(true)
+  }
+
+  const handleSurveyComplete = () => {
+    setIsSurveyModalOpen(false)
+    setShowPrizeWheel(true)
+  }
+
+  const handlePrizeWon = (prize: string) => {
+    console.log("🎉 Prize won:", prize)
+  }
+
+  const handlePrizeWheelClose = () => {
+    setShowPrizeWheel(false)
+    window.location.href = "/classes"
+  }
+
   // Determine if buttons should be hidden
-  const shouldHideButtons = isSurveyModalOpen || showKnowledgeRadar
+  const shouldHideButtons = isSurveyModalOpen || showKnowledgeRadar || showPrizeWheel
 
   // Show global loading state
   if (isLoading) {
@@ -129,10 +162,7 @@ export const WorkspaceLayout: React.FC = () => {
           <ResizablePanelGroup direction="horizontal">
             <ResizablePanel defaultSize={28} minSize={20} maxSize={40}>
               <TaskSidebar
-                isSurveyModalOpen={isSurveyModalOpen}
-                setIsSurveyModalOpen={setIsSurveyModalOpen}
-                showKnowledgeRadar={showKnowledgeRadar}
-                setShowKnowledgeRadar={setShowKnowledgeRadar}
+                onUserFinished={handleUserFinished}
               />
             </ResizablePanel>
 
@@ -198,6 +228,30 @@ export const WorkspaceLayout: React.FC = () => {
           </ResizablePanelGroup>
         </div>
       </main>
+
+      <KnowledgeRadarModal
+        isOpen={showKnowledgeRadar}
+        onClose={() => setShowKnowledgeRadar(false)}
+        lessonId={lessonId}
+        onContinue={handleKnowledgeRadarContinue}
+      />
+
+      <SurveyModal
+        isOpen={isSurveyModalOpen}
+        onClose={() => setIsSurveyModalOpen(false)}
+        conceptTitle={currentConceptTitle}
+        sessionId={sessionId}        
+        lessonId={lessonId}          
+        onComplete={handleSurveyComplete}
+      />
+
+      <PrizeWheelModal
+        isOpen={showPrizeWheel}
+        onClose={handlePrizeWheelClose}
+        onPrizeWon={handlePrizeWon}
+        sessionId={sessionId}     
+        lessonId={lessonId}     
+      />
     </>
   )
 }

@@ -10,10 +10,6 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ArrowLeft, ArrowRight, Target, ChevronRight, CheckCircle, Lock } from "lucide-react"
 
-import { SurveyModal } from "@/components/concepts/components/survey-modal"
-import PrizeWheelModal from "@/components/concepts/components/prize-wheel" 
-import KnowledgeRadarModal from "@/components/student-side/student-report/studentReport" 
-
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
 import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
 import { getTaskProgressForSession } from '@/lib/actions/task-progress-actions'
@@ -25,14 +21,9 @@ import { conceptIcons } from "@/lib/constants/conceptIcons"
 import { TaskSidebarProps } from "@/components/student-side/task-sidebar/types"
 
 export default function TaskSidebar({ 
-  isSurveyModalOpen, 
-  setIsSurveyModalOpen,
-  showKnowledgeRadar,
-  setShowKnowledgeRadar
+  onUserFinished
 }: TaskSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [currentConceptTitle, setCurrentConceptTitle] = useState("")
-  const [showPrizeWheel, setShowPrizeWheel] = useState(false) 
 
   // Task progress state 
   const [completedTasks, setCompletedTasks] = useState<Set<number>>(new Set())
@@ -126,10 +117,7 @@ export default function TaskSidebar({
     }
 
     if (currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex)) {
-      // On the last task when it's completed, complete the lesson and show knowledge radar
-      const conceptTitle = sessionData.tasks[currentMethodIndex]?.title || "Lesson Complete"
-      setCurrentConceptTitle(conceptTitle)
-      
+      // Complete lesson progress
       if (lessonId) {
         try {
           console.log('📝 Updating lesson progress...', { lessonId })
@@ -143,33 +131,13 @@ export default function TaskSidebar({
         } catch (error) {
           console.error('❌ Error updating lesson progress:', error)
         }
-      } else {
-        console.warn('⚠️ No lessonId available to update progress')
       }
       
-      setShowKnowledgeRadar(true)
+      // User explicitly finished - trigger knowledge radar
+      onUserFinished()
     } else {
       handleNextClick() 
     }
-  }
-
-  const handleKnowledgeRadarContinue = () => {
-    setShowKnowledgeRadar(false)
-    setIsSurveyModalOpen(true)
-  }
-
-  const handleSurveyComplete = () => {
-    setIsSurveyModalOpen(false)
-    setShowPrizeWheel(true)
-  }
-
-  const handlePrizeWon = (prize: string) => {
-    console.log("🎉 Prize won:", prize)
-  }
-
-  const handlePrizeWheelClose = () => {
-    setShowPrizeWheel(false)
-    window.location.href = "/classes"
   }
 
   const currentTask = sessionData?.tasks[currentMethodIndex]
@@ -404,31 +372,6 @@ export default function TaskSidebar({
           </div>
         </div>
       </div>
-
-      {/* Modals */}
-      <KnowledgeRadarModal
-        isOpen={showKnowledgeRadar}
-        onClose={() => setShowKnowledgeRadar(false)}
-        lessonId={lessonId}
-        onContinue={handleKnowledgeRadarContinue}
-      />
-
-      <SurveyModal
-        isOpen={isSurveyModalOpen}
-        onClose={() => setIsSurveyModalOpen(false)}
-        conceptTitle={currentConceptTitle}
-        sessionId={sessionId}        
-        lessonId={lessonId}          
-        onComplete={handleSurveyComplete}
-      />
-
-      <PrizeWheelModal
-        isOpen={showPrizeWheel}
-        onClose={handlePrizeWheelClose}
-        onPrizeWon={handlePrizeWon}
-        sessionId={sessionId}     
-        lessonId={lessonId}     
-      />
     </>
   )
 }
