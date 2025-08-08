@@ -1,20 +1,25 @@
 "use client"
 
 import { useState } from "react"
+
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+
 import { Play } from "lucide-react"
+
 import { saveTestCaseResults } from '@/lib/actions/test-case-results-actions'
 import { saveCodeError } from '@/lib/actions/code-errors-actions'
 import { markTaskCompleted, recordTaskAttempt } from '@/lib/actions/task-progress-actions'
-import { TestCaseResult } from "@/types"
+
+import { useSession } from "@/lib/context/session/SessionProvider"
+import { useCodeEditor } from "@/lib/context/codeEditor/CodeEditorProvider"
+
 import { linkedListTestCases, supportedLinkedListMethods, linkClassDefinition } from "@/utils/testCases/LinkedListsTestCases"
 import { binarySearchTreeTestCases, supportedBinarySearchTreeMethods, treeNodeClassDefinition } from "@/utils/testCases/BinarySearchTreeTestCases"
 import { sortingTestCases, supportedSortingMethods } from "@/utils/testCases/SortingTestCases"
 
-import { useSession } from "@/lib/context/session/SessionProvider"
-import { useCodeEditor } from "@/lib/context/codeEditor/CodeEditorProvider"
+import { TestCaseResult } from "@/types"
 
 const Terminal = () => {
   const [output, setOutput] = useState("")
@@ -36,7 +41,6 @@ const Terminal = () => {
     updateExecutionOutput, 
   } = useCodeEditor()
 
-  // RapidAPI Judge0 configuration
   const JUDGE0_API_URL = "https://judge0-ce.p.rapidapi.com"
   const JAVA_LANGUAGE_ID = 62 // Java (OpenJDK 13.0.1)
   const RAPIDAPI_KEY = process.env.NEXT_PUBLIC_JUDGE0_API_KEY 
