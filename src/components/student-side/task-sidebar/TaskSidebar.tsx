@@ -1,18 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
-
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { ArrowLeft, ArrowRight, Target, ChevronRight, CheckCircle, Lock } from "lucide-react"
+import { ArrowLeft, ArrowRight, Target, CheckCircle, Lock } from "lucide-react"
 
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
 import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
-import { getTaskProgressForSession } from '@/lib/actions/task-progress-actions'
+
+import { useTaskProgress } from "@/lib/hooks/taskProgress/useTaskProgress"
 
 import { useSession } from "@/lib/context/session/SessionProvider"
 
@@ -23,10 +22,6 @@ import { TaskSidebarProps } from "@/components/student-side/task-sidebar/types"
 export default function TaskSidebar({ 
   onUserFinished
 }: TaskSidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
-
-  // Task progress state 
-  const [completedTasks, setCompletedTasks] = useState<Set<number>>(new Set())
 
   const {
     sessionData,
@@ -37,35 +32,8 @@ export default function TaskSidebar({
     lessonId,
   } = useSession()
 
-  // Load task progress 
-  useEffect(() => {
-    const loadTaskProgress = async () => {
-      if (!sessionId) return
-      
-      try {
-        const result = await getTaskProgressForSession(sessionId)
-        if (result.success && result.data) {
-          const completed = new Set(
-            result.data.filter((p: any) => p.completed).map((p: any) => p.task_index)
-          )
-          setCompletedTasks(completed)
-          console.log('✅ Loaded task progress:', Array.from(completed))
-        }
-      } catch (error) {
-        console.error('Error loading task progress:', error)
-      }
-    }
-
-    loadTaskProgress()
-  }, [sessionId])
-
-  // Helper function to check if task is completed
-  const isTaskCompleted = (taskIndex: number): boolean => {
-    return completedTasks.has(taskIndex)
-  }
-
-  // Check if all tasks are completed
-  const allTasksCompleted = sessionData?.tasks.every((_: any, index: number) => isTaskCompleted(index)) || false
+   // Task progress state 
+  const { isTaskCompleted, isLoading: taskProgressLoading, error } = useTaskProgress(sessionId)
 
   // Navigation handlers with tracking
   const handleNextClick = () => {
@@ -133,7 +101,7 @@ export default function TaskSidebar({
         }
       }
       
-      // User explicitly finished - trigger knowledge radar
+      // User explicitly finished 
       onUserFinished()
     } else {
       handleNextClick() 
@@ -145,43 +113,6 @@ export default function TaskSidebar({
 
   if (!sessionData || !currentTask) {
     return null
-  }
-
-  if (isCollapsed) {
-    return (
-      <div className="h-screen w-12 bg-gradient-to-b from-background to-muted/20 border-r flex flex-col items-center py-4 transition-all duration-300 relative">
-        <Button variant="ghost" size="sm" onClick={() => setIsCollapsed(false)} className="p-2 mb-4">
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-
-        <div className="flex-1 flex flex-col items-center justify-center gap-2">
-          <div className="text-xs text-muted-foreground writing-mode-vertical transform rotate-180">
-            {currentMethodIndex + 1}/{sessionData?.tasks.length || 0}
-          </div>
-        </div>
-
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handlePreviousClick} 
-            disabled={currentMethodIndex === 0}
-            className="p-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleNextClick} 
-            disabled={currentMethodIndex === (sessionData?.tasks.length || 0) - 1}
-            className="p-2"
-          >
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -198,12 +129,6 @@ export default function TaskSidebar({
 
           {/* Concept badges */}
           <div className="flex flex-wrap items-center gap-2">
-            {concepts.length === 0 && (
-              <Badge variant="secondary" className="text-xs font-medium bg-blue-100 text-blue-800">
-                Lambda Functions
-              </Badge>
-            )}
-
             {concepts.map((concept: string) => {
               const conceptInfo = conceptIcons[concept]
               const Icon = conceptInfo?.icon
@@ -263,22 +188,6 @@ export default function TaskSidebar({
                   ))}
                 </div>
               </div>
-
-              {/* All Tasks Completion Status */}
-              {allTasksCompleted && (
-                <div className="space-y-3">
-                  <Separator />
-                  <Card className="p-4 bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
-                    <div className="flex items-center gap-2 text-green-800">
-                      <CheckCircle className="h-5 w-5" />
-                      <p className="text-sm font-medium">Task Completed!</p>
-                    </div>
-                    <p className="text-xs text-green-700 mt-1">
-                      All test cases passed. You can now proceed to the next task.
-                    </p>
-                  </Card>
-                </div>
-              )}
             </div>
           </ScrollArea>
         </div>
@@ -294,6 +203,12 @@ export default function TaskSidebar({
             </div>
           </div>
 
+        {taskProgressLoading ? (
+          <div className="flex items-center justify-between gap-4">
+            <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+        ) : (
           <div className="flex items-center justify-between gap-4">
             <TooltipProvider>
               <Tooltip>
@@ -370,6 +285,7 @@ export default function TaskSidebar({
               </Tooltip>
             </TooltipProvider>
           </div>
+          )}
         </div>
       </div>
     </>
