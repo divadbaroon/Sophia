@@ -9,7 +9,7 @@ export const useTaskProgress = (sessionId: string | undefined) => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const { taskCompletionTrigger } = useSession()
+  const { lastCompletedTask } = useSession() 
 
   const loadTaskProgress = async () => {
     if (!sessionId) {
@@ -47,11 +47,11 @@ export const useTaskProgress = (sessionId: string | undefined) => {
   }, [sessionId])
 
   useEffect(() => {
-    if (taskCompletionTrigger > 0) {
-      console.log('🔄 Task completion detected, refreshing progress...')
+    if (lastCompletedTask !== null) {
+      console.log(`🔄 Task ${lastCompletedTask} completed, refreshing progress...`)
       loadTaskProgress()
     }
-  }, [taskCompletionTrigger])
+  }, [lastCompletedTask])  
 
   const isTaskCompleted = (taskIndex: number): boolean => {
     return completedTasks.has(taskIndex)

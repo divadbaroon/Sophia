@@ -17,7 +17,7 @@ interface SessionContextType {
 
   completedTasks: Set<number>
   markTaskCompleted: (taskIndex: number) => void
-  taskCompletionTrigger: number  
+  lastCompletedTask: number | null 
 }
 
 // Code Editor
