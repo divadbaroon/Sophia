@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from 'react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -30,10 +31,27 @@ export default function TaskSidebar({
     goToPrevMethod,
     sessionId,
     lessonId,
+    lastCompletedTask          
   } = useSession()
 
    // Task progress state 
-  const { isTaskCompleted, isLoading: taskProgressLoading } = useTaskProgress(sessionId)
+  const { isTaskCompleted } = useTaskProgress(sessionId)
+
+  // Local loading state for smooth button transitions
+  const [isUpdating, setIsUpdating] = useState(false)
+
+  // Show loading when a task completion triggers
+  useEffect(() => {
+    if (lastCompletedTask === currentMethodIndex) {
+      setIsUpdating(true)
+      
+      const timer = setTimeout(() => {
+        setIsUpdating(false)
+      }, 500)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [lastCompletedTask]) 
 
   // Navigation handlers with tracking
   const handleNextClick = () => {
@@ -203,12 +221,6 @@ export default function TaskSidebar({
             </div>
           </div>
 
-        {taskProgressLoading ? (
-          <div className="flex items-center justify-between gap-4">
-            <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
-            <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
-          </div>
-        ) : (
           <div className="flex items-center justify-between gap-4">
             <TooltipProvider>
               <Tooltip>
@@ -219,7 +231,7 @@ export default function TaskSidebar({
                       size="sm"
                       onClick={handlePreviousClick} 
                       disabled={currentMethodIndex === 0}
-                      className={`flex items-center gap-2 ${
+                      className={`flex items-center gap-2 transition-all duration-300 ${
                         currentMethodIndex === 0 ? "pointer-events-none" : ""
                       }`}
                     >
@@ -242,17 +254,22 @@ export default function TaskSidebar({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className={!isTaskCompleted(currentMethodIndex) ? "cursor-not-allowed" : ""}>
+                  <span className={!isTaskCompleted(currentMethodIndex) && !isUpdating ? "cursor-not-allowed" : ""}>
                     <Button
                       variant="default"
                       size="sm"
                       onClick={handleFinishedClick}
-                      disabled={!isTaskCompleted(currentMethodIndex)}
-                      className={`flex items-center gap-2 ${
-                        !isTaskCompleted(currentMethodIndex) ? "opacity-50 pointer-events-none" : ""
-                      } ${currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex) ? "bg-green-600 hover:bg-green-700" : ""}`}
+                      disabled={(!isTaskCompleted(currentMethodIndex) && !isUpdating) || isUpdating}
+                      className={`flex items-center gap-2 transition-all duration-300 ${
+                        !isTaskCompleted(currentMethodIndex) && !isUpdating ? "opacity-50 pointer-events-none" : ""
+                      } ${currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex) && !isUpdating ? "bg-green-600 hover:bg-green-700" : ""}`}
                     >
-                      {currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex) ? (
+                      {isUpdating ? (
+                        <>
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          Updating...
+                        </>
+                      ) : currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex) ? (
                         <>
                           Finished
                           <CheckCircle className="h-4 w-4" />
@@ -272,20 +289,21 @@ export default function TaskSidebar({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>
-                    {currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex)
-                      ? "View your learning report, complete survey, and spin the wheel for prizes!"
-                      : !isTaskCompleted(currentMethodIndex)
-                        ? "Complete all test cases to unlock the next task"
-                        : currentMethodIndex === (sessionData?.tasks.length || 0) - 1
-                          ? "Complete this task to finish"
-                          : "Proceed to next task"
+                    {isUpdating
+                      ? "Updating task progress..."
+                      : currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex)
+                        ? "View your learning report, complete survey, and spin the wheel for prizes!"
+                        : !isTaskCompleted(currentMethodIndex)
+                          ? "Complete all test cases to unlock the next task"
+                          : currentMethodIndex === (sessionData?.tasks.length || 0) - 1
+                            ? "Complete this task to finish"
+                            : "Proceed to next task"
                     }
                   </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
-          )}
         </div>
       </div>
     </>
