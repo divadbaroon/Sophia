@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { useState, createContext, useContext, ReactNode } from 'react';
 
 import { useSessionUrl } from '@/lib/hooks/session/useSessionUrl';
 import { useSessionData } from '@/lib/hooks/session/useSessionData';
@@ -27,6 +27,14 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     goToPrevMethod,
   } = useTaskNavigation(sessionData);
 
+  const [completedTasks, setCompletedTasks] = useState<Set<number>>(new Set())
+  const [taskCompletionTrigger, setTaskCompletionTrigger] = useState(0)
+
+  const markTaskCompleted = (taskIndex: number) => {
+    setCompletedTasks((prev: Set<number>) => new Set([...prev, taskIndex]))
+    setTaskCompletionTrigger((prev: number) => prev + 1) // Trigger refresh
+  }
+
   const value: SessionContextType = {
     // Core session data
     sessionId,
@@ -42,6 +50,10 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     setCurrentMethodIndex,
     goToNextMethod,
     goToPrevMethod,
+
+    completedTasks,
+    markTaskCompleted,
+    taskCompletionTrigger,
   };
 
   return (
