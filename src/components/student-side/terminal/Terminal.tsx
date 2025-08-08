@@ -25,8 +25,8 @@ const Terminal = () => {
     activeMethodId,
     currentTestCases,
     currentMethodIndex,     
-    markTaskCompleted: triggerTaskCompletion
-    } = useSession()
+    markTaskCompleted: triggerTaskCompletion  
+  } = useSession()
 
   const { 
     fileContent, 
@@ -99,28 +99,24 @@ const Terminal = () => {
             testCaseCount: detailedResults.length
           })
           
-          try {
-            saveTestCaseResults({
-              sessionId,
-              lessonId,
-              taskIndex: currentMethodIndex,
-              methodId: activeMethodId,
-              testCaseResults: detailedResults
-            })
-            console.log("✅ Test case results saved successfully")
-          } catch (error) {
+          saveTestCaseResults({
+            sessionId,
+            lessonId,
+            taskIndex: currentMethodIndex,
+            methodId: activeMethodId,
+            testCaseResults: detailedResults
+          }).catch(error => {
             console.error("Failed to save detailed test results:", error)
-          }
+          })
         }
 
-        // Record the attempt 
+        // Record the attempt
         if (sessionId) {
-          try {
-            recordTaskAttempt(sessionId, currentMethodIndex, passedCount, totalCount)
-            console.log(`📝 Recorded attempt: ${passedCount}/${totalCount} test cases passed`)
-          } catch (error) {
-            console.error("Failed to record attempt:", error)
-          }
+          recordTaskAttempt(sessionId, currentMethodIndex, passedCount, totalCount)
+            .catch(error => {
+              console.error("Failed to record attempt:", error)
+            })
+          console.log(`📝 Recorded attempt: ${passedCount}/${totalCount} test cases passed`)
         }
 
         // Check if all tests passed and mark completed 
@@ -128,8 +124,12 @@ const Terminal = () => {
           console.log(`🎉 Success! All ${totalCount} test cases passed!`)
           
           try {
+            // Save to database 
             await markTaskCompleted(sessionId, currentMethodIndex, passedCount, totalCount)
+            
+            // Trigger context update (triggers TaskSidebar refresh)
             triggerTaskCompletion(currentMethodIndex)
+            
             console.log(`✅ Task ${currentMethodIndex} marked as completed`)
           } catch (error) {
             console.error("Failed to mark task as completed:", error)
