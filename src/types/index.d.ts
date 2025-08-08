@@ -148,4 +148,44 @@ export type CodeEditorProps = {
   readOnly?: boolean;
 };
 
+export interface SurveyData {
+  // AI Assistant Experience 
+  sophiaHelpfulness: string
+  sophiaReliability: string
+  sophiaTeachingStyle: string
+  instructorAlignment: string
+  aiVsHumanPreference: string
+
+  // Learning Effectiveness  
+  conceptUnderstanding: string
+  problemSolvingImprovement: string
+  examPreparation: string
+  learningAutonomy: string
+
+  // System Experience
+  easeOfUse: string
+  voiceInteractionQuality: string
+  appropriateHelp: string
+
+  // Trust & Confidence
+  trustInGuidance: string
+  confidenceInLearning: string
+  comfortWithAI: string
+
+  // Open-ended feedback
+  bestAspects: string
+  improvements: string
+  comparisonToInstructor: string
+  additionalComments: string
+  interviewEmail: string
+}
+
+export interface SurveyModalProps {
+  isOpen: boolean
+  onClose: () => void
+  conceptTitle: string
+  sessionId?: string
+  lessonId?: string
+  onComplete: () => void
+}
 

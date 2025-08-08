@@ -2,28 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 
-interface SurveyData {
-  // Cognitive Load
-  mentalEffort: string
-  difficulty: string
-  concentration: string
-
-  // System Effectiveness
-  misconceptionFocus: string
-  remediation: string
-  learningHelp: string
-  visualHelpTiming: string
-  visualHelpClarity: string
-
-  // Overall Experience
-  satisfaction: string
-  recommendation: string
-
-  // Open-ended feedback
-  improvements: string
-  additionalComments: string
-  interviewEmail: string
-}
+import { SurveyData } from "@/types"
 
 export async function saveSurveyResponse(
   sessionId: string,
@@ -47,39 +26,60 @@ export async function saveSurveyResponse(
       return isNaN(parsed) ? null : parsed
     }
 
-    // Prepare survey data for insertion
+    // Prepare survey data for insertion 
     const surveyResponse = {
       session_id: sessionId,
       profile_id: profileId,
       lesson_id: lessonId,
+      survey_version: 'v2', 
       
-      // Cognitive Load (required fields)
-      mental_effort: parseRating(surveyData.mentalEffort),
-      difficulty: parseRating(surveyData.difficulty),
-      concentration: parseRating(surveyData.concentration),
-      
-      // System Effectiveness (required fields)
-      misconception_focus: parseRating(surveyData.misconceptionFocus),
-      remediation: parseRating(surveyData.remediation),
-      learning_help: parseRating(surveyData.learningHelp),
-      visual_help_timing: 1,
-      visual_help_clarity: 1,
-      
-      // Overall Experience (optional fields)
-      satisfaction: parseRating(surveyData.satisfaction),
-      recommendation: parseRating(surveyData.recommendation),
-      
-      // Open-ended feedback (optional)
+      // AI Assistant Experience 
+      sophia_helpfulness: parseRating(surveyData.sophiaHelpfulness),
+      sophia_reliability: parseRating(surveyData.sophiaReliability),
+      sophia_teaching_style: parseRating(surveyData.sophiaTeachingStyle),
+      instructor_alignment: parseRating(surveyData.instructorAlignment),
+      ai_vs_human_preference: surveyData.aiVsHumanPreference.trim() || null,
+
+      // Learning Effectiveness 
+      concept_understanding: parseRating(surveyData.conceptUnderstanding),
+      problem_solving_improvement: parseRating(surveyData.problemSolvingImprovement),
+      exam_preparation: parseRating(surveyData.examPreparation),
+      learning_autonomy: parseRating(surveyData.learningAutonomy),
+
+      // System Experience 
+      ease_of_use: parseRating(surveyData.easeOfUse),
+      voice_interaction_quality: parseRating(surveyData.voiceInteractionQuality),
+      appropriate_help: parseRating(surveyData.appropriateHelp),
+
+      // Trust & Confidence 
+      trust_in_guidance: parseRating(surveyData.trustInGuidance),
+      confidence_in_learning: parseRating(surveyData.confidenceInLearning),
+      comfort_with_ai: parseRating(surveyData.comfortWithAI),
+
+      // Open-ended feedback
+      best_aspects: surveyData.bestAspects.trim() || null,
       improvements: surveyData.improvements.trim() || null,
+      comparison_to_instructor: surveyData.comparisonToInstructor.trim() || null,
       additional_comments: surveyData.additionalComments.trim() || null,
       interview_email: surveyData.interviewEmail.trim() || null,
+
+      // Leave old fields as NULL for new surveys
+      mental_effort: null,
+      difficulty: null,
+      concentration: null,
+      misconception_focus: null,
+      remediation: null,
+      learning_help: null,
+      visual_help_timing: null,
+      visual_help_clarity: null,
+      satisfaction: null,
+      recommendation: null,
     }
 
-    // Validate required fields
-    if (!surveyResponse.mental_effort || !surveyResponse.difficulty || 
-        !surveyResponse.misconception_focus || !surveyResponse.remediation || 
-        !surveyResponse.learning_help || !surveyResponse.visual_help_timing ||
-        !surveyResponse.visual_help_clarity) {
+    // Validate required fields for v2 survey version
+    if (!surveyResponse.sophia_helpfulness || !surveyResponse.sophia_teaching_style || 
+        !surveyResponse.instructor_alignment || !surveyResponse.concept_understanding || 
+        !surveyResponse.exam_preparation || !surveyResponse.learning_autonomy) {
       return { success: false, error: "Please complete all required fields" }
     }
 
@@ -101,7 +101,7 @@ export async function saveSurveyResponse(
       return { success: false, error: insertError.message }
     }
 
-    // Optionally update the learning session to mark survey as completed
+    // Update the learning session to mark survey as completed
     const { error: updateError } = await supabase
       .from('learning_sessions')
       .update({
@@ -147,6 +147,7 @@ export async function checkSurveyCompletion(lessonId: string) {
       .select(`
         id,
         created_at,
+        survey_version,
         learning_sessions!inner(lesson_id)
       `)
       .eq('profile_id', profileId)
@@ -161,7 +162,8 @@ export async function checkSurveyCompletion(lessonId: string) {
     return { 
       completed: responses && responses.length > 0,
       error: null,
-      submittedAt: responses?.[0]?.created_at || null
+      submittedAt: responses?.[0]?.created_at || null,
+      surveyVersion: responses?.[0]?.survey_version || null
     }
 
   } catch (error) {
@@ -170,37 +172,3 @@ export async function checkSurveyCompletion(lessonId: string) {
   }
 }
 
-export async function getSurveyResponse(sessionId: string) {
-  const supabase = await createClient()
-  
-  try {
-    // Get the current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError || !user) {
-      return { data: null, error: "Not authenticated" }
-    }
-
-    // Get survey response for this session and user
-    const { data: survey, error } = await supabase
-      .from('survey_responses')
-      .select(`
-        *,
-        learning_sessions!inner(lesson_id),
-        lessons!inner(title, description)
-      `)
-      .eq('session_id', sessionId)
-      .eq('profile_id', user.id)
-      .single()
-
-    if (error) {
-      console.error('Error fetching survey response:', error)
-      return { data: null, error: error.message }
-    }
-
-    return { data: survey, error: null }
-
-  } catch (error) {
-    console.error('Unexpected error fetching survey response:', error)
-    return { data: null, error: 'Failed to fetch survey response' }
-  }
-}
