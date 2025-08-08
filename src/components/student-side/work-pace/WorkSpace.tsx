@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 
 import { Card } from "@/components/ui/card"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
@@ -14,24 +14,30 @@ import Terminal from "@/components/student-side/terminal/Terminal"
 import ConsentModal from "@/components/student-side/consent/ConsentModal"
 import SophiaConversationalAI from '@/components/student-side/voice-chat/elevenlabs/SophiaConversationalAI'
 
-import { trackSophiaInteraction } from "@/lib/actions/sophia-button-interaction-actions"
+import { useUserConsent } from '@/lib/hooks/userConsent/useUserConsent'
+import { useSophiaInteractionTracking } from '@/lib/hooks/interactionTracking/useSophiaInteractionTracking'
 
 import { useSession } from "@/lib/context/session/SessionProvider"
 import { useCodeEditor } from "@/lib/context/codeEditor/CodeEditorProvider"
 
-const CONSENT_STORAGE_KEY = 'sophia_user_consent'
-
 export const WorkspaceLayout: React.FC = () => {
+
   const { sessionId, lessonId, currentMethodIndex, sessionData } = useSession()
 
   const { codeLoading } = useCodeEditor()
 
+  const { 
+    showConsentModal, 
+    consentProcessing, 
+    handleConsent 
+  } = useUserConsent()
+
+  const { trackOpen, trackClose } = useSophiaInteractionTracking()
+
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
 
-  const [showConsentModal, setShowConsentModal] = useState(false)
-  const [consentProcessing, setConsentProcessing] = useState(false)
-
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false)
+
   const [showKnowledgeRadar, setShowKnowledgeRadar] = useState(false)
   
   const [terminalHeight, setTerminalHeight] = useState(50)
@@ -39,68 +45,22 @@ export const WorkspaceLayout: React.FC = () => {
   // Check if essential data is loaded
   const isLoading = !sessionData || !sessionId || !lessonId || currentMethodIndex === undefined || codeLoading
 
-  // Calculate button positioning
+  // Calculate button positioning based on text showing
   const sophiaButtonText = isQuestionPanelVisible ? 'Close Sophia' : 'Ask Sophia'
-
-  // Consent check on mount
-  useEffect(() => {
-    try {
-      const existing = localStorage.getItem(CONSENT_STORAGE_KEY)
-      if (!existing) setShowConsentModal(true)
-    } catch {
-      setShowConsentModal(true)
-    }
-  }, [])
 
   const onToggleSophia = () => {
     if (isQuestionPanelVisible) {
-      // Closing Sophia
       setIsQuestionPanelVisible(false)
-      
-      // Track close interaction in background 
-      if (sessionId && lessonId) {
-        trackSophiaInteraction({
-          sessionId,
-          lessonId,
-          currentTaskIndex: currentMethodIndex,
-          interactionType: 'close'
-        }).catch(error => {
-          console.error('Failed to track Sophia close interaction:', error)
-        })
-      }
+      trackClose()
     } else {
-      // Opening Sophia
       setIsQuestionPanelVisible(true)
-      
-      // Track open interaction in background 
-      if (sessionId && lessonId) {
-        trackSophiaInteraction({
-          sessionId,
-          lessonId,
-          currentTaskIndex: currentMethodIndex,
-          interactionType: 'open'
-        }).catch(error => {
-          console.error('Failed to track Sophia open interaction:', error)
-        })
-      }
+      trackOpen()
     }
   }
 
-  // Close handler 
   const onCloseSophia = () => {
     setIsQuestionPanelVisible(false)
-    
-    // Track close interaction from wrapper 
-    if (sessionId && lessonId) {
-      trackSophiaInteraction({
-        sessionId,
-        lessonId,
-        currentTaskIndex: currentMethodIndex,
-        interactionType: 'close'
-      }).catch(error => {
-        console.error('Failed to track Sophia close interaction from wrapper:', error)
-      })
-    }
+    trackClose()
   }
 
   // Terminal resize handler
@@ -119,15 +79,7 @@ export const WorkspaceLayout: React.FC = () => {
           <ConsentModal
             isOpen={showConsentModal}
             onClose={() => window.location.href = '/'}
-            onConsent={async (ok) => {
-              setConsentProcessing(true)
-              localStorage.setItem(
-                CONSENT_STORAGE_KEY,
-                JSON.stringify({ consented: ok, timestamp: new Date().toISOString() })
-              )
-              setConsentProcessing(false)
-              if (ok) setShowConsentModal(false)
-            }}
+            onConsent={handleConsent}  
             isProcessing={consentProcessing}
           />
         )}
@@ -150,15 +102,7 @@ export const WorkspaceLayout: React.FC = () => {
         <ConsentModal
           isOpen={showConsentModal}
           onClose={() => window.location.href = '/'}
-          onConsent={async (ok) => {
-            setConsentProcessing(true)
-            localStorage.setItem(
-              CONSENT_STORAGE_KEY,
-              JSON.stringify({ consented: ok, timestamp: new Date().toISOString() })
-            )
-            setConsentProcessing(false)
-            if (ok) setShowConsentModal(false)
-          }}
+          onConsent={handleConsent}  
           isProcessing={consentProcessing}
         />
       )}
@@ -167,20 +111,20 @@ export const WorkspaceLayout: React.FC = () => {
         <div className="flex-1 flex relative">
           {/* Ask Sophia button */}
           {!shouldHideButtons && (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="absolute top-3.5 right-16 z-50 flex items-center gap-2 mr-1.5 transition-all duration-200 ease-in-out"
-                    style={{
-                      backgroundColor: isQuestionPanelVisible ? 'hsl(var(--secondary))' : 'hsl(var(--background))',
-                      minWidth: 'fit-content'
-                    }}
-                    onClick={onToggleSophia}
-                    disabled={showConsentModal}
-                  >
-                    <HelpCircle className="h-5 w-5" />
-                    {sophiaButtonText}
-                  </Button> 
+            <Button
+              variant="outline"
+              size="lg"
+              className="absolute top-3.5 right-16 z-50 flex items-center gap-2 mr-1.5 transition-all duration-200 ease-in-out"
+              style={{
+                backgroundColor: isQuestionPanelVisible ? 'hsl(var(--secondary))' : 'hsl(var(--background))',
+                minWidth: 'fit-content'
+              }}
+              onClick={onToggleSophia}
+              disabled={showConsentModal}
+            >
+              <HelpCircle className="h-5 w-5" />
+              {sophiaButtonText}
+            </Button> 
           )}
 
           <ResizablePanelGroup direction="horizontal">
