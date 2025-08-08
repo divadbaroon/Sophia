@@ -1,7 +1,7 @@
 import { useSession } from '@/lib/context/session/SessionProvider'
 import { trackSophiaInteraction } from '@/lib/actions/sophia-button-interaction-actions'
 
-export const useSophiaInteractionTracking = () => {
+export const useSophiaButtonInteractionTracking = () => {
   const { sessionId, lessonId, currentMethodIndex } = useSession()
   
   const trackInteraction = (type: 'open' | 'close') => {

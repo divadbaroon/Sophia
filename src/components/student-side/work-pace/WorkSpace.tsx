@@ -15,7 +15,7 @@ import ConsentModal from "@/components/student-side/consent/ConsentModal"
 import SophiaConversationalAI from '@/components/student-side/voice-chat/elevenlabs/SophiaConversationalAI'
 
 import { useUserConsent } from '@/lib/hooks/userConsent/useUserConsent'
-import { useSophiaInteractionTracking } from '@/lib/hooks/interactionTracking/useSophiaInteractionTracking'
+import { useSophiaButtonInteractionTracking } from '@/lib/hooks/interactionTracking/useSophiaButtonInteractionTracking'
 
 import { useSession } from "@/lib/context/session/SessionProvider"
 import { useCodeEditor } from "@/lib/context/codeEditor/CodeEditorProvider"
@@ -32,7 +32,7 @@ export const WorkspaceLayout: React.FC = () => {
     handleConsent 
   } = useUserConsent()
 
-  const { trackOpen, trackClose } = useSophiaInteractionTracking()
+  const { trackOpen, trackClose } = useSophiaButtonInteractionTracking()
 
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
 
