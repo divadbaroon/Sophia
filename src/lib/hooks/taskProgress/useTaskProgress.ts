@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { getTaskProgressForSession } from '@/lib/actions/task-progress-actions'
+import { useSession } from '@/lib/context/session/SessionProvider'
 
-import { UseTaskProgressReturn } from './types'
-
-export const useTaskProgress = (sessionId: string | undefined): UseTaskProgressReturn => {
+export const useTaskProgress = (sessionId: string | undefined) => {
   const [completedTasks, setCompletedTasks] = useState<Set<number>>(new Set())
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const { taskCompletionTrigger } = useSession()
 
   const loadTaskProgress = async () => {
     if (!sessionId) {
@@ -27,31 +28,35 @@ export const useTaskProgress = (sessionId: string | undefined): UseTaskProgressR
           result.data.filter((p: any) => p.completed).map((p: any) => p.task_index)
         )
         setCompletedTasks(completed)
-        console.log('Loaded task progress:', Array.from(completed))
+        console.log('✅ Loaded task progress:', Array.from(completed))
       } else {
         setError(result.error || 'Failed to load task progress')
-        console.error('Failed to load task progress:', result.error)
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       setError(errorMessage)
-      console.error('Error loading task progress:', error)
+      console.error('❌ Error loading task progress:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Load task progress when sessionId changes
+  // Load initially
   useEffect(() => {
     loadTaskProgress()
   }, [sessionId])
 
-  // Helper function to check if specific task is completed
+  useEffect(() => {
+    if (taskCompletionTrigger > 0) {
+      console.log('🔄 Task completion detected, refreshing progress...')
+      loadTaskProgress()
+    }
+  }, [taskCompletionTrigger])
+
   const isTaskCompleted = (taskIndex: number): boolean => {
     return completedTasks.has(taskIndex)
   }
 
-  // Function to manually refresh task progress
   const refreshTaskProgress = async (): Promise<void> => {
     await loadTaskProgress()
   }
