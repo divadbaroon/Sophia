@@ -5,17 +5,17 @@ import { Button } from '@/components/ui/button'
 import { X, ArrowRight, ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface SophiaOnboardingModalProps {
+interface OnboardingModalProps {
   isOpen: boolean
   onClose: () => void
   onGetStarted: () => void
 }
 
-export default function SophiaOnboardingModal({
+export default function OnboardingModal({
   isOpen,
   onClose,
   onGetStarted,
-}: SophiaOnboardingModalProps) {
+}: OnboardingModalProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const titleId = useId()
   const panelRef = useRef<HTMLDivElement>(null)

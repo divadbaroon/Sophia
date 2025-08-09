@@ -10,12 +10,12 @@ import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
 import CodeEditor from "@/components/student-side/code-editor/CodeEditor"
 import Terminal from "@/components/student-side/terminal/Terminal"
 
+import OnboardingModal from "@/components/concepts/components/onboardingModal"
 import { SurveyModal } from "@/components/concepts/components/survey-modal"
 import PrizeWheelModal from "@/components/concepts/components/prize-wheel" 
 import ConsentModal from "@/components/student-side/consent/ConsentModal"
 
 import SophiaConversationalAI from '@/components/student-side/voice-chat/elevenlabs/SophiaConversationalAI'
-import SophiaOnboardingModal from "@/components/concepts/components/SophiaOnboardingModal"
 
 import { useUserConsent } from '@/lib/hooks/userConsent/useUserConsent'
 import { useSophiaButtonInteractionTracking } from '@/lib/hooks/interactionTracking/useSophiaButtonInteractionTracking'
