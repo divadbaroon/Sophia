@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -31,27 +31,14 @@ export default function TaskSidebar({
     goToPrevMethod,
     sessionId,
     lessonId,
-    lastCompletedTask          
+    completedTasks  
   } = useSession()
 
-   // Task progress state 
+  // Task progress state 
   const { isTaskCompleted } = useTaskProgress(sessionId)
 
-  // Local loading state for smooth button transitions
-  const [isUpdating, setIsUpdating] = useState(false)
-
-  // Show loading when a task completion triggers
-  useEffect(() => {
-    if (lastCompletedTask === currentMethodIndex) {
-      setIsUpdating(true)
-      
-      const timer = setTimeout(() => {
-        setIsUpdating(false)
-      }, 500)
-      
-      return () => clearTimeout(timer)
-    }
-  }, [lastCompletedTask]) 
+  // Check if current task is completed
+  const isCurrentTaskCompleted = completedTasks.has(currentMethodIndex) || isTaskCompleted(currentMethodIndex)
 
   // Navigation handlers with tracking
   const handleNextClick = () => {
@@ -102,7 +89,7 @@ export default function TaskSidebar({
       return
     }
 
-    if (currentMethodIndex === sessionData.tasks.length - 1 && isTaskCompleted(currentMethodIndex)) {
+    if (currentMethodIndex === sessionData.tasks.length - 1 && isCurrentTaskCompleted) {
       // Complete lesson progress
       if (lessonId) {
         try {
@@ -141,7 +128,7 @@ export default function TaskSidebar({
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2 flex-1">
               <h2 className="text-xl font-bold text-foreground">{currentTask.title}</h2>
-              {isTaskCompleted(currentMethodIndex) && <CheckCircle className="h-5 w-5 text-green-600" />}
+              {isCurrentTaskCompleted && <CheckCircle className="h-5 w-5 text-green-600" />}
             </div>
           </div>
 
@@ -254,22 +241,17 @@ export default function TaskSidebar({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className={!isTaskCompleted(currentMethodIndex) && !isUpdating ? "cursor-not-allowed" : ""}>
+                  <span className={!isCurrentTaskCompleted ? "cursor-not-allowed" : ""}>
                     <Button
                       variant="default"
                       size="sm"
                       onClick={handleFinishedClick}
-                      disabled={(!isTaskCompleted(currentMethodIndex) && !isUpdating) || isUpdating}
+                      disabled={!isCurrentTaskCompleted}
                       className={`flex items-center gap-2 transition-all duration-300 ${
-                        !isTaskCompleted(currentMethodIndex) && !isUpdating ? "opacity-50 pointer-events-none" : ""
-                      } ${currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex) && !isUpdating ? "bg-green-600 hover:bg-green-700" : ""}`}
+                        !isCurrentTaskCompleted ? "opacity-50 pointer-events-none" : ""
+                      } ${currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isCurrentTaskCompleted ? "bg-green-600 hover:bg-green-700" : ""}`}
                     >
-                      {isUpdating ? (
-                        <>
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          Updating...
-                        </>
-                      ) : currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex) ? (
+                      {currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isCurrentTaskCompleted ? (
                         <>
                           Finished
                           <CheckCircle className="h-4 w-4" />
@@ -277,7 +259,7 @@ export default function TaskSidebar({
                       ) : (
                         <>
                           Next
-                          {!isTaskCompleted(currentMethodIndex) ? (
+                          {!isCurrentTaskCompleted ? (
                             <Lock className="h-4 w-4" />
                           ) : (
                             <ArrowRight className="h-4 w-4" />
@@ -289,15 +271,13 @@ export default function TaskSidebar({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>
-                    {isUpdating
-                      ? "Updating task progress..."
-                      : currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isTaskCompleted(currentMethodIndex)
-                        ? "View your learning report, complete survey, and spin the wheel for prizes!"
-                        : !isTaskCompleted(currentMethodIndex)
-                          ? "Complete all test cases to unlock the next task"
-                          : currentMethodIndex === (sessionData?.tasks.length || 0) - 1
-                            ? "Complete this task to finish"
-                            : "Proceed to next task"
+                    {currentMethodIndex === (sessionData?.tasks.length || 0) - 1 && isCurrentTaskCompleted
+                      ? "Next complete a survey and spin the wheel for prizes!"
+                      : !isCurrentTaskCompleted
+                        ? "Complete all test cases to unlock the next task"
+                        : currentMethodIndex === (sessionData?.tasks.length || 0) - 1
+                          ? "Complete this task to finish"
+                          : "Proceed to next task"
                     }
                   </p>
                 </TooltipContent>

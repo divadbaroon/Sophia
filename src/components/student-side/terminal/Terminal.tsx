@@ -124,12 +124,18 @@ const Terminal = () => {
           console.log(`🎉 Success! All ${totalCount} test cases passed!`)
           
           try {
-            // Save to database 
-            await markTaskCompleted(sessionId, currentMethodIndex, passedCount, totalCount)
-            
-            // Trigger context update (triggers TaskSidebar refresh)
+            // Trigger sidebar task completion update
             triggerTaskCompletion(currentMethodIndex)
-            
+
+            // Save to database 
+            markTaskCompleted(sessionId, currentMethodIndex, passedCount, totalCount)
+              .then(() => {
+                console.log(`✅ Task ${currentMethodIndex} saved to database`)
+              })
+              .catch(error => {
+                console.error("❌ Failed to save task completion to database:", error)
+              })
+                            
             console.log(`✅ Task ${currentMethodIndex} marked as completed`)
           } catch (error) {
             console.error("Failed to mark task as completed:", error)

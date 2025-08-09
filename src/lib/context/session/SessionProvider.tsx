@@ -28,7 +28,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   } = useTaskNavigation(sessionData);
 
   const [completedTasks, setCompletedTasks] = useState<Set<number>>(new Set())
-  const [lastCompletedTask, setLastCompletedTask] = useState<number | null>(null)
 
   const markTaskCompleted = (taskIndex: number) => {
     setCompletedTasks((prev: Set<number>) => {
@@ -36,7 +35,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       newSet.add(taskIndex)
       return newSet
     })
-    setLastCompletedTask(taskIndex)  
   }
 
   const value: SessionContextType = {
@@ -57,7 +55,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
     completedTasks,
     markTaskCompleted,
-    lastCompletedTask,  
   };
 
   return (
