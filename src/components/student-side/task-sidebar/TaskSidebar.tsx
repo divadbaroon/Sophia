@@ -11,8 +11,6 @@ import { ArrowLeft, ArrowRight, Target, CheckCircle, Lock } from "lucide-react"
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
 import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
 
-import { useTaskProgress } from "@/lib/hooks/taskProgress/useTaskProgress"
-
 import { useSession } from "@/lib/context/session/SessionProvider"
 
 import { conceptIcons } from "@/lib/constants/conceptIcons"
@@ -33,11 +31,8 @@ export default function TaskSidebar({
     completedTasks  
   } = useSession()
 
-  // Task progress state 
-  const { isTaskCompleted } = useTaskProgress(sessionId)
-
   // Check if current task is completed
-  const isCurrentTaskCompleted = completedTasks.has(currentMethodIndex) || isTaskCompleted(currentMethodIndex)
+  const isCurrentTaskCompleted = completedTasks.has(currentMethodIndex)
 
   // Navigation handlers with tracking
   const handleNextClick = () => {
