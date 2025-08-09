@@ -43,7 +43,7 @@ export const WorkspaceLayout: React.FC = () => {
   
   const [terminalHeight, setTerminalHeight] = useState(50)
 
-  const [showSophiaOnboarding, setShowSophiaOnboarding] = useState(true)
+  const [showOnboarding, setShowOnboarding] = useState(true)
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
 
   // Derive concept title from session data
@@ -93,17 +93,17 @@ export const WorkspaceLayout: React.FC = () => {
     window.location.href = "/classes"
   }
 
-  const handleSophiaOnboardingClose = () => {
-    setShowSophiaOnboarding(false)
+  const handleOnboardingClose = () => {
+    setShowOnboarding(false)
   }
 
-  const handleSophiaGetStarted = () => {
-    setShowSophiaOnboarding(false)
+  const handleGetStarted = () => {
+    setShowOnboarding(false)
     trackOpen()
   }
 
   // Determine if buttons should be hidden
-  const shouldHideButtons = isSurveyModalOpen || showPrizeWheel || showSophiaOnboarding
+  const shouldHideButtons = isSurveyModalOpen || showPrizeWheel || showOnboarding
 
   // Show global loading state
   if (isLoading) {
@@ -142,10 +142,10 @@ export const WorkspaceLayout: React.FC = () => {
       )}
 
       {/* onboarding modal */}
-      <SophiaOnboardingModal
-        isOpen={showSophiaOnboarding}
-        onClose={handleSophiaOnboardingClose}
-        onGetStarted={handleSophiaGetStarted}
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={handleOnboardingClose}
+        onGetStarted={handleGetStarted}
       />
 
 
