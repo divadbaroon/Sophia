@@ -40,7 +40,7 @@ const ConsentModal = ({ isOpen = true, onClose, onConsent, isProcessing = false 
               What is Sophia?
             </h3>
             <p className="text-sm leading-relaxed">
-              Sophia is a context-aware voice agent that personalizes interactions based on individual students' mental models. 
+              Sophia is a context-aware voice agent that personalizes interactions based on individual students&apos; mental models. 
               Sophia is designed and configured by instructors and tested at scale using simulated students to ensure appropriate pedagogical behavior and responses.
             </p>
           </div>
