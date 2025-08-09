@@ -43,7 +43,6 @@ export async function saveSurveyResponse(
       // Learning Effectiveness 
       concept_understanding: parseRating(surveyData.conceptUnderstanding),
       problem_solving_improvement: parseRating(surveyData.problemSolvingImprovement),
-      exam_preparation: parseRating(surveyData.examPreparation),
       learning_autonomy: parseRating(surveyData.learningAutonomy),
 
       // System Experience 
@@ -79,7 +78,7 @@ export async function saveSurveyResponse(
     // Validate required fields for v2 survey version
     if (!surveyResponse.sophia_helpfulness || !surveyResponse.sophia_teaching_style || 
         !surveyResponse.instructor_alignment || !surveyResponse.concept_understanding || 
-        !surveyResponse.exam_preparation || !surveyResponse.learning_autonomy) {
+        !surveyResponse.learning_autonomy) {
       return { success: false, error: "Please complete all required fields" }
     }
 
