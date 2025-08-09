@@ -14,7 +14,7 @@ import { saveSurveyResponse, checkSurveyCompletion } from "@/lib/actions/survey-
 
 import { SurveyData, SurveyModalProps } from "@/types"
 
-export function SurveyModal({ 
+export default function SurveyModal({ 
   isOpen, 
   onClose, 
   sessionId,

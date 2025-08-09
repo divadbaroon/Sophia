@@ -11,7 +11,7 @@ import CodeEditor from "@/components/student-side/code-editor/CodeEditor"
 import Terminal from "@/components/student-side/terminal/Terminal"
 
 import OnboardingModal from "@/components/concepts/components/onboardingModal"
-import { SurveyModal } from "@/components/concepts/components/survey-modal"
+import SurveyModal from "@/components/concepts/components/survey-modal"
 import PrizeWheelModal from "@/components/concepts/components/prize-wheel" 
 import ConsentModal from "@/components/student-side/consent/ConsentModal"
 
