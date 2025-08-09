@@ -30,6 +30,8 @@ export default function ConceptLibrary() {
 
   // Custom sorting order for lessons with fixed IDs
   const lessonOrder = [
+    'Graph Algorithms',
+    'Hash Tables',
     'Singly Linked Lists',
     'Sorting Algorithms', 
     'Binary Search Trees'
@@ -37,6 +39,8 @@ export default function ConceptLibrary() {
 
   // Fixed ID mapping 
   const FIXED_LESSON_IDS = [
+    '899e4241-288a-4e7d-875d-f395ab32015d',
+    '3317ea88-7f0b-45af-ad1e-57ed56b69d51',
     '0cff2209-b34f-45b4-8a79-9503d0066ab8', 
     '15af35b6-69c4-43d0-8403-a273ed587ee0',  
     'ed1cd4fa-42bc-4f59-8a3c-fc3fae1c9176',  
