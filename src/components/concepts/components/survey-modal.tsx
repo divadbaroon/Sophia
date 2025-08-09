@@ -281,7 +281,7 @@ export function SurveyModal({
 
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-gray-700">
-                    Sophia's teaching approach felt consistent with my instructor's style. *
+                    Sophia&apos;s teaching approach felt consistent with my instructor&apos;s style. *
                   </Label>
                   <RadioGroup
                     value={formData.sophiaTeachingStyle}
@@ -300,7 +300,7 @@ export function SurveyModal({
 
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-gray-700">
-                    I trusted Sophia's guidance because I knew my instructor configured it. *
+                    I trusted Sophia&apos;s guidance because I knew my instructor configured it. *
                   </Label>
                   <RadioGroup
                     value={formData.instructorAlignment}
@@ -368,7 +368,7 @@ export function SurveyModal({
 
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-gray-700">
-                    I felt I maintained control over my learning while using Sophia. *
+                    I felt I maintained control over my learning while using Sophia.
                   </Label>
                   <RadioGroup
                     value={formData.learningAutonomy}
@@ -455,7 +455,7 @@ export function SurveyModal({
 
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-gray-700">
-                    How comfortable were you interacting with the AI?
+                    How comfortable were you interacting with Sophia?
                   </Label>
                   <RadioGroup
                     value={formData.comfortWithAI}
@@ -484,7 +484,7 @@ export function SurveyModal({
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="bestAspects" className="text-sm font-medium text-gray-700">
-                  What worked best about Sophia's help?
+                  What worked best about Sophia&apos;s help?
                 </Label>
                 <Textarea
                   id="bestAspects"
@@ -498,7 +498,7 @@ export function SurveyModal({
 
               <div className="space-y-2">
                 <Label htmlFor="improvements" className="text-sm font-medium text-gray-700">
-                  What could be improved about Sophia's assistance?
+                  What could be improved about Sophia&apos;s assistance?
                 </Label>
                 <Textarea
                   id="improvements"
@@ -512,7 +512,7 @@ export function SurveyModal({
 
               <div className="space-y-2">
                 <Label htmlFor="comparisonToInstructor" className="text-sm font-medium text-gray-700">
-                  How did Sophia's teaching approach compare to your instructor's?
+                  How did Sophia&apos;s teaching approach compare to your instructor's?
                 </Label>
                 <Textarea
                   id="comparisonToInstructor"
