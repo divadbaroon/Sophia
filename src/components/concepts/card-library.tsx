@@ -256,7 +256,7 @@ export default function ConceptLibrary() {
           
           <div className="relative text-center py-16 px-8">
             <h1 className="text-3xl md:text-4xl font-bold text-black mb-4 tracking-tight">
-              Welcome to {currentClass?.class_code || "Your Class"}!
+              Welcome to CS3114!
             </h1>
             <p className="text-gray-700 text-base max-w-2xl mx-auto leading-relaxed mb-4">
               Practice topics for your final exam and receive intelligent assistance from Sophia.

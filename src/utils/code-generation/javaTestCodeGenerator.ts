@@ -43,7 +43,7 @@ export const createJavaTestCode = ({ fileContent, activeMethodId, currentTestCas
   const codeWithClassDefinitions = injectClassDefinitions(cleanedFileContent, cleanMethodId)
   
   // Get test cases code (use clean method ID)
-  const testCasesCode = getTestCasesCode(cleanMethodId, currentTestCases)
+  const testCasesCode = getTestCasesCode(cleanMethodId)
   
   // Generate helper methods (use clean method ID)
   const helperMethods = generateHelperMethods(cleanMethodId)
@@ -97,7 +97,7 @@ const injectClassDefinitions = (cleanedContent: string, activeMethodId: string):
 }
 
 // Get test cases code for the active method
-const getTestCasesCode = (activeMethodId: string, currentTestCases?: any[]): string => {
+const getTestCasesCode = (activeMethodId: string): string => {
   console.log("Looking for test cases for:", activeMethodId)
   
   // always check hardcoded test cases first

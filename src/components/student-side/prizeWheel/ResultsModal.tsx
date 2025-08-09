@@ -17,12 +17,6 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
   const [userEmail, setUserEmail] = useState("")
   const [emailError, setEmailError] = useState("")
 
-  const getPrizeIcon = (prize: string) => {
-    if (prize.includes("GIFT CARD")) return <DollarSign className="w-6 h-6" />
-    if (prize.includes("TRY AGAIN")) return <Heart className="w-6 h-6" />
-    return <Trophy className="w-6 h-6" />
-  }
-
   const getPrizeValue = (prize: string) => {
     if (prize.includes("$5")) return "$5 Amazon Gift Card"
     if (prize.includes("$10")) return "$10 Amazon Gift Card"
