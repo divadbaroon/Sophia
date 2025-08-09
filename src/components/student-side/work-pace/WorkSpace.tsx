@@ -12,7 +12,6 @@ import Terminal from "@/components/student-side/terminal/Terminal"
 
 import { SurveyModal } from "@/components/concepts/components/survey-modal"
 import PrizeWheelModal from "@/components/concepts/components/prize-wheel" 
-import KnowledgeRadarModal from "@/components/student-side/student-report/studentReport" 
 import ConsentModal from "@/components/student-side/consent/ConsentModal"
 
 import SophiaConversationalAI from '@/components/student-side/voice-chat/elevenlabs/SophiaConversationalAI'
@@ -39,8 +38,6 @@ export const WorkspaceLayout: React.FC = () => {
   const { trackOpen, trackClose } = useSophiaButtonInteractionTracking()
 
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false)
-
-  const [showKnowledgeRadar, setShowKnowledgeRadar] = useState(false)
 
   const [showPrizeWheel, setShowPrizeWheel] = useState(false) 
   
@@ -79,12 +76,7 @@ export const WorkspaceLayout: React.FC = () => {
   }
 
   const handleUserFinished = () => {
-  setShowKnowledgeRadar(true)
-  }
-
-  const handleKnowledgeRadarContinue = () => {
-    setShowKnowledgeRadar(false)
-    setIsSurveyModalOpen(true)
+  setIsSurveyModalOpen(true)
   }
 
   const handleSurveyComplete = () => {
@@ -111,7 +103,7 @@ export const WorkspaceLayout: React.FC = () => {
   }
 
   // Determine if buttons should be hidden
-  const shouldHideButtons = isSurveyModalOpen || showKnowledgeRadar || showPrizeWheel || showSophiaOnboarding
+  const shouldHideButtons = isSurveyModalOpen || showPrizeWheel || showSophiaOnboarding
 
   // Show global loading state
   if (isLoading) {
@@ -252,13 +244,6 @@ export const WorkspaceLayout: React.FC = () => {
           </ResizablePanelGroup>
         </div>
       </main>
-
-      <KnowledgeRadarModal
-        isOpen={showKnowledgeRadar}
-        onClose={() => setShowKnowledgeRadar(false)}
-        lessonId={lessonId}
-        onContinue={handleKnowledgeRadarContinue}
-      />
 
       <SurveyModal
         isOpen={isSurveyModalOpen}
