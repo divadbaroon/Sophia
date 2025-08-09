@@ -70,11 +70,6 @@ export const WorkspaceLayout: React.FC = () => {
     trackClose()
   }
 
-  // Terminal resize handler
-  const updateTerminalHeight = (newHeight: number) => {
-    setTerminalHeight(Math.min(Math.max(newHeight, 5), 70))
-  }
-
   const handleUserFinished = () => {
     setIsSurveyModalOpen(true)
   }
@@ -199,15 +194,12 @@ export const WorkspaceLayout: React.FC = () => {
                     <div className="h-24 bg-white -mt-1"></div>
                     
                     {/* Code editor */}
-                    <div className="flex-1 flex">
-                      <div className={`flex-1 transition-all duration-300`}>
-                        {/* CodeEditor */}
-                        <CodeEditor terminalHeight={terminalHeight} />
-                      </div>
+                    <div className="flex-1 relative">
+                      <CodeEditor terminalHeight={terminalHeight} />
                       
-                      {/* Sophia panel inside code editor area */}
+                      {/* Sophia panel */}
                       {isQuestionPanelVisible && (
-                        <div className="w-80 bg-background border-l shadow-lg">
+                      <div className="absolute -top-1 right-6 w-80 z-30 bg-background border rounded-xl shadow-xl max-h-80 overflow-hidden">
                           <SophiaConversationalAI 
                             onClose={onCloseSophia} 
                             sessionId={sessionId} 
@@ -235,7 +227,8 @@ export const WorkspaceLayout: React.FC = () => {
                     const handleMouseMove = (moveEvent: MouseEvent) => {
                       const deltaY = startY - moveEvent.clientY
                       const deltaPercent = (deltaY / containerHeight) * 100
-                      updateTerminalHeight(startHeight + deltaPercent)
+                      const newHeight = startHeight + deltaPercent
+                      setTerminalHeight(Math.min(Math.max(newHeight, 5), 70))
                     }
 
                     const handleMouseUp = () => {
