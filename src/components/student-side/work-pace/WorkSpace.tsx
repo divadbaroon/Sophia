@@ -10,10 +10,10 @@ import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
 import CodeEditor from "@/components/student-side/code-editor/CodeEditor"
 import Terminal from "@/components/student-side/terminal/Terminal"
 
+import ConsentModal from "@/components/student-side/consent/ConsentModal"
 import OnboardingModal from "@/components/concepts/components/onboardingModal"
 import SurveyModal from "@/components/concepts/components/survey-modal"
 import PrizeWheelModal from "@/components/concepts/components/prize-wheel" 
-import ConsentModal from "@/components/student-side/consent/ConsentModal"
 
 import SophiaConversationalAI from '@/components/student-side/voice-chat/elevenlabs/SophiaConversationalAI'
 
@@ -43,7 +43,7 @@ export const WorkspaceLayout: React.FC = () => {
   
   const [terminalHeight, setTerminalHeight] = useState(50)
 
-  const [showOnboarding, setShowOnboarding] = useState(true)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
 
   // Derive concept title from session data
@@ -76,7 +76,7 @@ export const WorkspaceLayout: React.FC = () => {
   }
 
   const handleUserFinished = () => {
-  setIsSurveyModalOpen(true)
+    setIsSurveyModalOpen(true)
   }
 
   const handleSurveyComplete = () => {
@@ -93,6 +93,19 @@ export const WorkspaceLayout: React.FC = () => {
     window.location.href = "/classes"
   }
 
+  // Handle consent completion and trigger onboarding
+  const handleConsentComplete = async (hasConsented: boolean) => {
+    if (hasConsented) {
+      // Process the consent first
+      await handleConsent(hasConsented)
+      // Then show onboarding after consent is processed
+      setShowOnboarding(true)
+    } else {
+      // This will redirect them away
+      await handleConsent(hasConsented)
+    }
+  }
+
   const handleOnboardingClose = () => {
     setShowOnboarding(false)
   }
@@ -103,7 +116,7 @@ export const WorkspaceLayout: React.FC = () => {
   }
 
   // Determine if buttons should be hidden
-  const shouldHideButtons = isSurveyModalOpen || showPrizeWheel || showOnboarding
+  const shouldHideButtons = isSurveyModalOpen || showPrizeWheel || showOnboarding || showConsentModal
 
   // Show global loading state
   if (isLoading) {
@@ -113,7 +126,7 @@ export const WorkspaceLayout: React.FC = () => {
           <ConsentModal
             isOpen={showConsentModal}
             onClose={() => window.location.href = '/'}
-            onConsent={handleConsent}  
+            onConsent={handleConsentComplete} 
             isProcessing={consentProcessing}
           />
         )}
@@ -132,24 +145,26 @@ export const WorkspaceLayout: React.FC = () => {
 
   return (
     <>
+      {/* Consent modal */}
       {showConsentModal && (
         <ConsentModal
           isOpen={showConsentModal}
           onClose={() => window.location.href = '/'}
-          onConsent={handleConsent}  
+          onConsent={handleConsentComplete} 
           isProcessing={consentProcessing}
         />
       )}
 
-      {/* onboarding modal */}
-      <OnboardingModal
-        isOpen={showOnboarding}
-        onClose={handleOnboardingClose}
-        onGetStarted={handleGetStarted}
-      />
+      {/* Onboarding modal */}
+      {!showConsentModal && (
+        <OnboardingModal
+          isOpen={showOnboarding}
+          onClose={handleOnboardingClose}
+          onGetStarted={handleGetStarted}
+        />
+      )}
 
-
-      <main className={`flex flex-col h-screen ${showConsentModal ? 'pointer-events-none opacity-50' : ''}`}>
+      <main className={`flex flex-col h-screen ${showConsentModal || showOnboarding ? 'pointer-events-none opacity-50' : ''}`}>
         <div className="flex-1 flex relative">
           {/* Ask Sophia button */}
           {!shouldHideButtons && (
@@ -162,7 +177,7 @@ export const WorkspaceLayout: React.FC = () => {
                 minWidth: 'fit-content'
               }}
               onClick={onToggleSophia}
-              disabled={showConsentModal}
+              disabled={showConsentModal || showOnboarding}
             >
               <HelpCircle className="h-5 w-5" />
               {sophiaButtonText}
