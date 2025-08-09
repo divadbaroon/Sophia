@@ -263,7 +263,7 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
         </TabsList>
 
         <TabsContent value="live" className="mt-4">
-          <div className="rounded-md border p-4 min-h-[200px]">
+          <div className="rounded-md border p-3 min-h-[190px]">
             <div className="space-y-4">
               {/* Status indicator */}
               <div className="flex justify-end mb-4">
@@ -310,7 +310,7 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
         </TabsContent>
 
         <TabsContent value="history" className="mt-4">
-          <div className="rounded-md border p-4 min-h-[200px] max-h-96 overflow-auto">
+          <div className="rounded-md border p-4 min-h-[220px] max-h-96 overflow-auto">
             {conversationHistory.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
                 <div className="text-center">
@@ -330,7 +330,7 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
                     <div
                       key={message.id}
                       className={cn(
-                        "p-3 rounded-lg max-w-[85%]",
+                        "p-3 rounded-xl max-w-[85%]",
                         message.type === 'user'
                           ? "bg-blue-100 ml-auto text-blue-900"
                           : "bg-gray-100 mr-auto text-gray-900"
