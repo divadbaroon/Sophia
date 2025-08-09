@@ -3,13 +3,16 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent } from "@/components/ui/card"
+
 import { ClipboardList, ArrowRight, Gift, Loader2 } from "lucide-react"
+
 import { saveSurveyResponse, checkSurveyCompletion } from "@/lib/actions/survey-actions"
 
 import { SurveyData, SurveyModalProps } from "@/types"
@@ -173,7 +176,6 @@ export default function SurveyModal({
     formData.sophiaTeachingStyle &&
     formData.instructorAlignment &&
     formData.conceptUnderstanding &&
-    formData.examPreparation &&
     formData.learningAutonomy
 
   const likertScale = [
