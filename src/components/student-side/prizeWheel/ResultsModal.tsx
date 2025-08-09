@@ -87,13 +87,7 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
           <>
             {/* Prize Display Card */}
             <div className="rounded-2xl p-6 border-4 bg-gradient-to-r from-yellow-200 to-orange-200 border-orange-400">
-              <div className="flex items-center justify-center gap-3 mb-3">
-                {getPrizeIcon(winner || "")}
-                <h3 className="text-2xl font-black text-gray-800" style={{ fontFamily: 'Arial Black, Arial, sans-serif' }}>
-                  {winner}
-                </h3>
-              </div>
-              <p className="text-lg text-gray-700 font-semibold">{getPrizeValue(winner || "")}</p>
+              <p className="text-2xl font-black text-gray-800 font-bold">{getPrizeValue(winner || "")}</p>
             </div>
 
             {/* Email input for prize winners */}
