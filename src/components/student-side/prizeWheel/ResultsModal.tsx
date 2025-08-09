@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { DollarSign, Heart, Trophy, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 interface ResultsModalProps {
   winner: string | null
