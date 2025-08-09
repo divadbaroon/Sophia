@@ -78,47 +78,67 @@ const CodeEditor = ({ className = '', readOnly = false }: CodeEditorProps) => {
   const currentMethodCode = generateCurrentMethodTemplate(methodsCode, activeMethodId);
 
   return (
-    <div 
-      className={`h-full flex flex-col relative ${className}`}
-      ref={editorContainerRef}
-    >
-      <CodeMirror
-        key={`${sessionId}-${activeMethodId}`}
-        value={currentMethodCode}
-        height="640px"
-        theme={vscodeLight}
-        extensions={customExtensions}
-        onChange={handleCodeChange}
-        onUpdate={handleEditorUpdate}
-        readOnly={readOnly}
-        basicSetup={{
-          lineNumbers: true,
-          highlightActiveLineGutter: false,
-          highlightSpecialChars: true,
-          history: true,
-          foldGutter: true,
-          drawSelection: true,
-          dropCursor: true,
-          allowMultipleSelections: true,
-          indentOnInput: true,
-          syntaxHighlighting: true,
-          bracketMatching: true,
-          closeBrackets: true,
-          autocompletion: true,
-          rectangularSelection: true,
-          crosshairCursor: true,
-          highlightActiveLine: false,
-          highlightSelectionMatches: true,
-          closeBracketsKeymap: true,
-          defaultKeymap: true,
-          searchKeymap: true,
-          historyKeymap: true,
-          foldKeymap: true,
-          completionKeymap: true,
-          lintKeymap: true,
-        }}
-      />
-    </div>
+    <>
+      {/* hide CodeMirror borders */}
+      <style jsx global>{`
+        .cm-editor,
+        .cm-editor.cm-focused {
+          border-top: none !important;
+          outline: none !important;
+          border: none !important;
+        }
+        
+        .cm-editor .cm-scroller {
+          border-top: none !important;
+        }
+        
+        .cm-content {
+          border-top: none !important;
+        }
+      `}</style>
+      
+      <div 
+        className={`h-full flex flex-col relative ${className}`}
+        ref={editorContainerRef}
+      >
+        <CodeMirror
+          key={`${sessionId}-${activeMethodId}`}
+          value={currentMethodCode}
+          height="640px"
+          theme={vscodeLight}
+          extensions={customExtensions}
+          onChange={handleCodeChange}
+          onUpdate={handleEditorUpdate}
+          readOnly={readOnly}
+          basicSetup={{
+            lineNumbers: true,
+            highlightActiveLineGutter: false,
+            highlightSpecialChars: true,
+            history: true,
+            foldGutter: true,
+            drawSelection: true,
+            dropCursor: true,
+            allowMultipleSelections: true,
+            indentOnInput: true,
+            syntaxHighlighting: true,
+            bracketMatching: true,
+            closeBrackets: true,
+            autocompletion: true,
+            rectangularSelection: true,
+            crosshairCursor: true,
+            highlightActiveLine: false,
+            highlightSelectionMatches: true,
+            closeBracketsKeymap: true,
+            defaultKeymap: true,
+            searchKeymap: true,
+            historyKeymap: true,
+            foldKeymap: true,
+            completionKeymap: true,
+            lintKeymap: true,
+          }}
+        />
+      </div>
+    </>
   );
 }
 
