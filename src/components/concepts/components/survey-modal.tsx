@@ -319,7 +319,7 @@ export function SurveyModal({
 
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-gray-700">
-                    Sophia provided the right amount of help - guiding me without giving away answers.
+                    Sophia provided the right amount of help - guiding me without giving away answers. *
                   </Label>
                   <RadioGroup
                     value={formData.appropriateHelp}
@@ -368,7 +368,7 @@ export function SurveyModal({
 
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-gray-700">
-                    I felt I maintained control over my learning while using Sophia.
+                    I felt I maintained control over my learning while using Sophia. *
                   </Label>
                   <RadioGroup
                     value={formData.learningAutonomy}
@@ -387,7 +387,7 @@ export function SurveyModal({
 
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-gray-700">
-                    Sophia helped improve my problem-solving skills.
+                    Sophia helped improve my problem-solving skills. *
                   </Label>
                   <RadioGroup
                     value={formData.problemSolvingImprovement}
@@ -417,7 +417,7 @@ export function SurveyModal({
               <div className="space-y-6">
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-gray-700">
-                    How would you rate the voice interaction with Sophia?
+                    How would you rate the voice interaction with Sophia? *
                   </Label>
                   <RadioGroup
                     value={formData.voiceInteractionQuality}
@@ -436,7 +436,7 @@ export function SurveyModal({
 
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-gray-700">
-                    How easy was the system to use?
+                    How easy was the system to use? *
                   </Label>
                   <RadioGroup
                     value={formData.easeOfUse}
@@ -455,7 +455,7 @@ export function SurveyModal({
 
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-gray-700">
-                    How comfortable were you interacting with Sophia?
+                    How comfortable were you interacting with Sophia? *
                   </Label>
                   <RadioGroup
                     value={formData.comfortWithAI}
@@ -512,7 +512,7 @@ export function SurveyModal({
 
               <div className="space-y-2">
                 <Label htmlFor="comparisonToInstructor" className="text-sm font-medium text-gray-700">
-                  How did Sophia&apos;s teaching approach compare to your instructor's?
+                  How did Sophia&apos;s teaching approach compare to your instructor&apos;s?
                 </Label>
                 <Textarea
                   id="comparisonToInstructor"
