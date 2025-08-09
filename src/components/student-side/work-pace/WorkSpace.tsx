@@ -2,7 +2,6 @@
 
 import React, { useState } from "react"
 
-import { Card } from "@/components/ui/card"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
 import { HelpCircle } from "lucide-react"
