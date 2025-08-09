@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState, createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 
 import { useSessionUrl } from '@/lib/hooks/session/useSessionUrl';
 import { useSessionData } from '@/lib/hooks/session/useSessionData';
 import { useTaskNavigation } from '@/lib/hooks/taskNavigation/useTaskNavigation';
+import { useTaskProgressLoader } from '@/lib/hooks/taskProgress/useTaskProgressLoader';
 
 import { SessionContextType } from "@/lib/context/types"
 
@@ -27,15 +28,11 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     goToPrevMethod,
   } = useTaskNavigation(sessionData);
 
-  const [completedTasks, setCompletedTasks] = useState<Set<number>>(new Set())
-
-  const markTaskCompleted = (taskIndex: number) => {
-    setCompletedTasks((prev: Set<number>) => {
-      const newSet = new Set(prev)
-      newSet.add(taskIndex)
-      return newSet
-    })
-  }
+  const { 
+    completedTasks, 
+    isLoadingProgress, 
+    markTaskCompleted 
+  } = useTaskProgressLoader(sessionId)
 
   const value: SessionContextType = {
     // Core session data
@@ -43,7 +40,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     lessonId,
     sessionData,
     
-    isLoadingTasks,
+    isLoadingTasks: isLoadingTasks || isLoadingProgress,
     
     // Navigation 
     currentMethodIndex,
@@ -53,6 +50,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     goToNextMethod,
     goToPrevMethod,
 
+    // Task completion
     completedTasks,
     markTaskCompleted,
   };
