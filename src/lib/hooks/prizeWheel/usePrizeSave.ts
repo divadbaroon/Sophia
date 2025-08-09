@@ -27,7 +27,7 @@ export const usePrizeSave = () => {
       
       setHasSavedSpin(true)
       return true
-    } catch (error) {
+    } catch {
       setSaveError("An unexpected error occurred")
       return false
     } finally {

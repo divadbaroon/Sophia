@@ -41,7 +41,7 @@ export const useEligibilityCheck = (isOpen: boolean, lessonId?: string) => {
           setIsEligible(false)
           setEligibilityError("Unable to verify eligibility")
         }
-      } catch (error) {
+      } catch {
         setEligibilityError("Failed to check eligibility")
         setIsEligible(false)
       } finally {
