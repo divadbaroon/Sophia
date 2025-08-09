@@ -201,7 +201,8 @@ export const WorkspaceLayout: React.FC = () => {
                     {/* Code editor */}
                     <div className="flex-1 flex">
                       <div className={`flex-1 transition-all duration-300`}>
-                        <CodeEditor />
+                        {/* CodeEditor */}
+                        <CodeEditor terminalHeight={terminalHeight} />
                       </div>
                       
                       {/* Sophia panel inside code editor area */}

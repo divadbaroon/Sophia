@@ -23,7 +23,15 @@ import { generateCurrentMethodTemplate, createFontSizeExtension } from '@/utils/
 
 import { CodeEditorProps } from "@/types"
 
-const CodeEditor = ({ className = '', readOnly = false }: CodeEditorProps) => {
+interface ExtendedCodeEditorProps extends CodeEditorProps {
+  terminalHeight?: number;
+}
+
+const CodeEditor = ({ 
+  className = '', 
+  readOnly = false, 
+  terminalHeight = 50 
+}: ExtendedCodeEditorProps) => {
   const { sessionId, activeMethodId } = useSession();
   const { updateCachedFileContent, setFileContent, methodsCode, updateMethodsCode } = useCodeEditor();
 
@@ -79,7 +87,6 @@ const CodeEditor = ({ className = '', readOnly = false }: CodeEditorProps) => {
 
   return (
     <>
-      {/* hide CodeMirror borders */}
       <style jsx global>{`
         .cm-editor,
         .cm-editor.cm-focused {
@@ -90,10 +97,14 @@ const CodeEditor = ({ className = '', readOnly = false }: CodeEditorProps) => {
         
         .cm-editor .cm-scroller {
           border-top: none !important;
+          /* 🎯 Dynamic padding based on terminal height */
+          padding-bottom: ${terminalHeight}vh !important;
         }
         
         .cm-content {
           border-top: none !important;
+          /* 🎯 Dynamic padding based on terminal height */
+          padding-bottom: ${terminalHeight}vh !important;
         }
       `}</style>
       
