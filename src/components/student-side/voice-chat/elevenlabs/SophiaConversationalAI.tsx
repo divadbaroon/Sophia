@@ -10,6 +10,7 @@ import { saveMessage } from '@/lib/actions/message-actions'
 import { MessageSave } from '@/types'
 
 import { useConversation as useConversationProvider } from '@/lib/context/conversation/conversationHistoryProvider'
+import { useSophiaContext } from '@/components/student-side/voice-chat/contextProvider/useSophiaContextProvider'
 
 interface SophiaConversationalAIProps {
   onClose: () => void
@@ -54,6 +55,7 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
   const [isInitializing, setIsInitializing] = useState(true)
   
   const { conversationHistory, addMessage } = useConversationProvider()
+  const { buildElevenLabsDynamicVariables } = useSophiaContext()
 
   console.log("🔄 SophiaConversationalAI component rendered with props:", {
     sessionId,
@@ -154,8 +156,21 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
         console.log("🔗 Getting signed URL...")
         const signedUrl = await getSignedUrl();
         
-        console.log("🎯 Starting ElevenLabs session...")
-        const conversationId = await conversation.startSession({ signedUrl });
+        console.log("📋 Building context for Sophia...")
+        const dynamicVariables = buildElevenLabsDynamicVariables();
+        
+        console.log("🎯 Dynamic variables being sent to ElevenLabs:", {
+          variableCount: Object.keys(dynamicVariables).length,
+          variables: Object.keys(dynamicVariables)
+        });
+        
+        console.log("📝 Full dynamic variables content:", dynamicVariables);
+        
+        console.log("🎯 Starting ElevenLabs session with context...")
+        const conversationId = await conversation.startSession({ 
+          signedUrl,
+          dynamicVariables 
+        });
         console.log("✅ Sophia conversation started with ID:", conversationId);
         
       } catch (err) {
@@ -199,14 +214,19 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
       }
       
       const signedUrl = await getSignedUrl();
-      await conversation.startSession({ signedUrl });
+      
+      console.log("📋 Building fresh context for reconnection...")
+      const dynamicVariables = buildElevenLabsDynamicVariables();
+      console.log("🎯 Reconnection dynamic variables:", dynamicVariables);
+      
+      await conversation.startSession({ signedUrl, dynamicVariables });
       console.log("✅ Reconnection successful")
     } catch (err) {
       console.error("❌ Failed to reconnect:", err);
       setError("Failed to reconnect. Please try again.");
       setIsInitializing(false)
     }
-  }, [conversation, saveMessageToDb]);
+  }, [conversation, buildElevenLabsDynamicVariables]);
 
   // Get current state for display
   const getCurrentState = () => {
