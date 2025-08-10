@@ -7,6 +7,7 @@ import { X } from 'lucide-react'
 import { useConversation } from '@11labs/react'
 import { cn } from '@/lib/utils'
 import { saveMessage } from '@/lib/actions/message-actions'
+import { saveSophiaConversation, updateSophiaConversationEndTime } from '@/lib/actions/sophia-conversation-actions'
 import { MessageSave } from '@/types'
 
 import { useConversation as useConversationProvider } from '@/lib/context/conversation/conversationHistoryProvider'
@@ -53,6 +54,7 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
 }) => {
   const [error, setError] = useState<string | null>(null)
   const [isInitializing, setIsInitializing] = useState(true)
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   
   const { conversationHistory, addMessage } = useConversationProvider()
 
@@ -185,6 +187,24 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
         });
         console.log("✅ Sophia conversation started with ID:", conversationId);
         
+        // Store conversation ID
+        setCurrentConversationId(conversationId);
+        
+        // Save conversation ID to db
+        saveSophiaConversation({
+          conversationId,
+          sessionId,
+          classId
+        }).then((result) => {
+          if (result.success) {
+            console.log("💾 Sophia conversation saved to database");
+          } else {
+            console.error("❌ Failed to save Sophia conversation:", result.error);
+          }
+        }).catch((error) => {
+          console.error("❌ Error saving Sophia conversation:", error);
+        });
+        
       } catch (err) {
         console.error("❌ Failed to start Sophia conversation:", err);
         setError("Failed to start conversation. Please try again.");
@@ -208,9 +228,24 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
     if (conversation.status === 'connected') {
       await conversation.endSession();
       console.log("✅ Conversation ended")
+      
+      // Update conversation end time in db
+      if (currentConversationId) {
+        updateSophiaConversationEndTime(currentConversationId)
+          .then((result) => {
+            if (result.success) {
+              console.log("💾 Sophia conversation end time updated");
+            } else {
+              console.error("❌ Failed to update conversation end time:", result.error);
+            }
+          })
+          .catch((error) => {
+            console.error("❌ Error updating conversation end time:", error);
+          });
+      }
     }
     onClose();
-  }, [conversation, onClose]);
+  }, [conversation, onClose, currentConversationId]);
 
   const handleReconnect = useCallback(async () => {
     console.log("🔄 Attempting to reconnect...")
