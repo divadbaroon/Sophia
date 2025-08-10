@@ -35,6 +35,9 @@ export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
   // Current cursor line
   const [lineNumber, setLineNumber] = useState<number | null>(null);
 
+  // Code the system has indicated it would like to highlight
+  const [systemHighlightedLine, setSystemHighlightedLine] = useState<number | null>(null);
+
   // Initialize methodsCode when hook finishes loading
   useEffect(() => {
     if (!isLoading && Object.keys(initialMethodsCode).length > 0) {
@@ -68,6 +71,11 @@ export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
       ...prev,
       [methodId]: code
     }));
+  };
+
+  const updateSystemHighlightedLine = (line: number | null) => {
+    console.log("HIGHLIGHTING LINE", line)
+    setSystemHighlightedLine(line);
   };
 
   // Check if current content matches saved content
@@ -107,6 +115,8 @@ export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
     codeLoading,
     methodsCode,
     updateMethodsCode,
+    systemHighlightedLine,       
+    updateSystemHighlightedLine,  
   };
 
   return (
