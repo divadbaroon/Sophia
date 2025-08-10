@@ -44,7 +44,7 @@ const highlightField = StateField.define<DecorationSet>({
   update(highlights, tr) {
     highlights = highlights.map(tr.changes);
     
-    for (let effect of tr.effects) {
+    for (const effect of tr.effects) {
       if (effect.is(addHighlight)) {
         const line = tr.state.doc.line(effect.value);
         highlights = highlights.update({
