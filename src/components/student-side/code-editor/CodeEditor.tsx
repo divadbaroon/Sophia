@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useRef, useCallback, useMemo } from 'react';
+import React, { useRef, useCallback, useMemo, useEffect } from 'react';
 
 import CodeMirror from '@uiw/react-codemirror';
 
 import { java } from '@codemirror/lang-java';
 import { indentUnit } from '@codemirror/language';
-import { EditorView } from '@codemirror/view' 
+import { EditorView, Decoration, DecorationSet } from '@codemirror/view' 
+import { StateField, StateEffect } from '@codemirror/state';
 import { vscodeLight } from '@uiw/codemirror-theme-vscode';
 import { ViewUpdate } from '@uiw/react-codemirror';
 
@@ -27,13 +28,50 @@ interface ExtendedCodeEditorProps extends CodeEditorProps {
   terminalHeight?: number;
 }
 
+// Create highlight decoration with light yellow
+const highlightMark = Decoration.line({
+  attributes: { style: "background-color: #fff9c4; animation: highlightPersist 5s forwards;" }
+});
+
+// State effect to add highlight
+const addHighlight = StateEffect.define<number>();
+
+// State field to manage highlights
+const highlightField = StateField.define<DecorationSet>({
+  create() {
+    return Decoration.none;
+  },
+  update(highlights, tr) {
+    highlights = highlights.map(tr.changes);
+    
+    for (let effect of tr.effects) {
+      if (effect.is(addHighlight)) {
+        const line = tr.state.doc.line(effect.value);
+        highlights = highlights.update({
+          add: [highlightMark.range(line.from, line.from)]
+        });
+      }
+    }
+    
+    return highlights;
+  },
+  provide: f => EditorView.decorations.from(f)
+});
+
 const CodeEditor = ({ 
   className = '', 
   readOnly = false, 
   terminalHeight = 50 
 }: ExtendedCodeEditorProps) => {
   const { sessionId, activeMethodId } = useSession();
-  const { updateCachedFileContent, setFileContent, methodsCode, updateMethodsCode } = useCodeEditor();
+  const { 
+    updateCachedFileContent, 
+    setFileContent, 
+    methodsCode, 
+    updateMethodsCode,
+    systemHighlightedLine,
+    updateSystemHighlightedLine
+  } = useCodeEditor();
 
   const editorViewRef = useRef<EditorView | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
@@ -52,11 +90,30 @@ const CodeEditor = ({
   // Use shortcuts hook
   useEditorShortcuts(manualSave);
 
+  // Watch for system highlight changes
+  useEffect(() => {
+    if (systemHighlightedLine && editorViewRef.current) {
+      console.log("🔆 Highlighting line:", systemHighlightedLine);
+      
+      // Add highlight to the line
+      editorViewRef.current.dispatch({
+        effects: addHighlight.of(systemHighlightedLine)
+      });
+      
+      // Clear the highlight after 5 seconds
+      setTimeout(() => {
+        console.log("🔆 Clearing highlight for line:", systemHighlightedLine);
+        updateSystemHighlightedLine(null);
+      }, 5000);
+    }
+  }, [systemHighlightedLine, updateSystemHighlightedLine]);
+
   // Memoize custom extensions
   const customExtensions = useMemo(() => [
     java(),
     createFontSizeExtension(fontSize),
-    indentUnit.of("    ") 
+    indentUnit.of("    "),
+    highlightField
   ], [fontSize]);
 
   // Handle updates from CodeMirror including selection changes
@@ -105,6 +162,13 @@ const CodeEditor = ({
           border-top: none !important;
           /* 🎯 Dynamic padding based on terminal height */
           padding-bottom: ${terminalHeight}vh !important;
+        }
+
+        /* Highlight animation - persist for 5 seconds then fade */
+        @keyframes highlightPersist {
+          0% { background-color: #fff9c4; }
+          80% { background-color: #fff9c4; }
+          100% { background-color: transparent; }
         }
       `}</style>
       
