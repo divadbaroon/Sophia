@@ -12,6 +12,7 @@ import { MessageSave } from '@/types'
 
 import { useConversation as useConversationProvider } from '@/lib/context/conversation/conversationHistoryProvider'
 import { useSophiaContext } from '@/components/student-side/voice-chat/contextProvider/useSophiaContextProvider'
+import { useCodeEditor } from '@/lib/context/codeEditor/CodeEditorProvider';
 
 interface SophiaConversationalAIProps {
   onClose: () => void
@@ -57,6 +58,8 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   
   const { conversationHistory, addMessage } = useConversationProvider()
+
+  const { updateSystemHighlightedLine } = useCodeEditor();
 
   console.log("🔄 SophiaConversationalAI component rendered with props:", {
     sessionId,
@@ -148,6 +151,17 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
 
   const { buildElevenLabsDynamicVariables } = useSophiaContext(sendContextualUpdate)
 
+  // Client tools registration
+  const clientTools = {
+    highlightCode: async ({ lineNumber }: { lineNumber: number }) => {
+
+      // Store the highlighted line in CodeEditor context
+      updateSystemHighlightedLine(lineNumber);
+      
+      return `Highlighted line ${lineNumber}`;
+    }
+  };
+
   // Auto-start conversation when component mounts
   useEffect(() => {
     console.log("🚀 Starting conversation initialization...")
@@ -183,7 +197,8 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
         console.log("🎯 Starting ElevenLabs session with context...")
         const conversationId = await conversation.startSession({ 
           signedUrl,
-          dynamicVariables 
+          dynamicVariables,
+          clientTools
         });
         console.log("✅ Sophia conversation started with ID:", conversationId);
         
@@ -266,7 +281,7 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
       const dynamicVariables = buildElevenLabsDynamicVariables();
       console.log("🎯 Reconnection dynamic variables:", dynamicVariables);
       
-      await conversation.startSession({ signedUrl, dynamicVariables });
+      await conversation.startSession({ signedUrl, dynamicVariables, clientTools });
       console.log("✅ Reconnection successful")
     } catch (err) {
       console.error("❌ Failed to reconnect:", err);
@@ -391,9 +406,9 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
             ) : (
               <div className="space-y-4">
                 <div className="space-y-3">
-                  {conversationHistory.map((message) => (
+                  {conversationHistory.map((message, index) => (
                     <div
-                      key={message.timestamp}
+                      key={`${message.timestamp}-${index}`}
                       className={cn(
                         "p-3 rounded-xl max-w-[85%]",
                         message.role === 'user'
