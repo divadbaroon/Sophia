@@ -55,9 +55,11 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
                       <HelpCircle className="w-4 h-4 text-green-600" />
                     </div>
                     <div>
-                      <h5 className="font-semibold text-black mb-1">Instructor-Configured Assistance</h5>
+                      <h5 className="font-semibold text-black mb-1">
+                        TA-Like Guidance
+                      </h5>
                       <p className="text-sm text-gray-600">
-                        Sophia is configured by your instructor to provide reliable guidance whenever you need it.
+                        Sophia has been configured and reviewed by your instructor to behave like a TA. Use for help or just to verify your thinking.
                       </p>
                     </div>
                   </div>
