@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { UnlockedConceptCard } from "@/components/concepts/components/unlocked-concept-card"
 import { InstructionsModal } from "@/components/concepts/components/instructions-modal"
 import { DemographicForm } from "./components/demographic-form"
+import OnboardingModal from "@/components/concepts/components/onboardingModal"
 
 import { getUserClasses } from "@/lib/actions/class-actions"
 import { getClassLessons } from "@/lib/actions/lessons-actions"
@@ -68,6 +69,9 @@ export default function ConceptLibrary() {
 
   // Demographic form state
   const [showDemographicForm, setShowDemographicForm] = useState(false)
+
+  // Onboarding modal state
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   // Function to sort lessons by custom order and assign fixed IDs
   const sortLessonsByOrder = (lessons: any[]) => {
@@ -148,6 +152,20 @@ export default function ConceptLibrary() {
   // Add demographic form completion handler
   const handleDemographicComplete = () => {
     setShowDemographicForm(false)
+  }
+
+  // Handle onboarding modal
+  const handleLearnMoreClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setShowOnboarding(true)
+  }
+
+  const handleOnboardingClose = () => {
+    setShowOnboarding(false)
+  }
+
+  const handleGetStarted = () => {
+    setShowOnboarding(false)
   }
 
   const handleCardClick = async (lesson: any) => {
@@ -268,11 +286,7 @@ export default function ConceptLibrary() {
               <a 
                 href="#" 
                 className="text-blue-600 hover:text-blue-800 underline font-medium transition-colors"
-                onClick={(e) => {
-                  e.preventDefault()
-                  // Add modal logic
-                  console.log('Learn more about Sophia clicked')
-                }}
+                onClick={handleLearnMoreClick}
               >
                 Learn more
               </a>
@@ -492,6 +506,13 @@ export default function ConceptLibrary() {
         onClose={() => setIsInstructionsModalOpen(false)}
         conceptTitle={currentConceptTitle}
         onContinue={handleInstructionsContinue}
+      />
+
+      {/* Onboarding Modal */}
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={handleOnboardingClose}
+        onGetStarted={handleGetStarted}
       />
 
       {/* Demographic Form Modal */}
