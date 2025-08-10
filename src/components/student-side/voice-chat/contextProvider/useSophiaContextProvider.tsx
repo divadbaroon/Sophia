@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSession } from '@/lib/context/session/SessionProvider';
-import { useCodeEditor } from '@/lib/context//codeEditor/CodeEditorProvider';
-import { useConversation } from '@/lib/context//conversation/conversationHistoryProvider';
+import { useCodeEditor } from '@/lib/context/codeEditor/CodeEditorProvider';
+import { useConversation } from '@/lib/context/conversation/conversationHistoryProvider';
 import { ConversationMessage } from '@/types';
 
 interface SophiaContext {
@@ -57,19 +57,18 @@ export const useSophiaContext = () => {
     executionOutput, 
     errorContent, 
     highlightedText, 
-    lineNumber 
   } = useCodeEditor();
   
   const { conversationHistory } = useConversation();
 
   // Individual change logging
   useEffect(() => {
-    if (sessionId && fileContent) {
-      console.log('📝 Code content changed:', {
-        length: fileContent.length,
-        preview: fileContent.slice(0, 100) + (fileContent.length > 100 ? '...' : '')
-      });
-    }
+  if (sessionId && fileContent) {
+    console.log('📝 Code content changed:', {
+      length: fileContent.length,
+      code: fileContent
+    });
+  }
   }, [fileContent]);
 
   useEffect(() => {
@@ -153,6 +152,69 @@ export const useSophiaContext = () => {
     return context;
   };
 
+  // Build ElevenLabs dynamic variables object
+  const buildElevenLabsDynamicVariables = () => {
+    const currentTask = sessionData?.tasks[currentMethodIndex];
+    const methodTemplate = sessionData?.methodTemplates[activeMethodId] || '';
+    
+    // Format examples as readable text
+    const formatExamples = (examples: any[]) => {
+      if (!examples || examples.length === 0) return 'No examples available';
+      
+      return examples.map((example, index) => 
+        `Example ${index + 1}:\nInput: ${JSON.stringify(example.input)}\nOutput: ${example.output}\nExplanation: Shows ${activeMethodId} algorithm behavior`
+      ).join('\n\n');
+    };
+
+    // Format test cases summary
+    const formatTestCasesSummary = (testCases: any[]) => {
+      if (!testCases || testCases.length === 0) return 'No test cases available';
+      
+      return `Testing ${testCases.length} scenarios including different graph sizes and edge configurations`;
+    };
+
+    // Format conversation history
+    const formatConversationHistory = (messages: any[]) => {
+      if (!messages || messages.length === 0) return 'No previous conversation';
+      
+      return messages.map(msg => {
+        const time = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const role = msg.role === 'user' ? 'Student' : 'Sophia';
+        return `[${time}] ${role}: ${msg.content}`;
+      }).join('\n');
+    };
+
+    const addLineNumbers = (code: string) => {
+      return code.split('\n').map((line, index) => `${index + 1}: ${line}`).join('\n');
+    };
+
+    const dynamicVariables = {
+      // Core context
+      current_task_title: currentTask?.title || '',
+      task_description: currentTask?.description || '',
+      method_id: activeMethodId || '',
+      
+      // Code context
+      template_code: addLineNumbers(methodTemplate),
+      student_code: addLineNumbers(fileContent || ''),
+      
+      // Always include these with fallbacks
+      highlighted_code: highlightedText || 'No code currently selected',
+      execution_output: executionOutput || 'No recent test execution',
+      error_details: errorContent || 'No current errors',
+      
+      // Educational context
+      task_examples: formatExamples(currentTask?.examples || []),
+      test_cases_summary: formatTestCasesSummary(currentTestCases || []),
+      
+      // Conversation context
+      conversation_history: formatConversationHistory(conversationHistory),
+      conversation_count: conversationHistory.length,
+    };
+
+    return dynamicVariables;
+  };
+
   // Get context and log it
   const getContextAndLog = (): SophiaContext => {
     const context = buildSophiaContext();
@@ -176,6 +238,7 @@ export const useSophiaContext = () => {
 
   return {
     buildSophiaContext,
+    buildElevenLabsDynamicVariables,
     getContextAndLog,
   };
 };
