@@ -26,43 +26,52 @@ export async function saveSurveyResponse(
       return isNaN(parsed) ? null : parsed
     }
 
+    // Check if user used Sophia
+    const usedSophia = surveyData.sophiaUsageFrequency !== "not-at-all" && surveyData.sophiaUsageFrequency !== ""
+
     // Prepare survey data for insertion 
     const surveyResponse = {
       session_id: sessionId,
       profile_id: profileId,
       lesson_id: lessonId,
-      survey_version: 'v2', 
+      survey_version: 'v3', 
       
-      // AI Assistant Experience 
-      sophia_helpfulness: parseRating(surveyData.sophiaHelpfulness),
+      // Sophia Usage
+      sophia_usage_frequency: surveyData.sophiaUsageFrequency.trim() || null,
+      
+      // AI Assistant Experience (only if used Sophia)
+      sophia_helpfulness: usedSophia ? parseRating(surveyData.sophiaHelpfulness) : null,
       sophia_reliability: parseRating(surveyData.sophiaReliability),
-      sophia_teaching_style: parseRating(surveyData.sophiaTeachingStyle),
-      instructor_alignment: parseRating(surveyData.instructorAlignment),
+      instructor_alignment: usedSophia ? parseRating(surveyData.instructorAlignment) : null,
       ai_vs_human_preference: surveyData.aiVsHumanPreference.trim() || null,
+      appropriate_help: usedSophia ? parseRating(surveyData.appropriateHelp) : null,
 
       // Learning Effectiveness 
       concept_understanding: parseRating(surveyData.conceptUnderstanding),
-      problem_solving_improvement: parseRating(surveyData.problemSolvingImprovement),
+      problem_solving_improvement: usedSophia ? parseRating(surveyData.problemSolvingImprovement) : null,
       learning_autonomy: parseRating(surveyData.learningAutonomy),
 
-      // System Experience 
-      ease_of_use: parseRating(surveyData.easeOfUse),
-      voice_interaction_quality: parseRating(surveyData.voiceInteractionQuality),
-      appropriate_help: parseRating(surveyData.appropriateHelp),
+      // System Experience (only if used Sophia)
+      voice_interaction_quality: usedSophia ? parseRating(surveyData.voiceInteractionQuality) : null,
+      comfort_with_ai: usedSophia ? parseRating(surveyData.comfortWithAI) : null,
 
-      // Trust & Confidence 
+      // General System Experience
+      ease_of_use: parseRating(surveyData.easeOfUse),
+
+      // Trust & Confidence (only if used Sophia)
       trust_in_guidance: parseRating(surveyData.trustInGuidance),
       confidence_in_learning: parseRating(surveyData.confidenceInLearning),
-      comfort_with_ai: parseRating(surveyData.comfortWithAI),
 
-      // Open-ended feedback
-      best_aspects: surveyData.bestAspects.trim() || null,
-      improvements: surveyData.improvements.trim() || null,
-      comparison_to_instructor: surveyData.comparisonToInstructor.trim() || null,
+      // Open-ended feedback (conditional based on Sophia usage)
+      best_aspects: (usedSophia && surveyData.bestAspects.trim()) ? surveyData.bestAspects.trim() : null,
+      improvements: (usedSophia && surveyData.improvements.trim()) ? surveyData.improvements.trim() : null,
+      comparison_to_instructor: (usedSophia && surveyData.comparisonToInstructor.trim()) ? surveyData.comparisonToInstructor.trim() : null,
       additional_comments: surveyData.additionalComments.trim() || null,
       interview_email: surveyData.interviewEmail.trim() || null,
 
       // Leave old fields as NULL for new surveys
+      sophia_teaching_style: null, // Removed in v3
+      exam_preparation: null,
       mental_effort: null,
       difficulty: null,
       concentration: null,
@@ -75,10 +84,22 @@ export async function saveSurveyResponse(
       recommendation: null,
     }
 
-    // Validate required fields for v2 survey version
-    if (!surveyResponse.sophia_helpfulness || !surveyResponse.sophia_teaching_style || 
-        !surveyResponse.instructor_alignment || !surveyResponse.concept_understanding || 
-        !surveyResponse.learning_autonomy) {
+    // Validate required fields for v3 survey version
+    const requiredFields = usedSophia 
+      ? [
+          surveyResponse.sophia_usage_frequency,
+          surveyResponse.sophia_helpfulness,
+          surveyResponse.instructor_alignment,
+          surveyResponse.concept_understanding,
+          surveyResponse.learning_autonomy
+        ]
+      : [
+          surveyResponse.sophia_usage_frequency,
+          surveyResponse.concept_understanding,
+          surveyResponse.learning_autonomy
+        ]
+
+    if (requiredFields.some(field => field === null || field === undefined || field === "")) {
       return { success: false, error: "Please complete all required fields" }
     }
 
@@ -118,7 +139,8 @@ export async function saveSurveyResponse(
       success: true, 
       data: {
         surveyId: data.id,
-        hasInterviewEmail: !!surveyResponse.interview_email
+        hasInterviewEmail: !!surveyResponse.interview_email,
+        usedSophia: usedSophia
       }
     }
 
@@ -170,4 +192,3 @@ export async function checkSurveyCompletion(lessonId: string) {
     return { completed: false, error: 'Failed to check survey completion' }
   }
 }
-

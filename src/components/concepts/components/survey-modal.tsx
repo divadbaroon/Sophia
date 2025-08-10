@@ -25,9 +25,9 @@ export default function SurveyModal({
   onComplete 
 }: SurveyModalProps) {
   const [formData, setFormData] = useState<SurveyData>({
+    sophiaUsageFrequency: "",
     sophiaHelpfulness: "",
     sophiaReliability: "",
-    sophiaTeachingStyle: "",
     instructorAlignment: "",
     aiVsHumanPreference: "",
     conceptUnderstanding: "",
@@ -108,9 +108,9 @@ export default function SurveyModal({
 
       // Reset form
       setFormData({
+        sophiaUsageFrequency: "",
         sophiaHelpfulness: "",
         sophiaReliability: "",
-        sophiaTeachingStyle: "",
         instructorAlignment: "",
         aiVsHumanPreference: "",
         conceptUnderstanding: "",
@@ -146,9 +146,9 @@ export default function SurveyModal({
 
     // Reset form and errors when closing
     setFormData({
+      sophiaUsageFrequency: "",
       sophiaHelpfulness: "",
       sophiaReliability: "",
-      sophiaTeachingStyle: "",
       instructorAlignment: "",
       aiVsHumanPreference: "",
       conceptUnderstanding: "",
@@ -171,12 +171,17 @@ export default function SurveyModal({
     onClose()
   }
 
-  const isFormValid =
-    formData.sophiaHelpfulness &&
-    formData.sophiaTeachingStyle &&
-    formData.instructorAlignment &&
-    formData.conceptUnderstanding &&
-    formData.learningAutonomy
+  const usedSophia = formData.sophiaUsageFrequency !== "not-at-all" && formData.sophiaUsageFrequency !== ""
+
+  const isFormValid = usedSophia
+    ? formData.sophiaUsageFrequency &&
+      formData.sophiaHelpfulness &&
+      formData.instructorAlignment &&
+      formData.conceptUnderstanding &&
+      formData.learningAutonomy
+    : formData.sophiaUsageFrequency &&
+      formData.conceptUnderstanding &&
+      formData.learningAutonomy
 
   const likertScale = [
     { value: "5", label: "Strongly Agree" },
@@ -254,92 +259,118 @@ export default function SurveyModal({
             </CardContent>
           </Card>
 
-          {/* AI Teaching Assistant Experience */}
+          {/* Sophia Usage Frequency */}
           <Card className="border-2 border-gray-200">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
-                AI Teaching Assistant Experience
+                Sophia Usage
               </h3>
-
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Sophia was helpful in learning this concept. *
-                  </Label>
-                  <RadioGroup
-                    value={formData.sophiaHelpfulness}
-                    onValueChange={(value) => handleInputChange("sophiaHelpfulness", value)}
-                  >
-                    {likertScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`helpful-${option.value}`} />
-                        <Label htmlFor={`helpful-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Sophia&apos;s teaching approach felt consistent with my instructor&apos;s style. *
-                  </Label>
-                  <RadioGroup
-                    value={formData.sophiaTeachingStyle}
-                    onValueChange={(value) => handleInputChange("sophiaTeachingStyle", value)}
-                  >
-                    {likertScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`style-${option.value}`} />
-                        <Label htmlFor={`style-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    I trusted Sophia&apos;s guidance because I knew my instructor configured it. *
-                  </Label>
-                  <RadioGroup
-                    value={formData.instructorAlignment}
-                    onValueChange={(value) => handleInputChange("instructorAlignment", value)}
-                  >
-                    {likertScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`trust-${option.value}`} />
-                        <Label htmlFor={`trust-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Sophia provided the right amount of help - guiding me without giving away answers. *
-                  </Label>
-                  <RadioGroup
-                    value={formData.appropriateHelp}
-                    onValueChange={(value) => handleInputChange("appropriateHelp", value)}
-                  >
-                    {likertScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`appropriate-${option.value}`} />
-                        <Label htmlFor={`appropriate-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-gray-700">
+                  How much did you interact with Sophia (the AI assistant) during this session? *
+                </Label>
+                <RadioGroup
+                  value={formData.sophiaUsageFrequency}
+                  onValueChange={(value) => handleInputChange("sophiaUsageFrequency", value)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="frequently" id="freq-frequently" />
+                    <Label htmlFor="freq-frequently" className="text-sm">
+                      Frequently (multiple conversations)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="occasionally" id="freq-occasionally" />
+                    <Label htmlFor="freq-occasionally" className="text-sm">
+                      Occasionally (a few interactions)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="briefly" id="freq-briefly" />
+                    <Label htmlFor="freq-briefly" className="text-sm">
+                      Briefly (tried it once or twice)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="not-at-all" id="freq-not" />
+                    <Label htmlFor="freq-not" className="text-sm">
+                      Not at all
+                    </Label>
+                  </div>
+                </RadioGroup>
               </div>
             </CardContent>
           </Card>
+
+          {/* Sophia Interaction Experience */}
+          {usedSophia && (
+            <Card className="border-2 border-gray-200">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
+                  Sophia Interaction Experience
+                </h3>
+
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Sophia was helpful in learning this concept. *
+                    </Label>
+                    <RadioGroup
+                      value={formData.sophiaHelpfulness}
+                      onValueChange={(value) => handleInputChange("sophiaHelpfulness", value)}
+                    >
+                      {likertScale.map((option) => (
+                        <div key={option.value} className="flex items-center space-x-2">
+                          <RadioGroupItem value={option.value} id={`helpful-${option.value}`} />
+                          <Label htmlFor={`helpful-${option.value}`} className="text-sm">
+                            {option.value} - {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-gray-700">
+                      I trusted Sophia&apos;s guidance because I knew my instructor configured it. *
+                    </Label>
+                    <RadioGroup
+                      value={formData.instructorAlignment}
+                      onValueChange={(value) => handleInputChange("instructorAlignment", value)}
+                    >
+                      {likertScale.map((option) => (
+                        <div key={option.value} className="flex items-center space-x-2">
+                          <RadioGroupItem value={option.value} id={`trust-${option.value}`} />
+                          <Label htmlFor={`trust-${option.value}`} className="text-sm">
+                            {option.value} - {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Sophia provided the right amount of help - guiding me without giving away answers. *
+                    </Label>
+                    <RadioGroup
+                      value={formData.appropriateHelp}
+                      onValueChange={(value) => handleInputChange("appropriateHelp", value)}
+                    >
+                      {likertScale.map((option) => (
+                        <div key={option.value} className="flex items-center space-x-2">
+                          <RadioGroupItem value={option.value} id={`appropriate-${option.value}`} />
+                          <Label htmlFor={`appropriate-${option.value}`} className="text-sm">
+                            {option.value} - {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Learning Effectiveness */}
           <Card className="border-2 border-gray-200">
@@ -351,7 +382,7 @@ export default function SurveyModal({
               <div className="space-y-6">
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-gray-700">
-                    I understand this concept better after using Sophia. *
+                    I understand this concept better after completing these tasks. *
                   </Label>
                   <RadioGroup
                     value={formData.conceptUnderstanding}
@@ -370,7 +401,7 @@ export default function SurveyModal({
 
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-gray-700">
-                    I felt I maintained control over my learning while using Sophia. *
+                    I felt I maintained control over my learning during this session. *
                   </Label>
                   <RadioGroup
                     value={formData.learningAutonomy}
@@ -387,55 +418,89 @@ export default function SurveyModal({
                   </RadioGroup>
                 </div>
 
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Sophia helped improve my problem-solving skills. *
-                  </Label>
-                  <RadioGroup
-                    value={formData.problemSolvingImprovement}
-                    onValueChange={(value) => handleInputChange("problemSolvingImprovement", value)}
-                  >
-                    {likertScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`problem-${option.value}`} />
-                        <Label htmlFor={`problem-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
+                {usedSophia && (
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Sophia helped improve my problem-solving skills. *
+                    </Label>
+                    <RadioGroup
+                      value={formData.problemSolvingImprovement}
+                      onValueChange={(value) => handleInputChange("problemSolvingImprovement", value)}
+                    >
+                      {likertScale.map((option) => (
+                        <div key={option.value} className="flex items-center space-x-2">
+                          <RadioGroupItem value={option.value} id={`problem-${option.value}`} />
+                          <Label htmlFor={`problem-${option.value}`} className="text-sm">
+                            {option.value} - {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* System Experience */}
+          {/* System Experience - Only show if used Sophia */}
+          {usedSophia && (
+            <Card className="border-2 border-gray-200">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
+                  System Experience
+                </h3>
+
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-gray-700">
+                      How would you rate the voice interaction with Sophia? *
+                    </Label>
+                    <RadioGroup
+                      value={formData.voiceInteractionQuality}
+                      onValueChange={(value) => handleInputChange("voiceInteractionQuality", value)}
+                    >
+                      {qualityScale.map((option) => (
+                        <div key={option.value} className="flex items-center space-x-2">
+                          <RadioGroupItem value={option.value} id={`voice-${option.value}`} />
+                          <Label htmlFor={`voice-${option.value}`} className="text-sm">
+                            {option.value} - {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-gray-700">
+                      How comfortable were you interacting with Sophia? *
+                    </Label>
+                    <RadioGroup
+                      value={formData.comfortWithAI}
+                      onValueChange={(value) => handleInputChange("comfortWithAI", value)}
+                    >
+                      {qualityScale.map((option) => (
+                        <div key={option.value} className="flex items-center space-x-2">
+                          <RadioGroupItem value={option.value} id={`comfort-${option.value}`} />
+                          <Label htmlFor={`comfort-${option.value}`} className="text-sm">
+                            {option.value} - {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* General System Experience */}
           <Card className="border-2 border-gray-200">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
-                System Experience
+                Overall System Experience
               </h3>
 
               <div className="space-y-6">
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    How would you rate the voice interaction with Sophia? *
-                  </Label>
-                  <RadioGroup
-                    value={formData.voiceInteractionQuality}
-                    onValueChange={(value) => handleInputChange("voiceInteractionQuality", value)}
-                  >
-                    {qualityScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`voice-${option.value}`} />
-                        <Label htmlFor={`voice-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-gray-700">
                     How easy was the system to use? *
@@ -454,94 +519,79 @@ export default function SurveyModal({
                     ))}
                   </RadioGroup>
                 </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">
-                    How comfortable were you interacting with Sophia? *
-                  </Label>
-                  <RadioGroup
-                    value={formData.comfortWithAI}
-                    onValueChange={(value) => handleInputChange("comfortWithAI", value)}
-                  >
-                    {qualityScale.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.value} id={`comfort-${option.value}`} />
-                        <Label htmlFor={`comfort-${option.value}`} className="text-sm">
-                          {option.value} - {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
               </div>
             </CardContent>
           </Card>
 
-         <Card className="border-2 border-gray-200">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
-              Your Feedback <span className="text-sm font-normal text-gray-500">(Optional)</span>
-            </h3>
+          <Card className="border-2 border-gray-200">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
+                Your Feedback <span className="text-sm font-normal text-gray-500">(Optional)</span>
+              </h3>
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="bestAspects" className="text-sm font-medium text-gray-700">
-                  What worked best about Sophia&apos;s help?
-                </Label>
-                <Textarea
-                  id="bestAspects"
-                  placeholder="Tell us what you liked most about Sophia's assistance..."
-                  value={formData.bestAspects}
-                  onChange={(e) => handleInputChange("bestAspects", e.target.value)}
-                  className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
-                  rows={3}
-                />
-              </div>
+              <div className="space-y-4">
+                {usedSophia && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="bestAspects" className="text-sm font-medium text-gray-700">
+                        What worked best about Sophia&apos;s help?
+                      </Label>
+                      <Textarea
+                        id="bestAspects"
+                        placeholder="Tell us what you liked most about Sophia's assistance..."
+                        value={formData.bestAspects}
+                        onChange={(e) => handleInputChange("bestAspects", e.target.value)}
+                        className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
+                        rows={3}
+                      />
+                    </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="improvements" className="text-sm font-medium text-gray-700">
-                  What could be improved about Sophia&apos;s assistance?
-                </Label>
-                <Textarea
-                  id="improvements"
-                  placeholder="How could Sophia be more helpful?"
-                  value={formData.improvements}
-                  onChange={(e) => handleInputChange("improvements", e.target.value)}
-                  className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
-                  rows={3}
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="improvements" className="text-sm font-medium text-gray-700">
+                        What could be improved about Sophia&apos;s assistance?
+                      </Label>
+                      <Textarea
+                        id="improvements"
+                        placeholder="How could Sophia be more helpful?"
+                        value={formData.improvements}
+                        onChange={(e) => handleInputChange("improvements", e.target.value)}
+                        className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
+                        rows={3}
+                      />
+                    </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="comparisonToInstructor" className="text-sm font-medium text-gray-700">
-                  How did Sophia&apos;s teaching approach compare to your instructor&apos;s?
-                </Label>
-                <Textarea
-                  id="comparisonToInstructor"
-                  placeholder="Similarities, differences, or other thoughts about the teaching approaches..."
-                  value={formData.comparisonToInstructor}
-                  onChange={(e) => handleInputChange("comparisonToInstructor", e.target.value)}
-                  className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
-                  rows={3}
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="comparisonToInstructor" className="text-sm font-medium text-gray-700">
+                        How did Sophia&apos;s teaching approach compare to your instructor&apos;s?
+                      </Label>
+                      <Textarea
+                        id="comparisonToInstructor"
+                        placeholder="Similarities, differences, or other thoughts about the teaching approaches..."
+                        value={formData.comparisonToInstructor}
+                        onChange={(e) => handleInputChange("comparisonToInstructor", e.target.value)}
+                        className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
+                        rows={3}
+                      />
+                    </div>
+                  </>
+                )}
 
-              <div className="space-y-2">
-                <Label htmlFor="additionalComments" className="text-sm font-medium text-gray-700">
-                  Any additional comments?
-                </Label>
-                <Textarea
-                  id="additionalComments"
-                  placeholder="Share any other thoughts or feedback..."
-                  value={formData.additionalComments}
-                  onChange={(e) => handleInputChange("additionalComments", e.target.value)}
-                  className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
-                  rows={3}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="additionalComments" className="text-sm font-medium text-gray-700">
+                    Any additional comments about your learning experience?
+                  </Label>
+                  <Textarea
+                    id="additionalComments"
+                    placeholder="Share any other thoughts or feedback..."
+                    value={formData.additionalComments}
+                    onChange={(e) => handleInputChange("additionalComments", e.target.value)}
+                    className="border-2 border-gray-200 focus:border-black transition-colors resize-none"
+                    rows={3}
+                  />
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
           {/* Interview Opportunity */}
           <Card className="border-2 border-gray-200">
@@ -552,7 +602,7 @@ export default function SurveyModal({
               <div className="space-y-4">
                 <div className="space-y-2">
                   <p className="text-xs text-gray-600 mb-2">
-                    We&apos;d love to hear more about your experience with Sophia. Please share your email if you&apos;re interested in a brief 30-minute interview for $10 compensation.
+                    We&apos;d love to hear more about your experience. Please share your email if you&apos;re interested in a brief 30-minute interview for $10 compensation.
                   </p>
                   <Textarea
                     id="interview"
