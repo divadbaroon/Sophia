@@ -50,6 +50,7 @@
     "date-fns": "^3.6.0",
     "dub": "^0.50.1",
     "elevenlabs": "^1.51.0",
+    "fabric": "^6.7.1",
     "framer-motion": "^12.4.3",
     "lucide-react": "^0.475.0",
     "next": "15.1.6",
