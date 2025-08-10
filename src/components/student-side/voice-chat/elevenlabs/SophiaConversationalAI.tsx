@@ -9,17 +9,12 @@ import { cn } from '@/lib/utils'
 import { saveMessage } from '@/lib/actions/message-actions'
 import { MessageSave } from '@/types'
 
+import { useConversation as useConversationProvider } from '@/lib/context/conversation/conversationHistoryProvider'
+
 interface SophiaConversationalAIProps {
   onClose: () => void
   sessionId?: string
   classId?: string
-}
-
-interface ConversationMessage {
-  id: string
-  type: 'user' | 'assistant'
-  content: string
-  timestamp: Date
 }
 
 async function requestMicrophonePermission() {
@@ -57,7 +52,8 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
 }) => {
   const [error, setError] = useState<string | null>(null)
   const [isInitializing, setIsInitializing] = useState(true)
-  const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([])
+  
+  const { conversationHistory, addMessage } = useConversationProvider()
 
   console.log("🔄 SophiaConversationalAI component rendered with props:", {
     sessionId,
@@ -113,15 +109,17 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
       const content = props.message || props.text || props.transcript || 'Message received'
       const role = props.source === 'user' || props.role === 'user' ? 'user' : 'assistant'
       
-      // Add message to history
-      const newMessage: ConversationMessage = {
-        id: Date.now().toString(),
-        type: role,
-        content,
-        timestamp: new Date()
-      }
+      addMessage({
+        role: role,
+        content: content,
+        timestamp: Date.now()
+      });
       
-      setConversationHistory(prev => [...prev, newMessage])
+      console.log("💬 Added message to global conversation provider:", {
+        role,
+        content: content.substring(0, 50) + '...',
+        totalMessages: conversationHistory.length + 1
+      });
       
       // Save to database
       saveMessageToDb(content, role)
@@ -328,10 +326,10 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
                 <div className="space-y-3">
                   {conversationHistory.map((message) => (
                     <div
-                      key={message.id}
+                      key={message.timestamp}
                       className={cn(
                         "p-3 rounded-xl max-w-[85%]",
-                        message.type === 'user'
+                        message.role === 'user'
                           ? "bg-blue-100 ml-auto text-blue-900"
                           : "bg-gray-100 mr-auto text-gray-900"
                       )}
@@ -339,12 +337,12 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
                       <div className="flex justify-between items-start gap-2">
                         <div className="flex-1">
                           <div className="text-xs font-medium mb-1">
-                            {message.type === 'user' ? 'You' : 'Sophia'}
+                            {message.role === 'user' ? 'You' : 'Sophia'}
                           </div>
                           <div className="text-sm">{message.content}</div>
                         </div>
                         <div className="text-xs text-muted-foreground whitespace-nowrap">
-                          {message.timestamp.toLocaleTimeString([], {
+                          {new Date(message.timestamp || Date.now()).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit'
                           })}
