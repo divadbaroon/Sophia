@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useSession } from '../session/SessionProvider';
 import { useCodeSnapshots } from '@/lib/hooks/codeEditor/useCodeSnapshots'; 
+import { saveSophiaHighlightAction } from '@/lib/actions/sophia-highlight-actions'
 
 import { CodeEditorContextType } from "../types"
 
@@ -76,6 +77,23 @@ export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
   const updateSystemHighlightedLine = (line: number | null) => {
     console.log("HIGHLIGHTING LINE", line)
     setSystemHighlightedLine(line);
+    
+    // Save highlighted line to db
+    if (line !== null) {
+      saveSophiaHighlightAction({
+        sessionId: sessionId,
+        classId: lessonId,
+        lineNumber: line
+      }).then((result) => {
+        if (result.success) {
+          console.log("💾 Sophia highlight action saved to database");
+        } else {
+          console.error("❌ Failed to save highlight action:", result.error);
+        }
+      }).catch((error) => {
+        console.error("❌ Error saving highlight action:", error);
+      });
+    }
   };
 
   // Check if current content matches saved content
