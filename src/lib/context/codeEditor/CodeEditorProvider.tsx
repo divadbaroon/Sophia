@@ -1,9 +1,10 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { useSession } from '../session/SessionProvider';
 import { useCodeSnapshots } from '@/lib/hooks/codeEditor/useCodeSnapshots'; 
 import { saveSophiaHighlightAction } from '@/lib/actions/sophia-highlight-actions'
+import { saveUserHighlightAction } from '@/lib/actions/user-highlight-actions'
 
 import { CodeEditorContextType } from "../types"
 
@@ -33,6 +34,9 @@ export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
 
   // Selected text in editor
   const [highlightedText, setHighlightedText] = useState<string>('');
+  // Used to track how long the text has been highlighted for 
+  const highlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Current cursor line
   const [lineNumber, setLineNumber] = useState<number | null>(null);
 
@@ -104,6 +108,34 @@ export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
   // Track selected text
   const updateHighlightedText = (text: string) => {
     setHighlightedText(text);
+    
+    // Clear any existing timeout
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+    }
+    
+    // Only save if text is not empty and wait 3 seconds for final selection
+    if (text.trim() !== '') {
+      highlightTimeoutRef.current = setTimeout(() => {
+        console.log("💾 Saving finalized highlight:", text);
+        
+        saveUserHighlightAction({
+          sessionId: sessionId,
+          classId: lessonId,
+          highlightedText: text.trim()
+        }).then((result) => {
+          if (result.success) {
+            console.log("💾 User highlight action saved to database");
+          } else {
+            console.error("❌ Failed to save user highlight action:", result.error);
+          }
+        }).catch((error) => {
+          console.error("❌ Error saving user highlight action:", error);
+        });
+        
+        highlightTimeoutRef.current = null;
+      }, 3000); // Wait 3 seconds
+    }
   };
 
   // Track cursor position
