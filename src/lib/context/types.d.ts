@@ -44,6 +44,9 @@ export interface CodeEditorContextType {
   codeLoading: boolean;
   methodsCode: Record<string, string>;
   updateMethodsCode: (methodId: string, code: string) => void;
+
+  systemHighlightedLine: number | null;
+  updateSystemHighlightedLine: (line: number | null) => void;
 }
 
 // Task Progress
