@@ -28,7 +28,7 @@ export default function OnboardingModal({
     },
     {
       title: "Contextual Awareness",
-      subtitle: "Sophia sees what you're coding and knows exactly where you are in each task. Jump straight into getting help without any setup or explanation."
+    subtitle: "Sophia sees what you're coding and knows exactly where you are in each task. Highlight specific code you want her to focus on. Jump straight into help without any setup."
     },
     {
       title: "Teaching Style",
@@ -36,7 +36,7 @@ export default function OnboardingModal({
     },
     {
       title: "Validate Your Thinking",
-      subtitle: "Feeling confident? Great! Use Sophia to explain your thinking and validate your understanding of your solutions. Teaching others is one of the best ways to learn!"
+      subtitle: "Feeling confident with your solution? Use Sophia to explain your approach and validate your understanding. Teaching others is one of the best ways to learn!"
     }
   ]
 
