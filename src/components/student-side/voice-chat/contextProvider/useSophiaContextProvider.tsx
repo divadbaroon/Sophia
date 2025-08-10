@@ -68,8 +68,13 @@ export const useSophiaContext = (sendContextualUpdate?: (message: string) => voi
       length: fileContent.length,
       code: fileContent
     });
+
+    // Send contextual update to Sophia
+    if (sendContextualUpdate) {
+      sendContextualUpdate(`Student just updated their code: ${fileContent}`);
+    }
   }
-  }, [fileContent]);
+  }, [fileContent, , sendContextualUpdate]);
 
   useEffect(() => {
     if (executionOutput) {
