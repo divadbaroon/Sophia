@@ -121,12 +121,6 @@ export const useSophiaContext = (sendContextualUpdate?: (message: string) => voi
         methodId: activeMethodId,
         taskIndex: currentMethodIndex
       });
-      
-      // Send contextual update to Sophia
-      if (sendContextualUpdate && sessionData) {
-        const currentTask = sessionData.tasks[currentMethodIndex];
-        sendContextualUpdate(`Student switched to task: ${currentTask?.title || activeMethodId} (${currentMethodIndex + 1} of ${sessionData.tasks.length})`);
-      }
     }
   }, [activeMethodId, currentMethodIndex, sendContextualUpdate, sessionData]);
 
