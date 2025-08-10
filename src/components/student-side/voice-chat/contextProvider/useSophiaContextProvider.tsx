@@ -42,7 +42,7 @@ interface SophiaContext {
   lessonId: string;
 }
 
-export const useSophiaContext = () => {
+export const useSophiaContext = (sendContextualUpdate?: (message: string) => void) => {
   const { 
     sessionData, 
     sessionId, 
@@ -74,20 +74,35 @@ export const useSophiaContext = () => {
   useEffect(() => {
     if (executionOutput) {
       console.log('🏃 Execution output changed:', executionOutput);
+      
+      // Send contextual update to Sophia
+      if (sendContextualUpdate) {
+        sendContextualUpdate(`Student just ran tests. Results: ${executionOutput}`);
+      }
     }
-  }, [executionOutput]);
+  }, [executionOutput, sendContextualUpdate]);
 
   useEffect(() => {
     if (errorContent) {
       console.log('❌ Error content changed:', errorContent);
+      
+      // Send contextual update to Sophia
+      if (sendContextualUpdate) {
+        sendContextualUpdate(`Student just ran into a new error: ${errorContent}`);
+      }
     }
-  }, [errorContent]);
+  }, [errorContent, sendContextualUpdate]);
 
   useEffect(() => {
     if (highlightedText) {
       console.log('🔍 Highlighted text changed:', highlightedText);
+      
+      // Send contextual update to Sophia
+      if (sendContextualUpdate) {
+        sendContextualUpdate(`Student just highlighted new code: ${highlightedText}`);
+      }
     }
-  }, [highlightedText]);
+  }, [highlightedText, sendContextualUpdate]);
 
   useEffect(() => {
     if (conversationHistory.length > 0) {
@@ -106,8 +121,14 @@ export const useSophiaContext = () => {
         methodId: activeMethodId,
         taskIndex: currentMethodIndex
       });
+      
+      // Send contextual update to Sophia
+      if (sendContextualUpdate && sessionData) {
+        const currentTask = sessionData.tasks[currentMethodIndex];
+        sendContextualUpdate(`Student switched to task: ${currentTask?.title || activeMethodId} (${currentMethodIndex + 1} of ${sessionData.tasks.length})`);
+      }
     }
-  }, [activeMethodId, currentMethodIndex]);
+  }, [activeMethodId, currentMethodIndex, sendContextualUpdate, sessionData]);
 
   // Show full context when method changes (after data is loaded)
   useEffect(() => {

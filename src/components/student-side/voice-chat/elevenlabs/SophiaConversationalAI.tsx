@@ -55,7 +55,6 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
   const [isInitializing, setIsInitializing] = useState(true)
   
   const { conversationHistory, addMessage } = useConversationProvider()
-  const { buildElevenLabsDynamicVariables } = useSophiaContext()
 
   console.log("🔄 SophiaConversationalAI component rendered with props:", {
     sessionId,
@@ -91,8 +90,8 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
   }, [sessionId, classId])
 
   const conversation = useConversation({
-    onConnect: () => {
-      console.log("🔗 Sophia connected successfully");
+    onConnect: (connectionData) => {
+      console.log("🔗 Sophia connected successfully", connectionData);
       setError(null)
       setIsInitializing(false)
     },
@@ -133,6 +132,19 @@ const SophiaConversationalAI: React.FC<SophiaConversationalAIProps> = ({
       console.log("📊 Status changed:", status);
     }
   });
+
+  // Function to send contextual updates to Sophia (declared after conversation)
+  const sendContextualUpdate = useCallback((message: string) => {
+    if (conversation.status === 'connected') {
+      console.log("📡 Sending contextual update to Sophia:", message);
+      // Use the built-in sendContextualUpdate method!
+      (conversation as any).sendContextualUpdate(message);
+    } else {
+      console.log("🔌 Cannot send contextual update - conversation not connected");
+    }
+  }, [conversation]);
+
+  const { buildElevenLabsDynamicVariables } = useSophiaContext(sendContextualUpdate)
 
   // Auto-start conversation when component mounts
   useEffect(() => {
