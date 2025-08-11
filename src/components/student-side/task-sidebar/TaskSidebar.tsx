@@ -28,11 +28,17 @@ export default function TaskSidebar({
     goToPrevMethod,
     sessionId,
     lessonId,
-    completedTasks  
+    completedTasks,
+    activeMethodId
   } = useSession()
 
   // Check if current task is completed
   const isCurrentTaskCompleted = completedTasks.has(currentMethodIndex)
+
+  // Check if current task is a visualization task
+  const isVisualizationTask = activeMethodId === 'dfs_visualization' || 
+                             activeMethodId === 'hash_visualization' || 
+                             activeMethodId === 'tree_visualization'
 
   // Navigation handlers with tracking
   const handleNextClick = () => {
@@ -162,31 +168,36 @@ export default function TaskSidebar({
 
               <Separator />
 
-              {/* Examples */}
-              <div className="space-y-4">
-                <h3 className="font-semibold text-foreground">Examples</h3>
-                <div className="space-y-3">
-                  {currentTask.examples.map((example: any, index: number) => (
-                    <Card key={index} className="overflow-hidden border-0 shadow-sm bg-card">
-                      <div className="bg-muted/50 px-4 py-2 border-b">
-                        <h4 className="text-sm font-medium text-foreground">Example {index + 1}</h4>
-                      </div>
-                      <div className="p-4">
-                        <pre className="text-xs bg-muted/30 p-3 rounded-lg font-mono border whitespace-pre-wrap break-words overflow-hidden">
-                          <code className="text-foreground block">
-                            {Object.entries(example.input).map(([key, value]) => {
-                              return typeof value === "string"
-                                ? `Input: ${key} = "${value}"\n`
-                                : `Input: ${key} = ${JSON.stringify(value)}\n`
-                            })}
-                            <span className="text-green-600 font-medium">Output: {example.output}</span>
-                          </code>
-                        </pre>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </div>
+              {/* Only show Examples section for non-visualization tasks */}
+              {!isVisualizationTask && (
+                <>
+                  {/* Examples */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-foreground">Examples</h3>
+                    <div className="space-y-3">
+                      {currentTask.examples.map((example: any, index: number) => (
+                        <Card key={index} className="overflow-hidden border-0 shadow-sm bg-card">
+                          <div className="bg-muted/50 px-4 py-2 border-b">
+                            <h4 className="text-sm font-medium text-foreground">Example {index + 1}</h4>
+                          </div>
+                          <div className="p-4">
+                            <pre className="text-xs bg-muted/30 p-3 rounded-lg font-mono border whitespace-pre-wrap break-words overflow-hidden">
+                              <code className="text-foreground block">
+                                {Object.entries(example.input).map(([key, value]) => {
+                                  return typeof value === "string"
+                                    ? `Input: ${key} = "${value}"\n`
+                                    : `Input: ${key} = ${JSON.stringify(value)}\n`
+                                })}
+                                <span className="text-green-600 font-medium">Output: {example.output}</span>
+                              </code>
+                            </pre>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </ScrollArea>
         </div>
