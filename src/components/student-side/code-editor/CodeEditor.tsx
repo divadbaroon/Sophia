@@ -4,6 +4,10 @@ import React, { useRef, useCallback, useMemo, useEffect } from 'react';
 
 import CodeMirror from '@uiw/react-codemirror';
 
+import DFSVisualizationOverlay from "./DFSVisualizationOverlay"
+import HashTableVisualizationOverlay from './HashTableVisualizationOverlay';
+import BinaryTreeVisualizationOverlay from './BinaryTreeVisualizationOverlay';
+
 import { java } from '@codemirror/lang-java';
 import { indentUnit } from '@codemirror/language';
 import { EditorView, Decoration, DecorationSet } from '@codemirror/view' 
@@ -70,7 +74,8 @@ const CodeEditor = ({
     methodsCode, 
     updateMethodsCode,
     systemHighlightedLine,
-    updateSystemHighlightedLine
+    updateSystemHighlightedLine,
+    logVisualizationInteraction  
   } = useCodeEditor();
 
   const editorViewRef = useRef<EditorView | null>(null);
@@ -141,6 +146,39 @@ const CodeEditor = ({
 
   // Use utility function
   const currentMethodCode = generateCurrentMethodTemplate(methodsCode, activeMethodId);
+
+  if (activeMethodId === 'dfs_visualization') {
+    return (
+      <div className={`h-full flex flex-col relative ${className}`}>
+        <DFSVisualizationOverlay 
+          onInteraction={logVisualizationInteraction}
+          terminalHeight={terminalHeight}
+        />
+      </div>
+    );
+  }
+
+  if (activeMethodId === 'hash_visualization') {
+    return (
+      <div className={`h-full flex flex-col relative ${className}`}>
+        <HashTableVisualizationOverlay 
+          onInteraction={logVisualizationInteraction}
+          terminalHeight={terminalHeight}
+        />
+      </div>
+    );
+  }
+
+  if (activeMethodId === 'tree_visualization') {
+    return (
+      <div className={`h-full flex flex-col relative ${className}`}>
+        <BinaryTreeVisualizationOverlay 
+          onInteraction={logVisualizationInteraction}
+          terminalHeight={terminalHeight}
+        />
+      </div>
+    );
+  }
 
   return (
     <>
