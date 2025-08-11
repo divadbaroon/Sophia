@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { ArrowLeft, ArrowRight, Target, CheckCircle, Lock } from "lucide-react"
+import { ArrowLeft, ArrowRight, Target, CheckCircle, Lock, Play } from "lucide-react"
 
 import { completeLessonProgress } from "@/lib/actions/learning-session-actions"
 import { trackNavigation } from "@/lib/actions/sidebar-navigation-actions"
@@ -35,10 +35,18 @@ export default function TaskSidebar({
   // Check if current task is completed
   const isCurrentTaskCompleted = completedTasks.has(currentMethodIndex)
 
-  // Check if current task is a visualization task
-  const isVisualizationTask = activeMethodId === 'dfs_visualization' || 
-                             activeMethodId === 'hash_visualization' || 
-                             activeMethodId === 'tree_visualization'
+  // Check if current task is a visualization task and get the appropriate video
+  const getVisualizationVideo = (methodId: string) => {
+    const videoMapping: { [key: string]: string } = {
+      'dfs_visualization': '/videos/GraphVisualizationSketchDemo.mp4',
+      'hash_visualization': '/videos/HashTableVisualizationSketchDemo.mp4', 
+      'tree_visualization': '/videos/BinaryTreeSketchDemo.mp4'
+    }
+    return videoMapping[methodId] || null
+  }
+
+  const visualizationVideoPath = getVisualizationVideo(activeMethodId)
+  const isVisualizationTask = !!visualizationVideoPath
 
   // Navigation handlers with tracking
   const handleNextClick = () => {
@@ -168,35 +176,56 @@ export default function TaskSidebar({
 
               <Separator />
 
-              {/* Only show Examples section for non-visualization tasks */}
-              {!isVisualizationTask && (
-                <>
-                  {/* Examples */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-foreground">Examples</h3>
-                    <div className="space-y-3">
-                      {currentTask.examples.map((example: any, index: number) => (
-                        <Card key={index} className="overflow-hidden border-0 shadow-sm bg-card">
-                          <div className="bg-muted/50 px-4 py-2 border-b">
-                            <h4 className="text-sm font-medium text-foreground">Example {index + 1}</h4>
-                          </div>
-                          <div className="p-4">
-                            <pre className="text-xs bg-muted/30 p-3 rounded-lg font-mono border whitespace-pre-wrap break-words overflow-hidden">
-                              <code className="text-foreground block">
-                                {Object.entries(example.input).map(([key, value]) => {
-                                  return typeof value === "string"
-                                    ? `Input: ${key} = "${value}"\n`
-                                    : `Input: ${key} = ${JSON.stringify(value)}\n`
-                                })}
-                                <span className="text-green-600 font-medium">Output: {example.output}</span>
-                              </code>
-                            </pre>
-                          </div>
-                        </Card>
-                      ))}
+              {/* Conditional content based on task type */}
+              {isVisualizationTask ? (
+                /* Demo Video section for visualization tasks */
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
+                    <Play className="h-4 w-4 text-primary" />
+                    Demo Video
+                  </h3>
+                  <Card className="p-4 bg-muted/30">
+                    <div className="relative aspect-video max-w-md mx-auto rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                      <video
+                        className="w-full h-full object-cover"
+                        controls
+                        poster="/videos/demo-thumbnail.png" // You can customize this or remove if no thumbnail
+                      >
+                        <source src={visualizationVideoPath} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Watch this demo to see how to complete the visualization task
+                    </p>
+                  </Card>
+                </div>
+              ) : (
+                /* Examples section for non-visualization tasks */
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-foreground">Examples</h3>
+                  <div className="space-y-3">
+                    {currentTask.examples.map((example: any, index: number) => (
+                      <Card key={index} className="overflow-hidden border-0 shadow-sm bg-card">
+                        <div className="bg-muted/50 px-4 py-2 border-b">
+                          <h4 className="text-sm font-medium text-foreground">Example {index + 1}</h4>
+                        </div>
+                        <div className="p-4">
+                          <pre className="text-xs bg-muted/30 p-3 rounded-lg font-mono border whitespace-pre-wrap break-words overflow-hidden">
+                            <code className="text-foreground block">
+                              {Object.entries(example.input).map(([key, value]) => {
+                                return typeof value === "string"
+                                  ? `Input: ${key} = "${value}"\n`
+                                  : `Input: ${key} = ${JSON.stringify(value)}\n`
+                              })}
+                              <span className="text-green-600 font-medium">Output: {example.output}</span>
+                            </code>
+                          </pre>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
-                </>
+                </div>
               )}
             </div>
           </ScrollArea>
