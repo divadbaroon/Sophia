@@ -56,12 +56,12 @@ export const WorkspaceLayout: React.FC = () => {
                              activeMethodId === 'tree_visualization'
 
   // Set terminal height based on task type
-  const defaultTerminalHeight = isVisualizationTask ? 25 : 50
+  const defaultTerminalHeight = isVisualizationTask ? 20 : 50
   const [terminalHeight, setTerminalHeight] = useState(defaultTerminalHeight)
 
   // Update terminal height when switching between task types
   React.useEffect(() => {
-    setTerminalHeight(isVisualizationTask ? 25 : 50)
+    setTerminalHeight(isVisualizationTask ? 20 : 50)
   }, [isVisualizationTask])
 
   // Calculate button positioning based on text showing and visualization task
