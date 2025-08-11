@@ -4,7 +4,7 @@ import React, { useState } from "react"
 
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
-import { HelpCircle } from "lucide-react"
+import { HelpCircle, Pencil, Trash2 } from "lucide-react"
 
 import TaskSidebar from "@/components/student-side/task-sidebar/TaskSidebar"
 import CodeEditor from "@/components/student-side/code-editor/CodeEditor"
@@ -27,7 +27,7 @@ export const WorkspaceLayout: React.FC = () => {
 
   const { sessionId, lessonId, currentMethodIndex, sessionData } = useSession()
 
-  const { codeLoading } = useCodeEditor()
+  const { codeLoading, isDrawingMode, toggleDrawingMode, clearAllDrawings } = useCodeEditor()
 
   const { 
     showConsentModal, 
@@ -54,6 +54,8 @@ export const WorkspaceLayout: React.FC = () => {
 
   // Calculate button positioning based on text showing
   const sophiaButtonText = isQuestionPanelVisible ? 'Close Sophia' : 'Ask Sophia'
+  const sophiaButtonWidth = isQuestionPanelVisible ? 140 : 130
+  const drawingButtonsRightPosition = sophiaButtonWidth + 61
 
   const onToggleSophia = () => {
     if (isQuestionPanelVisible) {
@@ -110,6 +112,15 @@ export const WorkspaceLayout: React.FC = () => {
     trackOpen()
   }
 
+  // Handle drawing mode toggle
+  const handleToggleDrawing = () => {
+    toggleDrawingMode();
+  };
+
+  const handleClearDrawing = () => {
+    clearAllDrawings();
+  };
+
   // Determine if buttons should be hidden
   const shouldHideButtons = isSurveyModalOpen || showPrizeWheel || showOnboarding || showConsentModal
 
@@ -161,6 +172,41 @@ export const WorkspaceLayout: React.FC = () => {
 
       <main className={`flex flex-col h-screen ${showConsentModal || showOnboarding ? 'pointer-events-none opacity-50' : ''}`}>
         <div className="flex-1 flex relative">
+          {/* Drawing Controls*/}
+          {!shouldHideButtons && (
+            <div 
+              className="absolute top-3.5 z-[9999] flex gap-3 mt-2 transition-all duration-200 ease-in-out"
+              style={{
+                right: `${52 + drawingButtonsRightPosition}px`
+              }}
+            >
+              {/* Draw Button */}
+              <Button
+                variant={isDrawingMode ? "default" : "outline"}
+                size="sm"
+                className="gap-2 font-medium"
+                onClick={handleToggleDrawing}
+                disabled={showConsentModal}
+                title="Toggle drawing mode on code editor"
+              >
+                <Pencil className="h-5 w-5" />
+                {isDrawingMode ? "Exit Draw" : "Draw"}
+              </Button>
+              {/* Clear All Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 font-medium text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={handleClearDrawing}
+                disabled={showConsentModal}
+                title="Clear all drawings on code editor"
+              >
+                <Trash2 className="h-5 w-5" />
+                Clear All
+              </Button>
+            </div>
+          )}
+
           {/* Ask Sophia button */}
           {!shouldHideButtons && (
             <Button
