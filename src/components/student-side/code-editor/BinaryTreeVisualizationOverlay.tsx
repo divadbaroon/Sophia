@@ -18,7 +18,6 @@ const BinaryTreeVisualizationOverlay: React.FC<BinaryTreeVisualizationOverlayPro
   const [lastX, setLastX] = useState(0);
   const [lastY, setLastY] = useState(0);
   const [userDrawings, setUserDrawings] = useState<Array<Array<{x: number, y: number}>>>([]);
-  const [feedbackType, setFeedbackType] = useState<'info' | 'correct' | 'incorrect'>('info');
 
   // Get global drawing state
   const { isDrawingMode, visualizationInteractions } = useCodeEditor();
@@ -89,7 +88,6 @@ const BinaryTreeVisualizationOverlay: React.FC<BinaryTreeVisualizationOverlayPro
         (lastInteraction.task === 'tree' || lastInteraction.zone === 'global_clear')) {
       setUserDrawings([]);
       drawVisualization();
-      setFeedbackType('info');
     }
   }, [visualizationInteractions, drawVisualization]);
 

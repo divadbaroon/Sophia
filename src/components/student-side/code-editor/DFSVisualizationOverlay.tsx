@@ -18,7 +18,6 @@ const DFSVisualizationOverlay: React.FC<DFSVisualizationOverlayProps> = ({
   const [lastX, setLastX] = useState(0);
   const [lastY, setLastY] = useState(0);
   const [userDrawings, setUserDrawings] = useState<Array<Array<{x: number, y: number}>>>([]);
-  const [feedbackType, setFeedbackType] = useState<'info' | 'correct' | 'incorrect'>('info');
 
   // Get global drawing state
   const { isDrawingMode, visualizationInteractions } = useCodeEditor();
@@ -87,7 +86,6 @@ const DFSVisualizationOverlay: React.FC<DFSVisualizationOverlayProps> = ({
         (lastInteraction.task === 'dfs' || lastInteraction.zone === 'global_clear')) {
       setUserDrawings([]);
       drawVisualization();
-      setFeedbackType('info');
     }
   }, [visualizationInteractions, drawVisualization]);
 
