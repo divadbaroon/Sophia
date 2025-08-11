@@ -33,6 +33,7 @@ const Terminal = () => {
     isSaved, 
     setErrorContent,
     updateExecutionOutput, 
+    currentSequence,   
   } = useCodeEditor()
 
   const { executeCode, isExecuting } = useCodeExecution()
@@ -49,6 +50,153 @@ const Terminal = () => {
       return
     }
 
+    if (activeMethodId === 'dfs_visualization') {
+      const correctSequence = [1, 2, 5, 6, 3];
+      const isCorrect = JSON.stringify(currentSequence) === JSON.stringify(correctSequence);
+      
+      // Save test case results
+      if (sessionId && lessonId) {
+        const testResults = [{
+          testCaseIndex: 0,
+          testInput: `DFS traversal starting from node 1`,
+          expectedOutput: correctSequence.join(' → '),
+          actualOutput: currentSequence.join(' → '),
+          passed: isCorrect,
+          errorMessage: isCorrect ? undefined : 'Incorrect DFS traversal order',
+          executionTimeMs: 0
+        }];
+        
+        saveTestCaseResults({
+          sessionId,
+          lessonId,
+          taskIndex: currentMethodIndex,
+          methodId: activeMethodId,
+          testCaseResults: testResults
+        }).catch(error => {
+          console.error("Failed to save DFS visualization results:", error)
+        })
+      }
+      
+      // Record the attempt
+      if (sessionId) {
+        recordTaskAttempt(sessionId, currentMethodIndex, isCorrect ? 1 : 0, 1)
+          .catch(error => {
+            console.error("Failed to record DFS visualization attempt:", error)
+          })
+      }
+      
+      if (isCorrect) {
+        setOutput(`🎉 Correct! DFS visit order: ${currentSequence.join(' → ')}\n\n✅ All tests passed!`);
+        
+        if (sessionId) {
+          triggerTaskCompletion(currentMethodIndex);
+          markTaskCompleted(sessionId, currentMethodIndex, 1, 1);
+        }
+      } else {
+        const userSequence = currentSequence.join(' → ');
+        setOutput(`❌ Incorrect DFS order\n\nYour sequence: ${userSequence}\n\nPlease try again!`);
+      }
+      
+      return; 
+      
+    } else if (activeMethodId === 'hash_visualization') {
+      const hasCorrectAnswer = currentSequence.includes('slot4Arrow');
+      
+      // Save test case results
+      if (sessionId && lessonId) {
+        const testResults = [{
+          testCaseIndex: 0,
+          testInput: `Insert value 15 (15 mod 11 = 4)`,
+          expectedOutput: 'slot4Arrow',
+          actualOutput: currentSequence.join(', '),
+          passed: hasCorrectAnswer,
+          errorMessage: hasCorrectAnswer ? undefined : 'Incorrect insertion point selected',
+          executionTimeMs: 0
+        }];
+        
+        saveTestCaseResults({
+          sessionId,
+          lessonId,
+          taskIndex: currentMethodIndex,
+          methodId: activeMethodId,
+          testCaseResults: testResults
+        }).catch(error => {
+          console.error("Failed to save hash visualization results:", error)
+        })
+      }
+      
+      // Record the attempt
+      if (sessionId) {
+        recordTaskAttempt(sessionId, currentMethodIndex, hasCorrectAnswer ? 1 : 0, 1)
+          .catch(error => {
+            console.error("Failed to record hash visualization attempt:", error)
+          })
+      }
+      
+      if (hasCorrectAnswer) {
+        setOutput(`🎉 Correct! You identified the proper insertion point.\n\n✅ 15 should be inserted before 26 in the chain!`);
+        
+        if (sessionId) {
+          triggerTaskCompletion(currentMethodIndex);
+          markTaskCompleted(sessionId, currentMethodIndex, 1, 1);
+        }
+      } else {
+        const userActions = currentSequence.join(', ');
+        setOutput(`❌ Incorrect insertion point\n\nYour actions: ${userActions}\n\nRemember: In collision chaining, new values go at the FRONT of the chain.\n\nPlease try again!`);
+      }
+      
+      return; 
+      
+    } else if (activeMethodId === 'tree_visualization') {
+      const correctSequence = ['nodeD', 'nodeE', 'nodeB', 'nodeF', 'nodeC', 'nodeA'];
+      const isCorrect = JSON.stringify(currentSequence) === JSON.stringify(correctSequence);
+      
+      // Save test case results
+      if (sessionId && lessonId) {
+        const testResults = [{
+          testCaseIndex: 0,
+          testInput: `Postorder traversal of binary tree`,
+          expectedOutput: correctSequence.map(n => n.replace('node', '')).join(' → '),
+          actualOutput: currentSequence.map(n => typeof n === 'string' ? n.replace('node', '') : n).join(' → '),
+          passed: isCorrect,
+          errorMessage: isCorrect ? undefined : 'Incorrect postorder traversal sequence',
+          executionTimeMs: 0
+        }];
+        
+        saveTestCaseResults({
+          sessionId,
+          lessonId,
+          taskIndex: currentMethodIndex,
+          methodId: activeMethodId,
+          testCaseResults: testResults
+        }).catch(error => {
+          console.error("Failed to save tree visualization results:", error)
+        })
+      }
+      
+      // Record the attempt
+      if (sessionId) {
+        recordTaskAttempt(sessionId, currentMethodIndex, isCorrect ? 1 : 0, 1)
+          .catch(error => {
+            console.error("Failed to record tree visualization attempt:", error)
+          })
+      }
+      
+      if (isCorrect) {
+        setOutput(`🎉 Correct! Postorder traversal: ${correctSequence.map(n => n.replace('node', '')).join(' → ')}\n\n✅ All tests passed!`);
+        
+        if (sessionId) {
+          triggerTaskCompletion(currentMethodIndex);
+          markTaskCompleted(sessionId, currentMethodIndex, 1, 1);
+        }
+      } else {
+        const userSequence = currentSequence.map(n => typeof n === 'string' ? n.replace('node', '') : n);
+        setOutput(`❌ Incorrect postorder sequence\n\nYour sequence: ${userSequence.join(' → ')}\n\nRemember: Postorder visits left subtree, right subtree, then root!`);
+      }
+      
+      return; 
+    }
+    
     if (compiler === "java") {
       try {
         setOutput("🔄 Compiling and running Java code...")
