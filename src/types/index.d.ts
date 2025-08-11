@@ -193,3 +193,13 @@ export interface SurveyModalProps {
   onComplete: () => void
 }
 
+export interface VisualizationInteractionSave {
+  sessionId: string;
+  lessonId: string;
+  task: string;
+  action: 'click' | 'draw' | 'clear';
+  zone: string;
+  x: number;
+  y: number;
+  timestamp: string;
+}
