@@ -98,8 +98,8 @@ export function DemographicForm({ isOpen, onSubmit, classId }: DemographicFormPr
                     className="border-2 border-gray-200 focus:border-gray-400 transition-colors"
                   />
                   <p className="text-xs text-gray-500">
-                    This is used for providing you with extra credit, per your professor&lsquo;s request. 
-                    At least one lesson must be completed to qualify
+                    This is used for providing you with extra credit, per your professor&lsquo;s request.{" "}  
+                    <span className="underline">At least one lesson must be completed to qualify.</span>
                   </p>
                 </div>
 
