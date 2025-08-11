@@ -16,7 +16,6 @@ export default function OnboardingModal({
   isOpen,
   onClose,
   onGetStarted,
-  conceptTitle = '',
 }: OnboardingModalProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const titleId = useId()
