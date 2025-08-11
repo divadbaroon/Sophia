@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
@@ -38,6 +38,11 @@ const Terminal = () => {
 
   const { executeCode, isExecuting } = useCodeExecution()
   const { parseTestResults } = useTestResultParser()
+
+  // Clear terminal output when task changes
+  useEffect(() => {
+    setOutput("")
+  }, [currentMethodIndex, activeMethodId])
 
   const handleRun = async (): Promise<void> => {
     if (!isSaved()) {
