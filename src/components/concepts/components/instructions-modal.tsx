@@ -59,7 +59,7 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
                         TA-Like Guidance
                       </h5>
                       <p className="text-sm text-gray-600">
-                        Sophia has been configured and reviewed by your instructor to behave like a TA. Use for help or just to verify your thinking.
+                        Sophia has been configured and reviewed by your instructor to behave like a TA. Use her for help or just to verify your thinking.
                       </p>
                     </div>
                   </div>
