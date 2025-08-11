@@ -5,6 +5,7 @@ import { useSession } from '../session/SessionProvider';
 import { useCodeSnapshots } from '@/lib/hooks/codeEditor/useCodeSnapshots'; 
 import { saveSophiaHighlightAction } from '@/lib/actions/sophia-highlight-actions'
 import { saveUserHighlightAction } from '@/lib/actions/user-highlight-actions'
+import { saveVisualizationInteraction } from '@/lib/actions/visualization-interaction-actions'
 
 import { CodeEditorContextType } from "../types"
 
@@ -42,6 +43,13 @@ export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
 
   // Code the system has indicated it would like to highlight
   const [systemHighlightedLine, setSystemHighlightedLine] = useState<number | null>(null);
+
+  // To track visualization interactions (drawing)
+  const [visualizationInteractions, setVisualizationInteractions] = useState<any[]>([]);
+  const [currentSequence, setCurrentSequence] = useState<(number | string)[]>([]);
+
+  // Drawing state ( controlled by drawing button in navbar )
+  const [isDrawingMode, setIsDrawingMode] = useState(false);
 
   // Initialize methodsCode when hook finishes loading
   useEffect(() => {
@@ -148,6 +156,106 @@ export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
     setExecutionOutput(output);
   };
 
+  const logVisualizationInteraction = (data: {
+    task: string;
+    action: 'click' | 'draw' | 'clear';
+    zone: string;
+    x: number;
+    y: number;
+  }) => {
+    const interaction = { 
+      ...data, 
+      timestamp: new Date().toISOString(), 
+      sessionId, 
+      lessonId 
+    };
+    
+    // 1. Save individual interaction (for research)
+    setVisualizationInteractions(prev => [...prev, interaction]);
+    
+    // 2. Update current sequence (for validation)
+    if (data.action === 'clear') {
+      setCurrentSequence([]);
+      console.log("🗑️ SEQUENCE CLEARED");
+    } else if (data.zone.startsWith('node')) {
+      // Check if it's DFS (numbers) or Tree (letters)
+      const zoneSuffix = data.zone.replace('node', ''); // Gets '1', '2', 'D', 'E', etc.
+      
+      if (data.task === 'dfs') {
+        // DFS: Add node numbers
+        const nodeNumber = parseInt(zoneSuffix);
+        setCurrentSequence(prev => {
+          const lastItem = prev[prev.length - 1];
+          if (lastItem === nodeNumber) {
+            console.log("🚫 DUPLICATE DFS NODE IGNORED:", nodeNumber);
+            return prev;
+          }
+          
+          const newSequence = [...prev, nodeNumber];
+          console.log("🎯 DFS NODE ADDED:", nodeNumber);
+          console.log("📊 Current Sequence:", newSequence);
+          return newSequence;
+        });
+      } else if (data.task === 'tree') {
+        // Binary tree: Add full zone names (nodeD, nodeE, etc.)
+        setCurrentSequence(prev => {
+          const lastItem = prev[prev.length - 1];
+          if (lastItem === data.zone) {
+            console.log("🚫 DUPLICATE TREE NODE IGNORED:", data.zone);
+            return prev;
+          }
+          
+          const newSequence = [...prev, data.zone];
+          console.log("🎯 TREE NODE ADDED:", data.zone);
+          console.log("📊 Current Sequence:", newSequence);
+          return newSequence;
+        });
+      }
+    } else if (data.task === 'hash' && (data.zone === 'slot4Arrow' || data.zone === 'node26Arrow')) {
+      // Hash table: Add zone names (prevent duplicates)
+      setCurrentSequence(prev => {
+        const lastItem = prev[prev.length - 1];
+        if (lastItem === data.zone) {
+          console.log("🚫 DUPLICATE HASH ZONE IGNORED:", data.zone);
+          return prev;
+        }
+        
+        const newSequence = [...prev, data.zone];
+        console.log("🎯 HASH ZONE ADDED:", data.zone);
+        console.log("📊 Current Sequence:", newSequence);
+        return newSequence;
+      });
+    }
+        
+    // 3. Save visualization interaction to db
+    saveVisualizationInteraction(interaction).then((result) => {
+      if (result.success) {
+        console.log("💾 Visualization interaction saved to database");
+      } else {
+        console.error("❌ Failed to save visualization interaction:", result.error);
+      }
+    }).catch((error) => {
+      console.error("❌ Error saving visualization interaction:", error);
+    });
+  };
+
+  // Add functions to control drawing
+  const toggleDrawingMode = () => {
+    setIsDrawingMode(prev => !prev);
+  };
+
+  const clearAllDrawings = () => {
+    // This will trigger clearing in the active visualization component
+    logVisualizationInteraction({
+      task: activeMethodId?.includes('dfs') ? 'dfs' : 
+            activeMethodId?.includes('hash') ? 'hash' : 'tree',
+      action: 'clear',
+      x: 0,
+      y: 0,
+      zone: 'global_clear'
+    });
+  };
+
   const value: CodeEditorContextType = {
     fileContent,
     cachedFileContent,
@@ -167,6 +275,12 @@ export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
     updateMethodsCode,
     systemHighlightedLine,       
     updateSystemHighlightedLine,  
+    visualizationInteractions,
+    logVisualizationInteraction,
+    currentSequence,
+    isDrawingMode,
+    toggleDrawingMode,
+    clearAllDrawings,
   };
 
   return (
