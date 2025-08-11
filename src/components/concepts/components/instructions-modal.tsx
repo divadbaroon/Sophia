@@ -18,6 +18,11 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
     onClose()
   }
 
+  // Check if this concept has visualization tasks
+  const hasVisualization = conceptTitle === 'Graph Algorithms' || 
+                          conceptTitle === 'Hash Tables' || 
+                          conceptTitle === 'Binary Search Trees'
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl bg-white border-2 border-black">
@@ -32,16 +37,35 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
             <h4 className="text-lg font-semibold text-black border-b border-gray-200 pb-2">What&apos;s Next:</h4>
 
             <div className="grid gap-4">
+              {/* Visualization Task - Only show for concepts with visualization */}
+              {hasVisualization && (
+                <Card className="border-2 border-gray-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Target className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <h5 className="font-semibold text-black mb-1">Visualization Task</h5>
+                        <p className="text-sm text-gray-600">
+                          First, you&apos;ll complete an interactive visualization exercise to build understanding of {conceptTitle.toLowerCase()}.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <Card className="border-2 border-gray-200">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Target className="w-4 h-4 text-blue-600" />
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Code className="w-4 h-4 text-purple-600" />
                     </div>
                     <div>
                       <h5 className="font-semibold text-black mb-1">3 {conceptTitle} Coding Tasks</h5>
                       <p className="text-sm text-gray-600">
-                        You&apos;ll receive progressively challenging coding problems related to {conceptTitle.toLowerCase()}.
+                        {hasVisualization ? 'Then you' : 'You'}&apos;ll receive progressively challenging coding problems related to {conceptTitle.toLowerCase()}.
                       </p>
                     </div>
                   </div>
@@ -66,21 +90,24 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
                 </CardContent>
               </Card>
 
-              <Card className="border-2 border-gray-200">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Code className="w-4 h-4 text-purple-600" />
+              {/* Exam Preparation - Only show for non-visualization concepts */}
+              {!hasVisualization && (
+                <Card className="border-2 border-gray-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Target className="w-4 h-4 text-orange-600" />
+                      </div>
+                      <div>
+                        <h5 className="font-semibold text-black mb-1">Exam Preparation Focus</h5>
+                        <p className="text-sm text-gray-600">
+                          Each task builds on what you&apos;ve learned and prepares you for your exam.
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h5 className="font-semibold text-black mb-1">Exam Preparation Focus</h5>
-                      <p className="text-sm text-gray-600">
-                        Each task builds on what you&apos;ve learned and prepares you for your exam.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
 
@@ -90,7 +117,7 @@ export function InstructionsModal({ isOpen, onClose, conceptTitle, onContinue }:
               onClick={handleContinue}
               className="w-full bg-black text-white hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
             >
-              Start Coding Tasks
+              {hasVisualization ? 'Start with Visualization' : 'Start Coding Tasks'}
               <ArrowRight size={16} />
             </Button>
           </div>
