@@ -35,18 +35,27 @@ export default function TaskSidebar({
   // Check if current task is completed
   const isCurrentTaskCompleted = completedTasks.has(currentMethodIndex)
 
-  // Check if current task is a visualization task and get the appropriate video
-  const getVisualizationVideo = (methodId: string) => {
-    const videoMapping: { [key: string]: string } = {
-      'dfs_visualization': '/videos/GraphVisualizationSketchDemo.mp4',
-      'hash_visualization': '/videos/HashTableVisualizationSketchDemo.mp4', 
-      'tree_visualization': '/videos/BinaryTreeSketchDemo.mp4'
+  // Check if current task is a visualization task and get the appropriate video and thumbnail
+  const getVisualizationAssets = (methodId: string) => {
+    const assetMapping: { [key: string]: { video: string, thumbnail: string } } = {
+      'dfs_visualization': {
+        video: '/videos/GraphVisualizationSketchDemo.mp4',
+        thumbnail: '/videos/GraphVisualizationSketchDemo.png'
+      },
+      'hash_visualization': {
+        video: '/videos/HashTableVisualizationSketchDemo.mp4',
+        thumbnail: '/videos/HashTableVisualizationSketchDemoThumbnail.png'
+      },
+      'tree_visualization': {
+        video: '/videos/BinaryTreeSketchDemo.mp4',
+        thumbnail: '/videos/BinaryTreeVisualizationSketchDemoThumbnail.png'
+      }
     }
-    return videoMapping[methodId] || null
+    return assetMapping[methodId] || null
   }
 
-  const visualizationVideoPath = getVisualizationVideo(activeMethodId)
-  const isVisualizationTask = !!visualizationVideoPath
+  const visualizationAssets = getVisualizationAssets(activeMethodId)
+  const isVisualizationTask = !!visualizationAssets
 
   // Navigation handlers with tracking
   const handleNextClick = () => {
@@ -189,9 +198,9 @@ export default function TaskSidebar({
                       <video
                         className="w-full h-full object-cover"
                         controls
-                        poster="/videos/demo-thumbnail.png" // You can customize this or remove if no thumbnail
+                        poster={visualizationAssets.thumbnail}
                       >
-                        <source src={visualizationVideoPath} type="video/mp4" />
+                        <source src={visualizationAssets.video} type="video/mp4" />
                         Your browser does not support the video tag.
                       </video>
                     </div>
