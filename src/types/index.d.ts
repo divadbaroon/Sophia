@@ -149,39 +149,32 @@ export type CodeEditorProps = {
 };
 
 export interface SurveyData {
-  // Sophia Usage Frequency
   sophiaUsageFrequency: string
-
-  // AI Assistant Experience (conditional - only if used Sophia)
   sophiaHelpfulness: string
   sophiaReliability: string
   instructorAlignment: string
   aiVsHumanPreference: string
-  appropriateHelp: string
-
-  // Learning Effectiveness
   conceptUnderstanding: string
   problemSolvingImprovement: string
   examPreparation: string
   learningAutonomy: string
-
-  // System Experience (conditional - only if used Sophia)
-  voiceInteractionQuality: string
-  comfortWithAI: string
-
-  // General System Experience
   easeOfUse: string
-
-  // Trust & Confidence (conditional - only if used Sophia)
+  voiceInteractionQuality: string
+  appropriateHelp: string
   trustInGuidance: string
   confidenceInLearning: string
-
-  // Open-ended feedback
+  comfortWithAI: string
   bestAspects: string
   improvements: string
   comparisonToInstructor: string
   additionalComments: string
   interviewEmail: string
+  
+  visualizationHelpfulness: string
+  visualizationEngagement: string
+  
+  wouldRecommend: string
+  learningSatisfaction: string
 }
 
 export interface SurveyModalProps {

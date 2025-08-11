@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent } from "@/components/ui/card"
 
-import { ClipboardList, ArrowRight, Gift, Loader2 } from "lucide-react"
+import { ClipboardList, ArrowRight, Gift, Loader2, Eye } from "lucide-react"
 
 import { saveSurveyResponse, checkSurveyCompletion } from "@/lib/actions/survey-actions"
 
@@ -45,6 +45,10 @@ export default function SurveyModal({
     comparisonToInstructor: "",
     additionalComments: "",
     interviewEmail: "",
+    visualizationHelpfulness: "",
+    visualizationEngagement: "",
+    wouldRecommend: "",
+    learningSatisfaction: "",
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -128,6 +132,10 @@ export default function SurveyModal({
         comparisonToInstructor: "",
         additionalComments: "",
         interviewEmail: "",
+        visualizationHelpfulness: "",
+        visualizationEngagement: "",
+        wouldRecommend: "",
+        learningSatisfaction: "",
       })
 
       setIsSubmitting(false)
@@ -166,6 +174,10 @@ export default function SurveyModal({
       comparisonToInstructor: "",
       additionalComments: "",
       interviewEmail: "",
+      visualizationHelpfulness: "",
+      visualizationEngagement: "",
+      wouldRecommend: "",
+      learningSatisfaction: "",
     })
     setSaveError(null)
     onClose()
@@ -178,10 +190,18 @@ export default function SurveyModal({
       formData.sophiaHelpfulness &&
       formData.instructorAlignment &&
       formData.conceptUnderstanding &&
-      formData.learningAutonomy
+      formData.learningAutonomy &&
+      formData.visualizationHelpfulness &&
+      formData.visualizationEngagement &&
+      formData.wouldRecommend &&
+      formData.learningSatisfaction
     : formData.sophiaUsageFrequency &&
       formData.conceptUnderstanding &&
-      formData.learningAutonomy
+      formData.learningAutonomy &&
+      formData.visualizationHelpfulness &&
+      formData.visualizationEngagement &&
+      formData.wouldRecommend &&
+      formData.learningSatisfaction
 
   const likertScale = [
     { value: "5", label: "Strongly Agree" },
@@ -372,6 +392,56 @@ export default function SurveyModal({
             </Card>
           )}
 
+          {/* NEW: Visualization Effectiveness Section */}
+          <Card className="border-2 border-gray-200">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2 flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Visualization Effectiveness
+              </h3>
+
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-gray-700">
+                    The visualization tasks helped me learn the concepts better. *
+                  </Label>
+                  <RadioGroup
+                    value={formData.visualizationHelpfulness}
+                    onValueChange={(value) => handleInputChange("visualizationHelpfulness", value)}
+                  >
+                    {likertScale.map((option) => (
+                      <div key={option.value} className="flex items-center space-x-2">
+                        <RadioGroupItem value={option.value} id={`viz-helpful-${option.value}`} />
+                        <Label htmlFor={`viz-helpful-${option.value}`} className="text-sm">
+                          {option.value} - {option.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-gray-700">
+                    The visualization tasks were engaging and interesting. *
+                  </Label>
+                  <RadioGroup
+                    value={formData.visualizationEngagement}
+                    onValueChange={(value) => handleInputChange("visualizationEngagement", value)}
+                  >
+                    {likertScale.map((option) => (
+                      <div key={option.value} className="flex items-center space-x-2">
+                        <RadioGroupItem value={option.value} id={`viz-engagement-${option.value}`} />
+                        <Label htmlFor={`viz-engagement-${option.value}`} className="text-sm">
+                          {option.value} - {option.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Learning Effectiveness */}
           <Card className="border-2 border-gray-200">
             <CardContent className="p-6">
@@ -493,7 +563,7 @@ export default function SurveyModal({
             </Card>
           )}
 
-          {/* General System Experience */}
+          {/* Overall System Experience */}
           <Card className="border-2 border-gray-200">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
@@ -513,6 +583,44 @@ export default function SurveyModal({
                       <div key={option.value} className="flex items-center space-x-2">
                         <RadioGroupItem value={option.value} id={`ease-${option.value}`} />
                         <Label htmlFor={`ease-${option.value}`} className="text-sm">
+                          {option.value} - {option.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-gray-700">
+                    I would recommend this learning system to other students. *
+                  </Label>
+                  <RadioGroup
+                    value={formData.wouldRecommend}
+                    onValueChange={(value) => handleInputChange("wouldRecommend", value)}
+                  >
+                    {likertScale.map((option) => (
+                      <div key={option.value} className="flex items-center space-x-2">
+                        <RadioGroupItem value={option.value} id={`recommend-${option.value}`} />
+                        <Label htmlFor={`recommend-${option.value}`} className="text-sm">
+                          {option.value} - {option.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-gray-700">
+                    I am satisfied with my learning experience. *
+                  </Label>
+                  <RadioGroup
+                    value={formData.learningSatisfaction}
+                    onValueChange={(value) => handleInputChange("learningSatisfaction", value)}
+                  >
+                    {likertScale.map((option) => (
+                      <div key={option.value} className="flex items-center space-x-2">
+                        <RadioGroupItem value={option.value} id={`satisfaction-${option.value}`} />
+                        <Label htmlFor={`satisfaction-${option.value}`} className="text-sm">
                           {option.value} - {option.label}
                         </Label>
                       </div>
@@ -597,12 +705,12 @@ export default function SurveyModal({
           <Card className="border-2 border-gray-200">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold text-black mb-4 border-b border-gray-200 pb-2">
-                Interview Opportunity - $10 Compensation 
+                Interview Opportunity - $15 Compensation 
               </h3>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <p className="text-xs text-gray-600 mb-2">
-                    We&apos;d love to hear more about your experience. Please share your email if you&apos;re interested in a brief 30-minute interview for $10 compensation.
+                    We&apos;d love to hear more about your experience. Please share your email if you&apos;re interested in a brief 30-minute interview for $15 compensation.
                   </p>
                   <Textarea
                     id="interview"

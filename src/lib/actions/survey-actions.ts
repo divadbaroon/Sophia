@@ -34,7 +34,7 @@ export async function saveSurveyResponse(
       session_id: sessionId,
       profile_id: profileId,
       lesson_id: lessonId,
-      survey_version: 'v3', 
+      survey_version: 'v4', 
       
       // Sophia Usage
       sophia_usage_frequency: surveyData.sophiaUsageFrequency.trim() || null,
@@ -57,6 +57,14 @@ export async function saveSurveyResponse(
 
       // General System Experience
       ease_of_use: parseRating(surveyData.easeOfUse),
+
+      // Visualization Effectiveness 
+      visualization_helpfulness: parseRating(surveyData.visualizationHelpfulness),
+      visualization_engagement: parseRating(surveyData.visualizationEngagement),
+
+      // Overall Satisfaction 
+      would_recommend: parseRating(surveyData.wouldRecommend),
+      learning_satisfaction: parseRating(surveyData.learningSatisfaction),
 
       // Trust & Confidence (only if used Sophia)
       trust_in_guidance: parseRating(surveyData.trustInGuidance),
@@ -84,19 +92,27 @@ export async function saveSurveyResponse(
       recommendation: null,
     }
 
-    // Validate required fields for v3 survey version
+    // Validate required fields for v4 survey version
     const requiredFields = usedSophia 
       ? [
           surveyResponse.sophia_usage_frequency,
           surveyResponse.sophia_helpfulness,
           surveyResponse.instructor_alignment,
           surveyResponse.concept_understanding,
-          surveyResponse.learning_autonomy
+          surveyResponse.learning_autonomy,
+          surveyResponse.visualization_helpfulness,
+          surveyResponse.visualization_engagement,
+          surveyResponse.would_recommend,
+          surveyResponse.learning_satisfaction
         ]
       : [
           surveyResponse.sophia_usage_frequency,
           surveyResponse.concept_understanding,
-          surveyResponse.learning_autonomy
+          surveyResponse.learning_autonomy,
+          surveyResponse.visualization_helpfulness,
+          surveyResponse.visualization_engagement,
+          surveyResponse.would_recommend,
+          surveyResponse.learning_satisfaction
         ]
 
     if (requiredFields.some(field => field === null || field === undefined || field === "")) {
