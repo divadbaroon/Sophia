@@ -9,12 +9,14 @@ interface OnboardingModalProps {
   isOpen: boolean
   onClose: () => void
   onGetStarted: () => void
+  conceptTitle?: string
 }
 
 export default function OnboardingModal({
   isOpen,
   onClose,
   onGetStarted,
+  conceptTitle = '',
 }: OnboardingModalProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const titleId = useId()
@@ -28,7 +30,7 @@ export default function OnboardingModal({
     },
     {
       title: "Contextual Awareness",
-    subtitle: "Sophia sees what you're coding and knows exactly where you are in each task. Highlight specific code you want her to focus on. Jump straight into help without any setup."
+      subtitle: "Sophia sees what you're coding and knows exactly where you are in each task. Highlight specific code you want her to focus on. Jump straight into help without any setup."
     },
     {
       title: "Teaching Style",
@@ -37,6 +39,10 @@ export default function OnboardingModal({
     {
       title: "Validate Your Thinking",
       subtitle: "Feeling confident with your solution? Use Sophia to explain your approach and validate your understanding. Teaching others is one of the best ways to learn!"
+    },
+    {
+      title: "Interactive Visualizations",
+      subtitle: "Before coding, you'll complete interactive visualization exercises to build conceptual understanding. Use the drawing tools to demonstrate your knowledge, then click 'Run Tests' to validate your answers."
     }
   ]
 
