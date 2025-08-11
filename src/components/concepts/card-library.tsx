@@ -118,30 +118,30 @@ export default function ConceptLibrary() {
   }
 
   const loadData = useCallback(async () => {
-    // Get user's classes
-    const { data: classes } = await getUserClasses()
+  // Get user's classes
+  const { data: classes } = await getUserClasses()
+  
+  if (classes && classes.length > 0) {
+    setCurrentClass(classes[classes.length - 1]) 
     
-    if (classes && classes.length > 0) {
-      setCurrentClass(classes[0]) 
-      
-      // Check if demographics are completed for the first class selected
-      const demographicResult = await checkDemographicCompletion((classes[0] as any).id)
-      if (demographicResult.success) {
-        if (!demographicResult.completed) {
-          setShowDemographicForm(true)
-        }
+    // Check if demographics are completed for the last class selected
+    const demographicResult = await checkDemographicCompletion((classes[classes.length - 1] as any).id)
+    if (demographicResult.success) {
+      if (!demographicResult.completed) {
+        setShowDemographicForm(true)
       }
-      
-      // Get lessons for first class
-      const { data: classLessons } = await getClassLessons((classes[0] as any).id)
-              
-      const sortedLessons = sortLessonsByOrder(classLessons || [])
-      setLessons(sortedLessons)
-      
-      await loadCompletedLessons((classes[0] as any).id)
     }
     
-    setLoading(false)
+    // Get lessons for last class
+    const { data: classLessons } = await getClassLessons((classes[classes.length - 1] as any).id)
+            
+    const sortedLessons = sortLessonsByOrder(classLessons || [])
+    setLessons(sortedLessons)
+    
+    await loadCompletedLessons((classes[classes.length - 1] as any).id)
+  }
+  
+  setLoading(false)
   }, [])
 
   // Load data on mount
