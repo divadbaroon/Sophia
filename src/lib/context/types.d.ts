@@ -47,6 +47,34 @@ export interface CodeEditorContextType {
 
   systemHighlightedLine: number | null;
   updateSystemHighlightedLine: (line: number | null) => void;
+
+  // Visualization interaction tracking
+  visualizationInteractions: VisualizationInteraction[];
+  logVisualizationInteraction: (data: VisualizationInteractionData) => void;
+  currentSequence: (number | string)[];
+
+  isDrawingMode: boolean;
+  toggleDrawingMode: () => void;
+  clearAllDrawings: () => void;
+}
+
+export interface VisualizationInteraction {
+  task: string;
+  action: 'click' | 'draw' | 'clear';
+  zone: string;
+  x: number;
+  y: number;
+  timestamp: string;
+  sessionId: string;
+  lessonId: string;
+}
+
+export interface VisualizationInteractionData {
+  task: string;
+  action: 'click' | 'draw' | 'clear';
+  zone: string;
+  x: number;
+  y: number;
 }
 
 // Task Progress
