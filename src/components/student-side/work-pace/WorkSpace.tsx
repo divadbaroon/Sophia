@@ -25,7 +25,7 @@ import { useCodeEditor } from "@/lib/context/codeEditor/CodeEditorProvider"
 
 export const WorkspaceLayout: React.FC = () => {
 
-  const { sessionId, lessonId, currentMethodIndex, sessionData } = useSession()
+  const { sessionId, lessonId, currentMethodIndex, sessionData, activeMethodId } = useSession()
 
   const { codeLoading, isDrawingMode, toggleDrawingMode, clearAllDrawings } = useCodeEditor()
 
@@ -41,8 +41,6 @@ export const WorkspaceLayout: React.FC = () => {
 
   const [showPrizeWheel, setShowPrizeWheel] = useState(false) 
   
-  const [terminalHeight, setTerminalHeight] = useState(50)
-
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [isQuestionPanelVisible, setIsQuestionPanelVisible] = useState(false)
 
@@ -52,7 +50,21 @@ export const WorkspaceLayout: React.FC = () => {
   // Check if essential data is loaded
   const isLoading = !sessionData || !sessionId || !lessonId || currentMethodIndex === undefined || codeLoading
 
-  // Calculate button positioning based on text showing
+  // Check if current task is a visualization task
+  const isVisualizationTask = activeMethodId === 'dfs_visualization' || 
+                             activeMethodId === 'hash_visualization' || 
+                             activeMethodId === 'tree_visualization'
+
+  // Set terminal height based on task type
+  const defaultTerminalHeight = isVisualizationTask ? 35 : 50
+  const [terminalHeight, setTerminalHeight] = useState(defaultTerminalHeight)
+
+  // Update terminal height when switching between task types
+  React.useEffect(() => {
+    setTerminalHeight(isVisualizationTask ? 35 : 50)
+  }, [isVisualizationTask])
+
+  // Calculate button positioning based on text showing and visualization task
   const sophiaButtonText = isQuestionPanelVisible ? 'Close Sophia' : 'Ask Sophia'
   const sophiaButtonWidth = isQuestionPanelVisible ? 140 : 130
   const drawingButtonsRightPosition = sophiaButtonWidth + 61
@@ -172,8 +184,8 @@ export const WorkspaceLayout: React.FC = () => {
 
       <main className={`flex flex-col h-screen ${showConsentModal || showOnboarding ? 'pointer-events-none opacity-50' : ''}`}>
         <div className="flex-1 flex relative">
-          {/* Drawing Controls*/}
-          {!shouldHideButtons && (
+          {/* Drawing Controls - Only show on visualization tasks */}
+          {!shouldHideButtons && isVisualizationTask && (
             <div 
               className="absolute top-3.5 z-[9999] flex gap-3 mt-2 transition-all duration-200 ease-in-out"
               style={{
@@ -187,10 +199,10 @@ export const WorkspaceLayout: React.FC = () => {
                 className="gap-2 font-medium"
                 onClick={handleToggleDrawing}
                 disabled={showConsentModal}
-                title="Toggle drawing mode on code editor"
+                title="Toggle drawing mode on visualization"
               >
                 <Pencil className="h-5 w-5" />
-                {isDrawingMode ? "Exit Draw" : "Draw"}
+                {isDrawingMode ? "Drawing" : "Draw"}
               </Button>
               {/* Clear All Button */}
               <Button
@@ -199,7 +211,7 @@ export const WorkspaceLayout: React.FC = () => {
                 className="gap-2 font-medium text-red-600 hover:text-red-700 hover:bg-red-50"
                 onClick={handleClearDrawing}
                 disabled={showConsentModal}
-                title="Clear all drawings on code editor"
+                title="Clear all drawings on visualization"
               >
                 <Trash2 className="h-5 w-5" />
                 Clear All
@@ -319,5 +331,3 @@ export const WorkspaceLayout: React.FC = () => {
     </>
   )
 }
-
-export default WorkspaceLayout
