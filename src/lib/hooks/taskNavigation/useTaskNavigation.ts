@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 
-import { extractMethodIdFromTitle } from "@/utils/string-parsing/string-utils"
-
 import { UseTaskNavigationReturn } from './types'
 import { TestCase } from '@/types';
 
@@ -15,10 +13,8 @@ export const useTaskNavigation = (
   // Update active method ID and test cases when method index or session changes
   useEffect(() => {
     if (sessionData?.tasks && sessionData.tasks[currentMethodIndex]) {
-      const title = sessionData.tasks[currentMethodIndex].title;
-      console.log("🔍 Extracting methodId from title:", title);
-      
-      const methodId = extractMethodIdFromTitle(title);
+      const currentTask = sessionData.tasks[currentMethodIndex];
+      const methodId = currentTask.method_name;
       
       if (methodId) {
         console.log("✅ Found methodId:", methodId);
@@ -30,7 +26,7 @@ export const useTaskNavigation = (
           setCurrentTestCases([]);
         }
       } else {
-        console.error("❌ Could not extract methodId from title:", title);
+        console.error("❌ No method_name found in task:", currentTask);
         setActiveMethodId('');
         setCurrentTestCases([]);
       }
