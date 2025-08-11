@@ -18,7 +18,6 @@ const DFSVisualizationOverlay: React.FC<DFSVisualizationOverlayProps> = ({
   const [lastX, setLastX] = useState(0);
   const [lastY, setLastY] = useState(0);
   const [userDrawings, setUserDrawings] = useState<Array<Array<{x: number, y: number}>>>([]);
-  const [feedback, setFeedback] = useState('Draw on the nodes to number them in DFS visit order (starting from node 1)');
   const [feedbackType, setFeedbackType] = useState<'info' | 'correct' | 'incorrect'>('info');
 
   // Get global drawing state
@@ -88,7 +87,6 @@ const DFSVisualizationOverlay: React.FC<DFSVisualizationOverlayProps> = ({
         (lastInteraction.task === 'dfs' || lastInteraction.zone === 'global_clear')) {
       setUserDrawings([]);
       drawVisualization();
-      setFeedback('Canvas cleared. Draw on the nodes to show DFS visit order.');
       setFeedbackType('info');
     }
   }, [visualizationInteractions, drawVisualization]);
@@ -129,7 +127,7 @@ const DFSVisualizationOverlay: React.FC<DFSVisualizationOverlayProps> = ({
     const startY = stroke[0].y;
     
     // Also check if any significant portion of the stroke is in a zone
-    let zoneHits: Record<string, number> = {};
+    const zoneHits: Record<string, number> = {};
     let sampledPoints = 0;
     
     // Sample every 3rd point to avoid over-sampling
@@ -232,16 +230,6 @@ const DFSVisualizationOverlay: React.FC<DFSVisualizationOverlayProps> = ({
         y: Math.round(y),
         zone: zone.name,
       });
-      
-      // Update feedback based on drawing
-      const zoneData = dfsZones[zone.name as keyof typeof dfsZones];
-      if (zoneData && typeof zoneData.correct === 'number') {
-        setFeedback(`✅ Great drawing! You drew on node ${zone.name.replace('node', '')} (visit order ${zoneData.correct})`);
-        setFeedbackType('correct');
-      } else {
-        setFeedback(`Try drawing on a specific node. You drew in ${zone.name}`);
-        setFeedbackType('incorrect');
-      }
     }
   }, [isDrawing, isDrawingMode, userDrawings, analyzeDrawing, onInteraction]);
 
@@ -249,17 +237,6 @@ const DFSVisualizationOverlay: React.FC<DFSVisualizationOverlayProps> = ({
   useEffect(() => {
     drawVisualization();
   }, [drawVisualization]);
-
-  const getFeedbackStyles = () => {
-    switch (feedbackType) {
-      case 'correct':
-        return 'bg-green-50 text-green-800 border-green-200';
-      case 'incorrect':
-        return 'bg-red-50 text-red-800 border-red-200';
-      default:
-        return 'bg-blue-50 text-blue-800 border-blue-200';
-    }
-  };
 
   return (
     <div className="h-full flex items-center justify-center bg-white" style={{ paddingBottom: `${terminalHeight}vh` }}>

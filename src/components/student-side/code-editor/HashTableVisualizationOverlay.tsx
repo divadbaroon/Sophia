@@ -18,8 +18,9 @@ const HashTableVisualizationOverlay: React.FC<HashTableVisualizationOverlayProps
   const [lastX, setLastX] = useState(0);
   const [lastY, setLastY] = useState(0);
   const [userDrawings, setUserDrawings] = useState<Array<Array<{x: number, y: number}>>>([]);
-  const [feedback, setFeedback] = useState('Draw where the value 15 should be inserted using collision chaining');
   const [feedbackType, setFeedbackType] = useState<'info' | 'correct' | 'incorrect'>('info');
+
+
 
   // Get global drawing state
   const { isDrawingMode, visualizationInteractions } = useCodeEditor();
@@ -187,7 +188,6 @@ const HashTableVisualizationOverlay: React.FC<HashTableVisualizationOverlayProps
         (lastInteraction.task === 'hash' || lastInteraction.zone === 'global_clear')) {
       setUserDrawings([]);
       drawVisualization();
-      setFeedback('Canvas cleared. Draw where 15 should be inserted.');
       setFeedbackType('info');
     }
   }, [visualizationInteractions, drawVisualization]);
@@ -235,7 +235,7 @@ const HashTableVisualizationOverlay: React.FC<HashTableVisualizationOverlayProps
     const startY = stroke[0].y;
     
     // Also check if any significant portion of the stroke is in a zone
-    let zoneHits: Record<string, number> = {};
+    const zoneHits: Record<string, number> = {};
     let sampledPoints = 0;
     
     // Sample every 3rd point to avoid over-sampling
@@ -338,16 +338,6 @@ const HashTableVisualizationOverlay: React.FC<HashTableVisualizationOverlayProps
         y: Math.round(y),
         zone: zone.name
       });
-      
-      // Update feedback based on drawing
-      const zoneData = hashZones[zone.name as keyof typeof hashZones];
-      if (zoneData && zoneData.correct === true) {
-        setFeedback(`✅ Perfect! You drew in the correct insertion zone. 15 should go before 26!`);
-        setFeedbackType('correct');
-      } else {
-        setFeedback(`Try drawing on the correct insertion arrow. You drew in ${zone.name}`);
-        setFeedbackType('incorrect');
-      }
     }
   }, [isDrawing, isDrawingMode, userDrawings, analyzeDrawing, onInteraction]);
 
@@ -355,17 +345,6 @@ const HashTableVisualizationOverlay: React.FC<HashTableVisualizationOverlayProps
   useEffect(() => {
     drawVisualization();
   }, [drawVisualization]);
-
-  const getFeedbackStyles = () => {
-    switch (feedbackType) {
-      case 'correct':
-        return 'bg-green-50 text-green-800 border-green-200';
-      case 'incorrect':
-        return 'bg-red-50 text-red-800 border-red-200';
-      default:
-        return 'bg-blue-50 text-blue-800 border-blue-200';
-    }
-  };
 
   return (
     <div className="h-full flex items-center justify-center bg-white" style={{ paddingBottom: `${terminalHeight}vh` }}>
