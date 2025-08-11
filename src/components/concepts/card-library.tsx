@@ -17,7 +17,22 @@ import { getClassLessons } from "@/lib/actions/lessons-actions"
 import { createLearningSession, getUserLearningSessions } from "@/lib/actions/learning-session-actions"
 import { checkDemographicCompletion } from "@/lib/actions/demographic-actions"
 
-import { Search, Filter, Variable, ActivityIcon as Function, RotateCcw, GitBranch, Database, Box, Target, ChevronDown, ChevronUp, Gift } from "lucide-react"
+import { 
+  Search, 
+  Filter, 
+  Variable, 
+  ActivityIcon as Function, 
+  RotateCcw, 
+  GitBranch, 
+  Database, 
+  Box, 
+  Target, 
+  ChevronDown, 
+  ChevronUp, 
+  Gift,
+  Network,    
+  Hash        
+} from "lucide-react"
 
 export default function ConceptLibrary() {
   const iconMap: { [key: string]: any } = {
@@ -26,7 +41,9 @@ export default function ConceptLibrary() {
     'RotateCcw': RotateCcw,
     'GitBranch': GitBranch,
     'Database': Database,
-    'Box': Box
+    'Box': Box,
+    'Network': Network,     
+    'Hash': Hash,          
   }
 
   // Custom sorting order for lessons with fixed IDs
@@ -34,8 +51,6 @@ export default function ConceptLibrary() {
     'Graph Algorithms',
     'Hash Tables',
     'Binary Search Trees',
-    'Singly Linked Lists',
-    'Sorting Algorithms'
   ]
 
   // Fixed ID mapping 
@@ -43,8 +58,6 @@ export default function ConceptLibrary() {
     '899e4241-288a-4e7d-875d-f395ab32015d',
     '3317ea88-7f0b-45af-ad1e-57ed56b69d51',
     'ed1cd4fa-42bc-4f59-8a3c-fc3fae1c9176',  
-    '0cff2209-b34f-45b4-8a79-9503d0066ab8', 
-    '15af35b6-69c4-43d0-8403-a273ed587ee0',  
   ]
 
   // Database state
@@ -215,6 +228,22 @@ export default function ConceptLibrary() {
   // Use real completion status from database
   const isConceptCompleted = (lessonId: string) => {
     return completedLessons.has(lessonId)
+  }
+
+  // Function to get the right icon for each lesson
+  const getIconForLesson = (lesson: any) => {
+    const title = lesson.title.toLowerCase()
+    
+    if (title.includes('graph')) {
+      return Network
+    } else if (title.includes('hash')) {
+      return Hash
+    } else if (title.includes('tree') || title.includes('binary search')) {
+      return GitBranch
+    }
+    
+    // Fallback to database icon or default
+    return iconMap[lesson.icon_name] || Variable
   }
 
   const filterOptions = ["All", "Beginner", "Intermediate", "Advanced", "Completed", "Not Completed"]
@@ -465,7 +494,7 @@ export default function ConceptLibrary() {
                 key={lesson.id}
                 title={lesson.title}
                 description={lesson.description || ""}
-                icon={iconMap[lesson.icon_name] || Variable} 
+                icon={getIconForLesson(lesson)} 
                 difficulty={lesson.difficulty || "Beginner"}
                 estimatedTime={`${lesson.estimated_time_mins || 10} min`}
                 isCompleted={isConceptCompleted(lesson.fixedId || lesson.id)}
