@@ -28,6 +28,7 @@ export async function getCodingTasksForLesson(lessonId: string) {
       title: task.title,
       difficulty: task.difficulty,
       description: task.description,
+      method_name: task.method_name,
       examples: task.examples
         ?.sort((a: any, b: any) => a.example_order - b.example_order)
         .map((example: any) => ({
