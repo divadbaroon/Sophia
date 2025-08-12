@@ -4,23 +4,42 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { VisualizationInteractionData } from '@/lib/context/types';
 import { useCodeEditor } from '@/lib/context/codeEditor/CodeEditorProvider';
 
+import { saveVisualizationStrokeData } from '@/lib/actions/visualization-stroke-data-actions'
+
 interface HashTableVisualizationOverlayProps {
   onInteraction: (data: VisualizationInteractionData) => void;
   terminalHeight?: number;
+  sessionId: string | null;   
+  lessonId: string | null;   
 }
 
 const HashTableVisualizationOverlay: React.FC<HashTableVisualizationOverlayProps> = ({ 
   onInteraction, 
-  terminalHeight = 50 
+  terminalHeight = 50,
+  sessionId,     
+  lessonId    
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastX, setLastX] = useState(0);
   const [lastY, setLastY] = useState(0);
-  const [userDrawings, setUserDrawings] = useState<Array<Array<{x: number, y: number}>>>([]);
+  const [userDrawings, setUserDrawings] = useState<Array<Array<{x: number, y: number, timestamp: number}>>>([]);
 
   // Get global drawing state
   const { isDrawingMode, visualizationInteractions } = useCodeEditor();
+
+  useEffect(() => {
+      if (userDrawings.length > 0) {
+        const latestStroke = userDrawings[userDrawings.length - 1];
+        console.log('🎨 Complete stroke data:', {
+          strokeNumber: userDrawings.length,
+          pointCount: latestStroke.length,
+          completePoints: latestStroke,
+          startPoint: latestStroke[0],
+          endPoint: latestStroke[latestStroke.length - 1]
+        });
+      }
+    }, [userDrawings]);
 
   // Hash table zones - where students can draw (updated for cleaner layout)
   const hashZones = {
@@ -271,11 +290,12 @@ const HashTableVisualizationOverlay: React.FC<HashTableVisualizationOverlayProps
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    const timestamp = Date.now();
     
     setIsDrawing(true);
     setLastX(x);
     setLastY(y);
-    setUserDrawings(prev => [...prev, [{x, y}]]);
+    setUserDrawings(prev => [...prev, [{x, y, timestamp}]]);
   }, [isDrawingMode]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -288,12 +308,13 @@ const HashTableVisualizationOverlay: React.FC<HashTableVisualizationOverlayProps
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    const timestamp = Date.now();
     
     // Add point to current stroke
     setUserDrawings(prev => {
       const newDrawings = [...prev];
       const currentStroke = newDrawings[newDrawings.length - 1];
-      currentStroke.push({x, y});
+      currentStroke.push({x, y, timestamp});
       return newDrawings;
     });
     
@@ -326,6 +347,23 @@ const HashTableVisualizationOverlay: React.FC<HashTableVisualizationOverlayProps
     const currentStroke = userDrawings[userDrawings.length - 1];
     if (currentStroke) {
       const zone = analyzeDrawing(currentStroke);
+
+      // Save complete stroke data (with proper null checks)
+      if (currentStroke.length > 1 && sessionId && lessonId) {
+        saveVisualizationStrokeData({
+          sessionId: sessionId,
+          lessonId: lessonId,
+          task: 'hash',          
+          zone: zone.name,
+          strokeNumber: userDrawings.length,
+          pointCount: currentStroke.length,
+          completePoints: currentStroke,
+          startPoint: currentStroke[0],
+          endPoint: currentStroke[currentStroke.length - 1]
+        }).catch(error => {
+          console.error('❌ Error saving stroke:', error);
+        });
+      }
       
       onInteraction({
         task: 'hash',
