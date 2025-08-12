@@ -67,7 +67,7 @@ const CodeEditor = ({
   readOnly = false, 
   terminalHeight = 50 
 }: ExtendedCodeEditorProps) => {
-  const { sessionId, activeMethodId } = useSession();
+  const { sessionId, activeMethodId, lessonId } = useSession();
   const { 
     updateCachedFileContent, 
     setFileContent, 
@@ -153,6 +153,8 @@ const CodeEditor = ({
         <DFSVisualizationOverlay 
           onInteraction={logVisualizationInteraction}
           terminalHeight={terminalHeight}
+          sessionId={sessionId}    
+          lessonId={lessonId}       
         />
       </div>
     );
@@ -164,6 +166,8 @@ const CodeEditor = ({
         <HashTableVisualizationOverlay 
           onInteraction={logVisualizationInteraction}
           terminalHeight={terminalHeight}
+          sessionId={sessionId}     
+          lessonId={lessonId}       
         />
       </div>
     );
@@ -175,6 +179,8 @@ const CodeEditor = ({
         <BinaryTreeVisualizationOverlay 
           onInteraction={logVisualizationInteraction}
           terminalHeight={terminalHeight}
+          sessionId={sessionId}     
+          lessonId={lessonId}      
         />
       </div>
     );
