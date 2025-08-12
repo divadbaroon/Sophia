@@ -8,6 +8,7 @@ import { Play } from "lucide-react"
 import { saveTestCaseResults } from '@/lib/actions/test-case-results-actions'
 import { saveCodeError } from '@/lib/actions/code-errors-actions'
 import { markTaskCompleted, recordTaskAttempt } from '@/lib/actions/task-progress-actions'
+import { saveCodeSnapshot } from '@/lib/actions/code-snapshot-actions'
 
 import { useSession } from "@/lib/context/session/SessionProvider"
 import { useCodeEditor } from "@/lib/context/codeEditor/CodeEditorProvider"
@@ -43,6 +44,21 @@ const Terminal = () => {
   useEffect(() => {
     setOutput("")
   }, [currentMethodIndex, activeMethodId])
+
+  // Save user's code before test cases are run
+  const saveCodeBeforeTest = () => {
+    if (sessionId && lessonId && activeMethodId && currentMethodIndex !== undefined) {
+      saveCodeSnapshot({
+        sessionId,
+        lessonId,
+        taskIndex: currentMethodIndex,
+        methodId: activeMethodId,
+        codeContent: fileContent
+      }).catch(error => {
+        console.error("Failed to save code before test:", error)
+      })
+    }
+  }
 
   const handleRun = async (): Promise<void> => {
     if (!isSaved()) {
@@ -201,6 +217,9 @@ const Terminal = () => {
       
       return; 
     }
+
+    // Save user's current code to db before running tests
+    saveCodeBeforeTest() 
     
     if (compiler === "java") {
       try {
