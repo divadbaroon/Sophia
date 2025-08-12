@@ -107,11 +107,10 @@ export default function TaskSidebar({
     }
 
     if (currentMethodIndex === sessionData.tasks.length - 1 && isCurrentTaskCompleted) {
-      // Complete lesson progress
-      if (lessonId) {
+      if (sessionId) { 
         try {
-          console.log('📝 Updating lesson progress...', { lessonId })
-          const result = await completeLessonProgress(lessonId)
+          console.log('📝 Updating lesson progress...', { sessionId }) 
+          const result = await completeLessonProgress(sessionId)
           
           if (result.success) {
             console.log('✅ Lesson completed successfully!', result.data)
