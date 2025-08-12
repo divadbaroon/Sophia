@@ -6,13 +6,14 @@ import { useCodeSnapshots } from '@/lib/hooks/codeEditor/useCodeSnapshots';
 import { saveSophiaHighlightAction } from '@/lib/actions/sophia-highlight-actions'
 import { saveUserHighlightAction } from '@/lib/actions/user-highlight-actions'
 import { saveVisualizationInteraction } from '@/lib/actions/visualization-interaction-actions'
+import { useSessionEndTracking } from '@/lib/hooks/sessionTracking/useSessionEndTracking';
 
 import { CodeEditorContextType } from "../types"
 
 const CodeEditorContext = createContext<CodeEditorContextType | undefined>(undefined);
 
 export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
-  const { sessionData, sessionId, lessonId, activeMethodId } = useSession();
+  const { sessionData, sessionId, lessonId, activeMethodId, currentMethodIndex } = useSession();
 
   // Code loading state
   const [codeLoading, setCodeLoading] = useState(true);
@@ -50,6 +51,15 @@ export const CodeEditorProvider = ({ children }: { children: ReactNode }) => {
 
   // Drawing state ( controlled by drawing button in navbar )
   const [isDrawingMode, setIsDrawingMode] = useState(false);
+
+  // Add session end tracking here ( for now )
+  useSessionEndTracking({
+    sessionId,
+    lessonId,
+    activeMethodId,
+    currentMethodIndex,
+    fileContent
+  });
 
   // Initialize methodsCode when hook finishes loading
   useEffect(() => {
